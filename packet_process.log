@@ -1,0 +1,239 @@
+Skipping packet 1 due to no valid JSON
+Processing packet 2 with JSON payload
+Skipping packet 3 due to unsupported protocol or no payload
+Skipping packet 4 due to no valid JSON
+Skipping packet 5 due to unsupported protocol or no payload
+Processing PFCP packet: 6
+Processing PFCP packet: 7
+Processing PFCP packet: 8
+Skipping packet 9 due to no valid JSON
+Processing packet 10 with JSON payload
+Processing PFCP packet: 11
+Skipping packet 12 due to unsupported protocol or no payload
+Skipping packet 13 due to no valid JSON
+Processing packet 14 with JSON payload
+Skipping packet 15 due to unsupported protocol or no payload
+Skipping packet 16 due to no valid JSON
+Skipping packet 17 due to unsupported protocol or no payload
+Skipping packet 18 due to no valid JSON
+Skipping packet 19 due to unsupported protocol or no payload
+Skipping packet 20 due to no valid JSON
+Processing packet 21 with JSON payload
+Skipping packet 22 due to unsupported protocol or no payload
+Skipping packet 23 due to no valid JSON
+Processing packet 24 with JSON payload
+Skipping packet 25 due to unsupported protocol or no payload
+Skipping packet 26 due to no valid JSON
+Skipping packet 27 due to unsupported protocol or no payload
+Skipping packet 28 due to no valid JSON
+Skipping packet 29 due to unsupported protocol or no payload
+Skipping packet 30 due to no valid JSON
+Processing packet 31 with JSON payload
+Skipping packet 32 due to unsupported protocol or no payload
+Skipping packet 33 due to no valid JSON
+Processing packet 34 with JSON payload
+Skipping packet 35 due to unsupported protocol or no payload
+Skipping packet 36 due to no valid JSON
+Skipping packet 37 due to unsupported protocol or no payload
+Skipping packet 38 due to no valid JSON
+Skipping packet 39 due to unsupported protocol or no payload
+Skipping packet 40 due to no valid JSON
+Processing packet 41 with JSON payload
+Skipping packet 42 due to unsupported protocol or no payload
+Skipping packet 43 due to no valid JSON
+Processing packet 44 with JSON payload
+Skipping packet 45 due to unsupported protocol or no payload
+Skipping packet 46 due to no valid JSON
+Skipping packet 47 due to unsupported protocol or no payload
+Skipping packet 48 due to no valid JSON
+Skipping packet 49 due to unsupported protocol or no payload
+Skipping packet 50 due to no valid JSON
+Processing packet 51 with JSON payload
+Skipping packet 52 due to unsupported protocol or no payload
+Skipping packet 53 due to no valid JSON
+Processing packet 54 with JSON payload
+Skipping packet 55 due to unsupported protocol or no payload
+Skipping packet 56 due to no valid JSON
+Skipping packet 57 due to unsupported protocol or no payload
+Skipping packet 58 due to no valid JSON
+Skipping packet 59 due to unsupported protocol or no payload
+Skipping packet 60 due to no valid JSON
+Processing packet 61 with JSON payload
+Skipping packet 62 due to unsupported protocol or no payload
+Skipping packet 63 due to no valid JSON
+Processing packet 64 with JSON payload
+Skipping packet 65 due to unsupported protocol or no payload
+Skipping packet 66 due to no valid JSON
+Skipping packet 67 due to unsupported protocol or no payload
+Skipping packet 68 due to no valid JSON
+Skipping packet 69 due to unsupported protocol or no payload
+Skipping packet 70 due to no valid JSON
+Processing packet 71 with JSON payload
+Skipping packet 72 due to unsupported protocol or no payload
+Skipping packet 73 due to no valid JSON
+Processing packet 74 with JSON payload
+Skipping packet 75 due to unsupported protocol or no payload
+Skipping packet 76 due to no valid JSON
+Skipping packet 77 due to unsupported protocol or no payload
+Skipping packet 78 due to no valid JSON
+Skipping packet 79 due to unsupported protocol or no payload
+Processing SCTP packet: 80
+Processing SCTP packet: 81
+Processing SCTP packet: 82
+Processing SCTP packet: 83
+Processing SCTP packet: 84
+Processing SCTP packet: 85
+Processing SCTP packet: 86
+Processing SCTP packet: 87
+Processing NGAP packet: 88
+An error occurred while reading the pcapng file: 
+Total packets processed: 27
+Packet data saved to packets_data.json
+--------------------
+Debugging Packet 107:
+Packet object representation:
+Packet (Length: 136)
+Layer SLL
+:	Packet type: Unicast to us (0)
+	Link-layer address type: 1
+	Link-layer address length: 6
+	Source: 08:00:27:9b:db:c5
+	Unused: 2c22
+	Protocol: IPv4 (0x0800)
+Layer IP
+:	0100 .... = Version: 4
+	.... 0101 = Header Length: 20 bytes (5)
+	Differentiated Services Field: 0x02 (DSCP: CS0, ECN: ECT(0))
+	0000 00.. = Differentiated Services Codepoint: Default (0)
+	.... ..10 = Explicit Congestion Notification: ECN-Capable Transport codepoint '10' (2)
+	Total Length: 120
+	Identification: 0x0004 (4)
+	Flags: 0x4000, Don't fragment
+	0... .... .... .... = Reserved bit: Not set
+	.1.. .... .... .... = Don't fragment: Set
+	..0. .... .... .... = More fragments: Not set
+	Fragment offset: 0
+	Time to live: 64
+	Protocol: SCTP (132)
+	Header checksum: 0x23df [validation disabled]
+	Header checksum status: Unverified
+	Source: 10.10.0.5
+	Destination: 10.10.2.5
+Layer SCTP
+:	Source port: 9487
+	Destination port: 38412
+	Verification tag: 0x4e19ce59
+	Association index: 65535
+	Checksum: 0x1c621a27 [unverified]
+	Checksum Status: Unverified
+	DATA chunk(ordered, complete segment, TSN: 638823489, SID: 0, SSN: 1, PPID: 60, payload length: 70 bytes)
+	Chunk type: DATA (0)
+	0... .... = Bit: Stop processing of the packet
+	.0.. .... = Bit: Do not report
+	Chunk flags: 0x03
+	.... 0... = I-Bit: Possibly delay SACK
+	.... .0.. = U-Bit: Ordered delivery
+	.... ..1. = B-Bit: First segment
+	.... ...1 = E-Bit: Last segment
+	Chunk length: 86
+	Transmission sequence number: 638823489
+	Stream identifier: 0x0000
+	Stream sequence number: 1
+	Payload protocol identifier: NGAP (60)
+	Chunk padding: 0000
+Layer NGAP
+:	NGAP-PDU: initiatingMessage (0)
+	initiatingMessage
+	procedureCode: id-InitialUEMessage (15)
+	criticality: ignore (1)
+	value
+	InitialUEMessage
+	protocolIEs: 5 items
+	Item 0: id-RAN-UE-NGAP-ID
+	ProtocolIE-Field
+	id: id-RAN-UE-NGAP-ID (85)
+	RAN-UE-NGAP-ID: 1
+	NAS-PDU: 7e004179000d0100f110f0ff000020000000002e02a020
+	Extended protocol discriminator: 5G mobility management messages (126)
+	0000 .... = Spare Half Octet: 0
+	.... 0000 = Security header type: Plain NAS message, not security protected (0)
+	Message type: Registration request (0x41)
+	.... 1... = Follow-On Request bit (FOR): Follow-on request pending
+	.... .001 = 5GS registration type: initial registration (1)
+	0... .... = Type of security context flag (TSC): Native security context (for KSIAMF)
+	.111 .... = NAS key set identifier: 7
+	Length: 13
+	0... .... = Spare: 0
+	.000 .... = SUPI format: IMSI (0)
+	.... 0... = Spare: 0
+	.... .001 = Type of identity: SUCI (1)
+	Mobile Country Code (MCC): Unknown (1)
+	Mobile Network Code (MNC): Unknown (01)
+	Routing indicator: 0
+	.... 0000 = Protection scheme Id: NULL scheme (0)
+	Home network public key identifier: 0
+	Scheme output: 0200000000
+	Element ID: 0x2e
+	1... .... = 5G-EA0: Supported
+	.0.. .... = 128-5G-EA1: Not supported
+	..1. .... = 128-5G-EA2: Supported
+	...0 .... = 128-5G-EA3: Not supported
+	.... 0... = 5G-EA4: Not supported
+	.... .0.. = 5G-EA5: Not supported
+	.... ..0. = 5G-EA6: Not supported
+	.... ...0 = 5G-EA7: Not supported
+	0... .... = 5G-IA0: Not supported
+	.0.. .... = 128-5G-IA1: Not supported
+	..1. .... = 128-5G-IA2: Supported
+	...0 .... = 128-5G-IA3: Not supported
+	.... .0.. = 5G-IA5: Not supported
+	.... ..0. = 5G-IA6: Not supported
+	.... ...0 = 5G-IA7: Not supported
+	UserLocationInformation: userLocationInformationNR (1)
+	userLocationInformationNR
+	nR-CGI
+	pLMNIdentity: 00f110
+	nRCellIdentity: 0x0000008000
+	tAI
+	tAC: 1 (0x000001)
+	RRCEstablishmentCause: mo-Signalling (3)
+	UEContextRequest: requested (0)
+	criticality: reject (0)
+	criticality: reject (0)
+	criticality: reject (0)
+	criticality: ignore (1)
+	criticality: ignore (1)
+	value
+	value
+	value
+	value
+	value
+	Item 1: id-NAS-PDU
+	Plain NAS 5GS Message
+	5GS registration type
+	NAS key set identifier
+	5GS mobile identity
+	UE security capability
+	Item 2: id-UserLocationInformation
+	Item 3: id-RRCEstablishmentCause
+	Item 4: id-UEContextRequest
+	ProtocolIE-Field
+	ProtocolIE-Field
+	ProtocolIE-Field
+	ProtocolIE-Field
+	id: id-NAS-PDU (38)
+	id: id-UserLocationInformation (121)
+	id: id-RRCEstablishmentCause (90)
+	id: id-UEContextRequest (112)
+	Length: 2
+	Mobile Country Code (MCC): Unknown (1)
+	Mobile Country Code (MCC): Unknown (1)
+	Mobile Network Code (MNC): Unknown (01)
+	Mobile Network Code (MNC): Unknown (01)
+	.... 0... = 5G-IA4: Not supported
+	pLMNIdentity: 00f110
+
+List of all layers found: [<SLL Layer>, <IP Layer>, <SCTP Layer>, <NGAP Layer>]
+Value of transport_layer attribute: None
+--------------------
+9487

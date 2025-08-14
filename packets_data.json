@@ -1,0 +1,5064 @@
+{
+    "packets": [
+        {
+            "num": "2",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.10",
+            "protocol": "TCP",
+            "length": 177,
+            "src_port": "37044",
+            "dst_port": "80",
+            "payload": [
+                {
+                    "op": "replace",
+                    "path": "/nfStatus",
+                    "value": "REGISTERED"
+                },
+                {
+                    "op": "replace",
+                    "path": "/load",
+                    "value": 0
+                }
+            ]
+        },
+        {
+            "num": "6",
+            "src": "127.0.0.4",
+            "dst": "127.0.0.7",
+            "protocol": "PFCP",
+            "length": 60,
+            "src_port": "8805",
+            "dst_port": "8805",
+            "payload": {
+                "flags": "0x00000020",
+                "version": "1",
+                "spare_b4": "0",
+                "spare_b3": "0",
+                "spare_b2": "0",
+                "mp_flag": "0",
+                "s": "0",
+                "msg_type": "1",
+                "length": "12",
+                "seqno": "17698",
+                "spare_oct": "0",
+                "ie_type": "96",
+                "ie_len": "4",
+                "recovery_time_stamp": "Jul 18, 2025 11:26:07.000000000 CST"
+            }
+        },
+        {
+            "num": "7",
+            "src": "127.0.0.7",
+            "dst": "127.0.0.4",
+            "protocol": "PFCP",
+            "length": 60,
+            "src_port": "8805",
+            "dst_port": "8805",
+            "payload": {
+                "flags": "0x00000020",
+                "version": "1",
+                "spare_b4": "0",
+                "spare_b3": "0",
+                "spare_b2": "0",
+                "mp_flag": "0",
+                "s": "0",
+                "msg_type": "2",
+                "length": "12",
+                "seqno": "17698",
+                "spare_oct": "0",
+                "ie_type": "96",
+                "ie_len": "4",
+                "recovery_time_stamp": "Jul 18, 2025 11:26:07.000000000 CST",
+                "response_to": "6",
+                "response_time": "0.000136102"
+            }
+        },
+        {
+            "num": "8",
+            "src": "127.0.0.7",
+            "dst": "127.0.0.4",
+            "protocol": "PFCP",
+            "length": 60,
+            "src_port": "8805",
+            "dst_port": "8805",
+            "payload": {
+                "flags": "0x00000020",
+                "version": "1",
+                "spare_b4": "0",
+                "spare_b3": "0",
+                "spare_b2": "0",
+                "mp_flag": "0",
+                "s": "0",
+                "msg_type": "1",
+                "length": "12",
+                "seqno": "17691",
+                "spare_oct": "0",
+                "ie_type": "96",
+                "ie_len": "4",
+                "recovery_time_stamp": "Jul 18, 2025 11:26:07.000000000 CST"
+            }
+        },
+        {
+            "num": "10",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.200",
+            "protocol": "DATA",
+            "length": 177,
+            "src_port": "40998",
+            "dst_port": "7777",
+            "payload": [
+                {
+                    "op": "replace",
+                    "path": "/nfStatus",
+                    "value": "REGISTERED"
+                },
+                {
+                    "op": "replace",
+                    "path": "/load",
+                    "value": 0
+                }
+            ]
+        },
+        {
+            "num": "11",
+            "src": "127.0.0.4",
+            "dst": "127.0.0.7",
+            "protocol": "PFCP",
+            "length": 60,
+            "src_port": "8805",
+            "dst_port": "8805",
+            "payload": {
+                "flags": "0x00000020",
+                "version": "1",
+                "spare_b4": "0",
+                "spare_b3": "0",
+                "spare_b2": "0",
+                "mp_flag": "0",
+                "s": "0",
+                "msg_type": "2",
+                "length": "12",
+                "seqno": "17691",
+                "spare_oct": "0",
+                "ie_type": "96",
+                "ie_len": "4",
+                "recovery_time_stamp": "Jul 18, 2025 11:26:07.000000000 CST",
+                "response_to": "8",
+                "response_time": "0.006268265"
+            }
+        },
+        {
+            "num": "14",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.10",
+            "protocol": "TCP",
+            "length": 177,
+            "src_port": "37044",
+            "dst_port": "80",
+            "payload": [
+                {
+                    "op": "replace",
+                    "path": "/nfStatus",
+                    "value": "REGISTERED"
+                },
+                {
+                    "op": "replace",
+                    "path": "/load",
+                    "value": 0
+                }
+            ]
+        },
+        {
+            "num": "21",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.200",
+            "protocol": "DATA",
+            "length": 177,
+            "src_port": "40942",
+            "dst_port": "7777",
+            "payload": [
+                {
+                    "op": "replace",
+                    "path": "/nfStatus",
+                    "value": "REGISTERED"
+                },
+                {
+                    "op": "replace",
+                    "path": "/load",
+                    "value": 1
+                }
+            ]
+        },
+        {
+            "num": "24",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.10",
+            "protocol": "TCP",
+            "length": 177,
+            "src_port": "37044",
+            "dst_port": "80",
+            "payload": [
+                {
+                    "op": "replace",
+                    "path": "/nfStatus",
+                    "value": "REGISTERED"
+                },
+                {
+                    "op": "replace",
+                    "path": "/load",
+                    "value": 1
+                }
+            ]
+        },
+        {
+            "num": "31",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.200",
+            "protocol": "DATA",
+            "length": 177,
+            "src_port": "40956",
+            "dst_port": "7777",
+            "payload": [
+                {
+                    "op": "replace",
+                    "path": "/nfStatus",
+                    "value": "REGISTERED"
+                },
+                {
+                    "op": "replace",
+                    "path": "/load",
+                    "value": 0
+                }
+            ]
+        },
+        {
+            "num": "34",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.10",
+            "protocol": "TCP",
+            "length": 177,
+            "src_port": "37044",
+            "dst_port": "80",
+            "payload": [
+                {
+                    "op": "replace",
+                    "path": "/nfStatus",
+                    "value": "REGISTERED"
+                },
+                {
+                    "op": "replace",
+                    "path": "/load",
+                    "value": 0
+                }
+            ]
+        },
+        {
+            "num": "41",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.200",
+            "protocol": "DATA",
+            "length": 177,
+            "src_port": "40968",
+            "dst_port": "7777",
+            "payload": [
+                {
+                    "op": "replace",
+                    "path": "/nfStatus",
+                    "value": "REGISTERED"
+                },
+                {
+                    "op": "replace",
+                    "path": "/load",
+                    "value": 0
+                }
+            ]
+        },
+        {
+            "num": "44",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.10",
+            "protocol": "TCP",
+            "length": 177,
+            "src_port": "37044",
+            "dst_port": "80",
+            "payload": [
+                {
+                    "op": "replace",
+                    "path": "/nfStatus",
+                    "value": "REGISTERED"
+                },
+                {
+                    "op": "replace",
+                    "path": "/load",
+                    "value": 0
+                }
+            ]
+        },
+        {
+            "num": "51",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.200",
+            "protocol": "DATA",
+            "length": 177,
+            "src_port": "40972",
+            "dst_port": "7777",
+            "payload": [
+                {
+                    "op": "replace",
+                    "path": "/nfStatus",
+                    "value": "REGISTERED"
+                },
+                {
+                    "op": "replace",
+                    "path": "/load",
+                    "value": 0
+                }
+            ]
+        },
+        {
+            "num": "54",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.10",
+            "protocol": "TCP",
+            "length": 177,
+            "src_port": "37044",
+            "dst_port": "80",
+            "payload": [
+                {
+                    "op": "replace",
+                    "path": "/nfStatus",
+                    "value": "REGISTERED"
+                },
+                {
+                    "op": "replace",
+                    "path": "/load",
+                    "value": 0
+                }
+            ]
+        },
+        {
+            "num": "61",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.200",
+            "protocol": "DATA",
+            "length": 177,
+            "src_port": "40994",
+            "dst_port": "7777",
+            "payload": [
+                {
+                    "op": "replace",
+                    "path": "/nfStatus",
+                    "value": "REGISTERED"
+                },
+                {
+                    "op": "replace",
+                    "path": "/load",
+                    "value": 0
+                }
+            ]
+        },
+        {
+            "num": "64",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.10",
+            "protocol": "TCP",
+            "length": 177,
+            "src_port": "37044",
+            "dst_port": "80",
+            "payload": [
+                {
+                    "op": "replace",
+                    "path": "/nfStatus",
+                    "value": "REGISTERED"
+                },
+                {
+                    "op": "replace",
+                    "path": "/load",
+                    "value": 0
+                }
+            ]
+        },
+        {
+            "num": "71",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.200",
+            "protocol": "DATA",
+            "length": 177,
+            "src_port": "40996",
+            "dst_port": "7777",
+            "payload": [
+                {
+                    "op": "replace",
+                    "path": "/nfStatus",
+                    "value": "REGISTERED"
+                },
+                {
+                    "op": "replace",
+                    "path": "/load",
+                    "value": 0
+                }
+            ]
+        },
+        {
+            "num": "74",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.10",
+            "protocol": "TCP",
+            "length": 177,
+            "src_port": "37044",
+            "dst_port": "80",
+            "payload": [
+                {
+                    "op": "replace",
+                    "path": "/nfStatus",
+                    "value": "REGISTERED"
+                },
+                {
+                    "op": "replace",
+                    "path": "/load",
+                    "value": 0
+                }
+            ]
+        },
+        {
+            "num": "80",
+            "src": "10.10.0.5",
+            "dst": "10.10.2.5",
+            "protocol": "SCTP",
+            "length": 84,
+            "src_port": "9487",
+            "dst_port": "38412",
+            "payload": {
+                "srcport": "9487",
+                "dstport": "38412",
+                "verification_tag": "0x00000000",
+                "assoc_index": "65535",
+                "port": "9487",
+                "checksum": "0x6f3a0fe1",
+                "checksum_status": "2",
+                "chunk_type": "1",
+                "chunk_bit_1": "0",
+                "chunk_bit_2": "0",
+                "chunk_flags": "0x00000000",
+                "chunk_length": "36",
+                "init_initiate_tag": "0x9e382d67",
+                "initiate_tag": "0x9e382d67",
+                "init_credit": "106496",
+                "init_nr_out_streams": "2",
+                "init_nr_in_streams": "2",
+                "init_initial_tsn": "638823488",
+                "parameter_type": "0x0000000c",
+                "parameter_bit_1": "0",
+                "parameter_bit_2": "0",
+                "parameter_length": "6",
+                "parameter_supported_addres_type": "5",
+                "parameter_padding": "00:00"
+            }
+        },
+        {
+            "num": "81",
+            "src": "10.10.2.5",
+            "dst": "10.10.0.5",
+            "protocol": "SCTP",
+            "length": 308,
+            "src_port": "38412",
+            "dst_port": "9487",
+            "payload": {
+                "srcport": "38412",
+                "dstport": "9487",
+                "verification_tag": "0x9e382d67",
+                "assoc_index": "65535",
+                "port": "38412",
+                "checksum": "0x5740e527",
+                "checksum_status": "2",
+                "chunk_type": "2",
+                "chunk_bit_1": "0",
+                "chunk_bit_2": "0",
+                "chunk_flags": "0x00000000",
+                "chunk_length": "260",
+                "initack_initiate_tag": "0x4e19ce59",
+                "initiate_tag": "0x4e19ce59",
+                "initack_credit": "106496",
+                "initack_nr_out_streams": "2",
+                "initack_nr_in_streams": "2",
+                "initack_initial_tsn": "3584266529",
+                "parameter_type": "0x00000007",
+                "parameter_bit_1": "0",
+                "parameter_bit_2": "0",
+                "parameter_length": "232",
+                "parameter_state_cookie": "4d:0e:1c:f8:0a:a1:3d:71:0a:0f:bd:fe:f4:ab:70:31:f1:70:2c:89:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:59:ce:19:4e:67:2d:38:9e:00:00:00:00:00:00:00:00:b5:28:7f:0d:c9:eb:53:18:02:00:02:00:21:91:a3:d5:02:00:25:0f:0a:0a:00:05:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:0c:96:01:00:00:00:00:00:80:02:00:24:e9:27:3a:53:98:f0:45:a1:da:74:4e:5c:ee:05:b7:3f:09:a5:46:77:6b:f6:76:1e:c3:6d:87:d9:99:21:45:78:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:01:00:00:24:9e:38:2d:67:00:01:a0:00:00:02:00:02:26:13:ac:40:00:0c:00:06:00:05:00:00:80:00:00:04:c0:00:00:04:00:00:00:00:00:00:00:00:00:00:00:00"
+            }
+        },
+        {
+            "num": "82",
+            "src": "10.10.0.5",
+            "dst": "10.10.2.5",
+            "protocol": "SCTP",
+            "length": 84,
+            "src_port": "9487",
+            "dst_port": "38412",
+            "payload": {
+                "srcport": "9487",
+                "dstport": "38412",
+                "verification_tag": "0x00000000",
+                "assoc_index": "65535",
+                "port": "9487",
+                "checksum": "0x6f3a0fe1",
+                "checksum_status": "2",
+                "chunk_type": "1",
+                "chunk_bit_1": "0",
+                "chunk_bit_2": "0",
+                "chunk_flags": "0x00000000",
+                "chunk_length": "36",
+                "init_initiate_tag": "0x9e382d67",
+                "initiate_tag": "0x9e382d67",
+                "init_credit": "106496",
+                "init_nr_out_streams": "2",
+                "init_nr_in_streams": "2",
+                "init_initial_tsn": "638823488",
+                "parameter_type": "0x0000000c",
+                "parameter_bit_1": "0",
+                "parameter_bit_2": "0",
+                "parameter_length": "6",
+                "parameter_supported_addres_type": "5",
+                "parameter_padding": "00:00"
+            }
+        },
+        {
+            "num": "83",
+            "src": "10.10.2.5",
+            "dst": "10.10.0.5",
+            "protocol": "SCTP",
+            "length": 308,
+            "src_port": "38412",
+            "dst_port": "9487",
+            "payload": {
+                "srcport": "38412",
+                "dstport": "9487",
+                "verification_tag": "0x9e382d67",
+                "assoc_index": "65535",
+                "port": "38412",
+                "checksum": "0xf912017b",
+                "checksum_status": "2",
+                "chunk_type": "2",
+                "chunk_bit_1": "0",
+                "chunk_bit_2": "0",
+                "chunk_flags": "0x00000000",
+                "chunk_length": "260",
+                "initack_initiate_tag": "0xca323aab",
+                "initiate_tag": "0xca323aab",
+                "initack_credit": "106496",
+                "initack_nr_out_streams": "2",
+                "initack_nr_in_streams": "2",
+                "initack_initial_tsn": "3139988571",
+                "parameter_type": "0x00000007",
+                "parameter_bit_1": "0",
+                "parameter_bit_2": "0",
+                "parameter_length": "232",
+                "parameter_state_cookie": "fa:6a:d8:79:d3:83:72:6f:50:9b:96:c2:e9:4c:9b:57:39:f5:94:35:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:ab:3a:32:ca:67:2d:38:9e:00:00:00:00:00:00:00:00:0e:b9:82:0d:c9:eb:53:18:02:00:02:00:5b:6c:28:bb:02:00:25:0f:0a:0a:00:05:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:0c:96:01:00:00:00:00:00:80:02:00:24:09:f4:4c:78:51:76:89:50:d8:b7:e5:b0:a2:0e:5c:50:68:b8:86:68:e1:57:2e:28:4c:d5:e0:dc:84:30:2e:a9:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:01:00:00:24:9e:38:2d:67:00:01:a0:00:00:02:00:02:26:13:ac:40:00:0c:00:06:00:05:00:00:80:00:00:04:c0:00:00:04:00:00:00:00:00:00:00:00:00:00:00:00"
+            }
+        },
+        {
+            "num": "84",
+            "src": "10.10.0.5",
+            "dst": "10.10.2.5",
+            "protocol": "SCTP",
+            "length": 280,
+            "src_port": "9487",
+            "dst_port": "38412",
+            "payload": {
+                "srcport": "9487",
+                "dstport": "38412",
+                "verification_tag": "0x4e19ce59",
+                "assoc_index": "65535",
+                "port": "9487",
+                "checksum": "0x704f243f",
+                "checksum_status": "2",
+                "chunk_type": "10",
+                "chunk_bit_1": "0",
+                "chunk_bit_2": "0",
+                "chunk_flags": "0x00000000",
+                "chunk_length": "232",
+                "cookie": "4d:0e:1c:f8:0a:a1:3d:71:0a:0f:bd:fe:f4:ab:70:31:f1:70:2c:89:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:59:ce:19:4e:67:2d:38:9e:00:00:00:00:00:00:00:00:b5:28:7f:0d:c9:eb:53:18:02:00:02:00:21:91:a3:d5:02:00:25:0f:0a:0a:00:05:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:0c:96:01:00:00:00:00:00:80:02:00:24:e9:27:3a:53:98:f0:45:a1:da:74:4e:5c:ee:05:b7:3f:09:a5:46:77:6b:f6:76:1e:c3:6d:87:d9:99:21:45:78:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:01:00:00:24:9e:38:2d:67:00:01:a0:00:00:02:00:02:26:13:ac:40:00:0c:00:06:00:05:00:00:80:00:00:04:c0:00:00:04:00:00:00:00:00:00:00:00:00:00:00:00"
+            }
+        },
+        {
+            "num": "85",
+            "src": "10.10.2.5",
+            "dst": "10.10.0.5",
+            "protocol": "SCTP",
+            "length": 52,
+            "src_port": "38412",
+            "dst_port": "9487",
+            "payload": {
+                "srcport": "38412",
+                "dstport": "9487",
+                "verification_tag": "0x9e382d67",
+                "assoc_index": "65535",
+                "port": "38412",
+                "checksum": "0x63586673",
+                "checksum_status": "2",
+                "chunk_type": "11",
+                "chunk_bit_1": "0",
+                "chunk_bit_2": "0",
+                "chunk_flags": "0x00000000",
+                "chunk_length": "4"
+            }
+        },
+        {
+            "num": "86",
+            "src": "10.10.0.5",
+            "dst": "10.10.2.5",
+            "protocol": "SCTP",
+            "length": 280,
+            "src_port": "9487",
+            "dst_port": "38412",
+            "payload": {
+                "srcport": "9487",
+                "dstport": "38412",
+                "verification_tag": "0x4e19ce59",
+                "assoc_index": "65535",
+                "port": "9487",
+                "checksum": "0x704f243f",
+                "checksum_status": "2",
+                "chunk_type": "10",
+                "chunk_bit_1": "0",
+                "chunk_bit_2": "0",
+                "chunk_flags": "0x00000000",
+                "chunk_length": "232",
+                "cookie": "4d:0e:1c:f8:0a:a1:3d:71:0a:0f:bd:fe:f4:ab:70:31:f1:70:2c:89:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:59:ce:19:4e:67:2d:38:9e:00:00:00:00:00:00:00:00:b5:28:7f:0d:c9:eb:53:18:02:00:02:00:21:91:a3:d5:02:00:25:0f:0a:0a:00:05:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:0c:96:01:00:00:00:00:00:80:02:00:24:e9:27:3a:53:98:f0:45:a1:da:74:4e:5c:ee:05:b7:3f:09:a5:46:77:6b:f6:76:1e:c3:6d:87:d9:99:21:45:78:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:01:00:00:24:9e:38:2d:67:00:01:a0:00:00:02:00:02:26:13:ac:40:00:0c:00:06:00:05:00:00:80:00:00:04:c0:00:00:04:00:00:00:00:00:00:00:00:00:00:00:00"
+            }
+        },
+        {
+            "num": "87",
+            "src": "10.10.2.5",
+            "dst": "10.10.0.5",
+            "protocol": "SCTP",
+            "length": 52,
+            "src_port": "38412",
+            "dst_port": "9487",
+            "payload": {
+                "srcport": "38412",
+                "dstport": "9487",
+                "verification_tag": "0x9e382d67",
+                "assoc_index": "65535",
+                "port": "38412",
+                "checksum": "0x63586673",
+                "checksum_status": "2",
+                "chunk_type": "11",
+                "chunk_bit_1": "0",
+                "chunk_bit_2": "0",
+                "chunk_flags": "0x00000000",
+                "chunk_length": "4"
+            }
+        },
+        {
+            "num": "88",
+            "src": "10.10.0.5",
+            "dst": "10.10.2.5",
+            "protocol": "NGAP",
+            "length": 124,
+            "src_port": "9487",
+            "dst_port": "38412",
+            "payload": {
+                "per_extension_bit": "0",
+                "per_choice_index": "0",
+                "ngap_pdu": "0",
+                "initiatingmessage_element": "initiatingMessage",
+                "procedurecode": "21",
+                "per_enum_index": "0",
+                "criticality": "0",
+                "per_open_type_length": "55",
+                "value_element": "value",
+                "ngsetuprequest_element": "NGSetupRequest",
+                "per_sequence_of_length": "4",
+                "protocolies": "4",
+                "protocolie_field_element": "ProtocolIE-Field",
+                "id": "27",
+                "globalrannodeid": "0",
+                "globalgnb_id_element": "globalGNB-ID",
+                "per_optional_field_bit": "0",
+                "plmnidentity": "00:f1:10",
+                "e212_mcc": "1",
+                "e212_mnc": "1",
+                "gnb_id": "0",
+                "per_bit_string_length": "24",
+                "per_extension_present_bit": "0",
+                "per_octet_string_length": "12",
+                "rannodename": "PacketRusher",
+                "supportedtalist": "1",
+                "supportedtaitem_element": "SupportedTAItem",
+                "tac": "1",
+                "broadcastplmnlist": "1",
+                "broadcastplmnitem_element": "BroadcastPLMNItem",
+                "taislicesupportlist": "1",
+                "slicesupportitem_element": "SliceSupportItem",
+                "s_nssai_element": "s-NSSAI",
+                "sst": "01",
+                "pagingdrx": "2"
+            }
+        },
+        {
+            "num": "89",
+            "src": "10.10.0.5",
+            "dst": "10.10.2.5",
+            "protocol": "SCTP",
+            "length": 124,
+            "src_port": "9487",
+            "dst_port": "38412",
+            "payload": {
+                "srcport": "9487",
+                "dstport": "38412",
+                "verification_tag": "0x4e19ce59",
+                "assoc_index": "65535",
+                "port": "9487",
+                "checksum": "0x5e4ff3df",
+                "checksum_status": "2",
+                "chunk_type": "0",
+                "chunk_bit_1": "0",
+                "chunk_bit_2": "0",
+                "chunk_flags": "0x00000003",
+                "data_i_bit": "0",
+                "data_u_bit": "0",
+                "data_b_bit": "1",
+                "data_e_bit": "1",
+                "chunk_length": "75",
+                "data_tsn": "638823488",
+                "retransmission": "88",
+                "_ws_expert": "Expert Info (Note/Sequence): Retransmitted TSN",
+                "retransmission_expert": "Retransmitted TSN",
+                "_ws_expert_message": "Retransmitted TSN",
+                "_ws_expert_severity": "4194304",
+                "_ws_expert_group": "33554432",
+                "retransmission_time": "0.000000653",
+                "data_sid": "0x00000000",
+                "data_ssn": "0",
+                "data_payload_proto_id": "60",
+                "chunk_padding": "00"
+            }
+        },
+        {
+            "num": "90",
+            "src": "10.10.2.5",
+            "dst": "10.10.0.5",
+            "protocol": "SCTP",
+            "length": 64,
+            "src_port": "38412",
+            "dst_port": "9487",
+            "payload": {
+                "srcport": "38412",
+                "dstport": "9487",
+                "verification_tag": "0x9e382d67",
+                "assoc_index": "65535",
+                "port": "38412",
+                "checksum": "0x0d27f356",
+                "checksum_status": "2",
+                "chunk_type": "3",
+                "chunk_bit_1": "0",
+                "chunk_bit_2": "0",
+                "chunk_flags": "0x00000000",
+                "sack_nounce_sum": "0",
+                "chunk_length": "16",
+                "sack_cumulative_tsn_ack": "638823488",
+                "ack": "638823488",
+                "ack_frame": "88",
+                "sack_rtt": "0.000058892",
+                "sack_a_rwnd": "106437",
+                "sack_number_of_gap_blocks": "0",
+                "sack_number_of_duplicated_tsns": "0"
+            }
+        },
+        {
+            "num": "91",
+            "src": "10.10.2.5",
+            "dst": "10.10.0.5",
+            "protocol": "SCTP",
+            "length": 68,
+            "src_port": "38412",
+            "dst_port": "9487",
+            "payload": {
+                "srcport": "38412",
+                "dstport": "9487",
+                "verification_tag": "0x9e382d67",
+                "assoc_index": "65535",
+                "port": "38412",
+                "checksum": "0xc9e22657",
+                "checksum_status": "2",
+                "chunk_type": "3",
+                "chunk_bit_1": "0",
+                "chunk_bit_2": "0",
+                "chunk_flags": "0x00000000",
+                "sack_nounce_sum": "0",
+                "chunk_length": "20",
+                "sack_cumulative_tsn_ack": "638823488",
+                "sack_a_rwnd": "106437",
+                "sack_number_of_gap_blocks": "0",
+                "sack_number_of_duplicated_tsns": "1",
+                "sack_duplicate_tsn": "638823488"
+            }
+        },
+        {
+            "num": "92",
+            "src": "10.10.2.5",
+            "dst": "10.10.0.5",
+            "protocol": "NGAP",
+            "length": 120,
+            "src_port": "38412",
+            "dst_port": "9487",
+            "payload": {
+                "per_extension_bit": "0",
+                "per_choice_index": "1",
+                "ngap_pdu": "1",
+                "successfuloutcome_element": "successfulOutcome",
+                "procedurecode": "21",
+                "per_enum_index": "0",
+                "criticality": "0",
+                "per_open_type_length": "50",
+                "value_element": "value",
+                "ngsetupresponse_element": "NGSetupResponse",
+                "per_sequence_of_length": "4",
+                "protocolies": "4",
+                "protocolie_field_element": "ProtocolIE-Field",
+                "id": "1",
+                "per_extension_present_bit": "0",
+                "per_octet_string_length": "12",
+                "amfname": "open5gs-amf0",
+                "servedguamilist": "1",
+                "servedguamiitem_element": "ServedGUAMIItem",
+                "per_optional_field_bit": "0",
+                "guami_element": "gUAMI",
+                "plmnidentity": "00:f1:10",
+                "e212_mcc": "1",
+                "e212_mnc": "1",
+                "amfregionid": "02",
+                "amfsetid": "00:40",
+                "amfpointer": "00",
+                "relativeamfcapacity": "255",
+                "plmnsupportlist": "1",
+                "plmnsupportitem_element": "PLMNSupportItem",
+                "slicesupportlist": "1",
+                "slicesupportitem_element": "SliceSupportItem",
+                "s_nssai_element": "s-NSSAI",
+                "sst": "01"
+            }
+        },
+        {
+            "num": "93",
+            "src": "10.10.0.5",
+            "dst": "10.10.2.5",
+            "protocol": "SCTP",
+            "length": 64,
+            "src_port": "9487",
+            "dst_port": "38412",
+            "payload": {
+                "srcport": "9487",
+                "dstport": "38412",
+                "verification_tag": "0x4e19ce59",
+                "assoc_index": "65535",
+                "port": "9487",
+                "checksum": "0xa8990737",
+                "checksum_status": "2",
+                "chunk_type": "3",
+                "chunk_bit_1": "0",
+                "chunk_bit_2": "0",
+                "chunk_flags": "0x00000000",
+                "sack_nounce_sum": "0",
+                "chunk_length": "16",
+                "sack_cumulative_tsn_ack": "3584266529",
+                "ack": "3584266529",
+                "ack_frame": "92",
+                "sack_rtt": "0.000715168",
+                "sack_a_rwnd": "106442",
+                "sack_number_of_gap_blocks": "0",
+                "sack_number_of_duplicated_tsns": "0"
+            }
+        },
+        {
+            "num": "94",
+            "src": "10.10.0.5",
+            "dst": "10.10.2.5",
+            "protocol": "SCTP",
+            "length": 64,
+            "src_port": "9487",
+            "dst_port": "38412",
+            "payload": {
+                "srcport": "9487",
+                "dstport": "38412",
+                "verification_tag": "0x4e19ce59",
+                "assoc_index": "65535",
+                "port": "9487",
+                "checksum": "0xa8990737",
+                "checksum_status": "2",
+                "chunk_type": "3",
+                "chunk_bit_1": "0",
+                "chunk_bit_2": "0",
+                "chunk_flags": "0x00000000",
+                "sack_nounce_sum": "0",
+                "chunk_length": "16",
+                "sack_cumulative_tsn_ack": "3584266529",
+                "sack_a_rwnd": "106442",
+                "sack_number_of_gap_blocks": "0",
+                "sack_number_of_duplicated_tsns": "0"
+            }
+        },
+        {
+            "num": "107",
+            "src": "10.10.0.5",
+            "dst": "10.10.2.5",
+            "protocol": "NGAP",
+            "length": 136,
+            "src_port": "9487",
+            "dst_port": "38412",
+            "payload": {
+                "per_extension_bit": "0",
+                "per_choice_index": "0",
+                "ngap_pdu": "0",
+                "initiatingmessage_element": "initiatingMessage",
+                "procedurecode": "15",
+                "per_enum_index": "1",
+                "criticality": "1",
+                "per_open_type_length": "66",
+                "value_element": "value",
+                "initialuemessage_element": "InitialUEMessage",
+                "per_sequence_of_length": "5",
+                "protocolies": "5",
+                "protocolie_field_element": "ProtocolIE-Field",
+                "id": "85",
+                "ran_ue_ngap_id": "1",
+                "per_octet_string_length": "23",
+                "nas_pdu": "7e:00:41:79:00:0d:01:00:f1:10:f0:ff:00:00:20:00:00:00:00:2e:02:a0:20",
+                "nas_5gs_epd": "126",
+                "nas_5gs_spare_half_octet": "0",
+                "nas_5gs_security_header_type": "0",
+                "nas_5gs_mm_message_type": "65",
+                "nas_5gs_mm_for": "1",
+                "nas_5gs_mm_5gs_reg_type": "1",
+                "nas_5gs_mm_tsc_h1": "0",
+                "nas_5gs_mm_nas_key_set_id_h1": "7",
+                "gsm_a_len": "13",
+                "nas_5gs_spare_b7": "0",
+                "nas_5gs_mm_suci_supi_fmt": "0",
+                "nas_5gs_spare_b3": "0",
+                "nas_5gs_mm_type_id": "1",
+                "e212_mcc": "1",
+                "e212_mnc": "1",
+                "nas_5gs_mm_suci_routing_indicator": "0",
+                "nas_5gs_mm_suci_scheme_id": "0",
+                "nas_5gs_mm_suci_pki": "0",
+                "nas_5gs_mm_suci_supi_null_scheme": "0200000000",
+                "nas_5gs_mm_elem_id": "0x0000002e",
+                "nas_5gs_mm_5g_ea0": "1",
+                "nas_5gs_mm_128_5g_ea1": "0",
+                "nas_5gs_mm_128_5g_ea2": "1",
+                "nas_5gs_mm_128_5g_ea3": "0",
+                "nas_5gs_mm_5g_ea4": "0",
+                "nas_5gs_mm_5g_ea5": "0",
+                "nas_5gs_mm_5g_ea6": "0",
+                "nas_5gs_mm_5g_ea7": "0",
+                "nas_5gs_mm_ia0": "0",
+                "nas_5gs_mm_5g_128_ia1": "0",
+                "nas_5gs_mm_5g_128_ia2": "1",
+                "nas_5gs_mm_5g_128_ia4": "0",
+                "nas_5gs_mm_5g_ia5": "0",
+                "nas_5gs_mm_5g_ia6": "0",
+                "nas_5gs_mm_5g_ia7": "0",
+                "userlocationinformation": "1",
+                "userlocationinformationnr_element": "userLocationInformationNR",
+                "per_optional_field_bit": "0",
+                "nr_cgi_element": "nR-CGI",
+                "plmnidentity": "00:f1:10",
+                "nrcellidentity": "0x0000000000008000",
+                "tai_element": "tAI",
+                "tac": "1",
+                "per_extension_present_bit": "0",
+                "rrcestablishmentcause": "3",
+                "uecontextrequest": "0"
+            }
+        },
+        {
+            "num": "108",
+            "src": "10.10.0.5",
+            "dst": "10.10.2.5",
+            "protocol": "SCTP",
+            "length": 136,
+            "src_port": "9487",
+            "dst_port": "38412",
+            "payload": {
+                "srcport": "9487",
+                "dstport": "38412",
+                "verification_tag": "0x4e19ce59",
+                "assoc_index": "65535",
+                "port": "9487",
+                "checksum": "0x1c621a27",
+                "checksum_status": "2",
+                "chunk_type": "0",
+                "chunk_bit_1": "0",
+                "chunk_bit_2": "0",
+                "chunk_flags": "0x00000003",
+                "data_i_bit": "0",
+                "data_u_bit": "0",
+                "data_b_bit": "1",
+                "data_e_bit": "1",
+                "chunk_length": "86",
+                "data_tsn": "638823489",
+                "retransmission": "107",
+                "_ws_expert": "Expert Info (Note/Sequence): Retransmitted TSN",
+                "retransmission_expert": "Retransmitted TSN",
+                "_ws_expert_message": "Retransmitted TSN",
+                "_ws_expert_severity": "4194304",
+                "_ws_expert_group": "33554432",
+                "retransmission_time": "0.000971072",
+                "data_sid": "0x00000000",
+                "data_ssn": "1",
+                "data_payload_proto_id": "60",
+                "chunk_padding": "00:00"
+            }
+        },
+        {
+            "num": "109",
+            "src": "10.10.2.5",
+            "dst": "10.10.0.5",
+            "protocol": "SCTP",
+            "length": 68,
+            "src_port": "38412",
+            "dst_port": "9487",
+            "payload": {
+                "srcport": "38412",
+                "dstport": "9487",
+                "verification_tag": "0x9e382d67",
+                "assoc_index": "65535",
+                "port": "38412",
+                "checksum": "0xf0195766",
+                "checksum_status": "2",
+                "chunk_type": "3",
+                "chunk_bit_1": "0",
+                "chunk_bit_2": "0",
+                "chunk_flags": "0x00000000",
+                "sack_nounce_sum": "0",
+                "chunk_length": "20",
+                "sack_cumulative_tsn_ack": "638823489",
+                "ack": "638823489",
+                "ack_frame": "107",
+                "sack_rtt": "0.001025175",
+                "sack_a_rwnd": "106496",
+                "sack_number_of_gap_blocks": "0",
+                "sack_number_of_duplicated_tsns": "1",
+                "sack_duplicate_tsn": "638823489"
+            }
+        },
+        {
+            "num": "111",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.200",
+            "protocol": "DATA",
+            "length": 180,
+            "src_port": "40996",
+            "dst_port": "7777",
+            "payload": {
+                "supiOrSuci": "suci-0-001-01-0-0-0-0200000000",
+                "servingNetworkName": "5G:mnc001.mcc001.3gppnetwork.org"
+            }
+        },
+        {
+            "num": "114",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.11",
+            "protocol": "TCP",
+            "length": 180,
+            "src_port": "51952",
+            "dst_port": "80",
+            "payload": {
+                "supiOrSuci": "suci-0-001-01-0-0-0-0200000000",
+                "servingNetworkName": "5G:mnc001.mcc001.3gppnetwork.org"
+            }
+        },
+        {
+            "num": "117",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.200",
+            "protocol": "DATA",
+            "length": 190,
+            "src_port": "40964",
+            "dst_port": "7777",
+            "payload": {
+                "servingNetworkName": "5G:mnc001.mcc001.3gppnetwork.org",
+                "ausfInstanceId": "f1373426-6386-41f0-8bd8-4dad5c556160"
+            }
+        },
+        {
+            "num": "120",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.12",
+            "protocol": "TCP",
+            "length": 190,
+            "src_port": "38770",
+            "dst_port": "80",
+            "payload": {
+                "servingNetworkName": "5G:mnc001.mcc001.3gppnetwork.org",
+                "ausfInstanceId": "f1373426-6386-41f0-8bd8-4dad5c556160"
+            }
+        },
+        {
+            "num": "131",
+            "src": "127.0.0.20",
+            "dst": "127.0.0.1",
+            "protocol": "DATA",
+            "length": 289,
+            "src_port": "7777",
+            "dst_port": "40712",
+            "payload": {
+                "authenticationMethod": "5G_AKA",
+                "encPermanentKey": "465b5ce8b199b49faa5f0a2ee238a6bc",
+                "sequenceNumber": {
+                    "sqn": "000000000a00"
+                },
+                "authenticationManagementField": "8000",
+                "encOpcKey": "e8ed289deba952e4283b54e88e6183ca"
+            }
+        },
+        {
+            "num": "135",
+            "src": "127.0.0.200",
+            "dst": "127.0.0.1",
+            "protocol": "DATA",
+            "length": 289,
+            "src_port": "7777",
+            "dst_port": "40968",
+            "payload": {
+                "authenticationMethod": "5G_AKA",
+                "encPermanentKey": "465b5ce8b199b49faa5f0a2ee238a6bc",
+                "sequenceNumber": {
+                    "sqn": "000000000a00"
+                },
+                "authenticationManagementField": "8000",
+                "encOpcKey": "e8ed289deba952e4283b54e88e6183ca"
+            }
+        },
+        {
+            "num": "139",
+            "src": "127.0.0.12",
+            "dst": "127.0.0.1",
+            "protocol": "TCP",
+            "length": 379,
+            "src_port": "80",
+            "dst_port": "38770",
+            "payload": {
+                "authType": "5G_AKA",
+                "authenticationVector": {
+                    "avType": "5G_HE_AKA",
+                    "rand": "4a912a1ec2775a4addaf80a7f64dd31b",
+                    "autn": "e2b11a5b41af800006173618d13ac6d5",
+                    "xresStar": "3e899c00b9af50cde70d04f5097d4152",
+                    "kausf": "fdfcd57e028e37dbea0f149303c6b4265370fc0dfb11b64f19c5080ff8c20f56"
+                },
+                "supi": "imsi-001010200000000"
+            }
+        },
+        {
+            "num": "143",
+            "src": "127.0.0.200",
+            "dst": "127.0.0.1",
+            "protocol": "DATA",
+            "length": 379,
+            "src_port": "7777",
+            "dst_port": "40964",
+            "payload": {
+                "authType": "5G_AKA",
+                "authenticationVector": {
+                    "avType": "5G_HE_AKA",
+                    "rand": "4a912a1ec2775a4addaf80a7f64dd31b",
+                    "autn": "e2b11a5b41af800006173618d13ac6d5",
+                    "xresStar": "3e899c00b9af50cde70d04f5097d4152",
+                    "kausf": "fdfcd57e028e37dbea0f149303c6b4265370fc0dfb11b64f19c5080ff8c20f56"
+                },
+                "supi": "imsi-001010200000000"
+            }
+        },
+        {
+            "num": "147",
+            "src": "127.0.0.11",
+            "dst": "127.0.0.1",
+            "protocol": "TCP",
+            "length": 376,
+            "src_port": "80",
+            "dst_port": "51952",
+            "payload": {
+                "authType": "5G_AKA",
+                "5gAuthData": {
+                    "rand": "4a912a1ec2775a4addaf80a7f64dd31b",
+                    "hxresStar": "064cb46ddf9602847abed4fc84df7454",
+                    "autn": "e2b11a5b41af800006173618d13ac6d5"
+                },
+                "_links": {
+                    "5g-aka": {
+                        "href": "http://ausf.5gc.mnc001.mcc001.3gppnetwork.org/nausf-auth/v1/ue-authentications/3/5g-aka-confirmation"
+                    }
+                }
+            }
+        },
+        {
+            "num": "151",
+            "src": "127.0.0.200",
+            "dst": "127.0.0.1",
+            "protocol": "DATA",
+            "length": 376,
+            "src_port": "7777",
+            "dst_port": "40996",
+            "payload": {
+                "authType": "5G_AKA",
+                "5gAuthData": {
+                    "rand": "4a912a1ec2775a4addaf80a7f64dd31b",
+                    "hxresStar": "064cb46ddf9602847abed4fc84df7454",
+                    "autn": "e2b11a5b41af800006173618d13ac6d5"
+                },
+                "_links": {
+                    "5g-aka": {
+                        "href": "http://ausf.5gc.mnc001.mcc001.3gppnetwork.org/nausf-auth/v1/ue-authentications/3/5g-aka-confirmation"
+                    }
+                }
+            }
+        },
+        {
+            "num": "153",
+            "src": "10.10.2.5",
+            "dst": "10.10.0.5",
+            "protocol": "NGAP",
+            "length": 132,
+            "src_port": "38412",
+            "dst_port": "9487",
+            "payload": {
+                "per_extension_bit": "0",
+                "per_choice_index": "0",
+                "ngap_pdu": "0",
+                "initiatingmessage_element": "initiatingMessage",
+                "procedurecode": "4",
+                "per_enum_index": "1",
+                "criticality": "1",
+                "per_open_type_length": "62",
+                "value_element": "value",
+                "downlinknastransport_element": "DownlinkNASTransport",
+                "per_sequence_of_length": "3",
+                "protocolies": "3",
+                "protocolie_field_element": "ProtocolIE-Field",
+                "id": "10",
+                "amf_ue_ngap_id": "3",
+                "ran_ue_ngap_id": "1",
+                "per_octet_string_length": "42",
+                "nas_pdu": "7e:00:56:02:02:00:00:21:4a:91:2a:1e:c2:77:5a:4a:dd:af:80:a7:f6:4d:d3:1b:20:10:e2:b1:1a:5b:41:af:80:00:06:17:36:18:d1:3a:c6:d5",
+                "nas_5gs_epd": "126",
+                "nas_5gs_spare_half_octet": "0",
+                "nas_5gs_security_header_type": "0",
+                "nas_5gs_mm_message_type": "86",
+                "nas_5gs_mm_tsc": "0",
+                "nas_5gs_mm_nas_key_set_id": "2",
+                "gsm_a_len": "2",
+                "nas_5gs_mm_abba_contents": "0x00000000",
+                "gsm_a_dtap_elem_id": "0x00000021",
+                "gsm_a_dtap_rand": "4a:91:2a:1e:c2:77:5a:4a:dd:af:80:a7:f6:4d:d3:1b",
+                "gsm_a_dtap_autn": "e2:b1:1a:5b:41:af:80:00:06:17:36:18:d1:3a:c6:d5",
+                "gsm_a_dtap_autn_sqn_xor_ak": "e2:b1:1a:5b:41:af",
+                "gsm_a_dtap_autn_amf": "80:00",
+                "gsm_a_dtap_autn_mac": "06:17:36:18:d1:3a:c6:d5"
+            }
+        },
+        {
+            "num": "154",
+            "src": "10.10.0.5",
+            "dst": "10.10.2.5",
+            "protocol": "NGAP",
+            "length": 144,
+            "src_port": "9487",
+            "dst_port": "38412",
+            "payload": {
+                "per_extension_bit": "0",
+                "per_choice_index": "0",
+                "ngap_pdu": "0",
+                "initiatingmessage_element": "initiatingMessage",
+                "procedurecode": "46",
+                "per_enum_index": "1",
+                "criticality": "1",
+                "per_open_type_length": "60",
+                "value_element": "value",
+                "uplinknastransport_element": "UplinkNASTransport",
+                "per_sequence_of_length": "4",
+                "protocolies": "4",
+                "protocolie_field_element": "ProtocolIE-Field",
+                "id": "10",
+                "amf_ue_ngap_id": "3",
+                "ran_ue_ngap_id": "1",
+                "per_octet_string_length": "21",
+                "nas_pdu": "7e:00:57:2d:10:3e:89:9c:00:b9:af:50:cd:e7:0d:04:f5:09:7d:41:52",
+                "nas_5gs_epd": "126",
+                "nas_5gs_spare_half_octet": "0",
+                "nas_5gs_security_header_type": "0",
+                "nas_5gs_mm_message_type": "87",
+                "nas_eps_emm_elem_id": "0x0000002d",
+                "gsm_a_len": "16",
+                "nas_eps_emm_res": "3e:89:9c:00:b9:af:50:cd:e7:0d:04:f5:09:7d:41:52",
+                "userlocationinformation": "1",
+                "userlocationinformationnr_element": "userLocationInformationNR",
+                "per_optional_field_bit": "0",
+                "nr_cgi_element": "nR-CGI",
+                "plmnidentity": "00:f1:10",
+                "e212_mcc": "1",
+                "e212_mnc": "1",
+                "nrcellidentity": "0x0000000000008000",
+                "tai_element": "tAI",
+                "tac": "1"
+            }
+        },
+        {
+            "num": "155",
+            "src": "10.10.0.5",
+            "dst": "10.10.2.5",
+            "protocol": "SCTP",
+            "length": 144,
+            "src_port": "9487",
+            "dst_port": "38412",
+            "payload": {
+                "srcport": "9487",
+                "dstport": "38412",
+                "verification_tag": "0x4e19ce59",
+                "assoc_index": "65535",
+                "port": "9487",
+                "checksum": "0xe5443e77",
+                "checksum_status": "2",
+                "chunk_type": "3",
+                "chunk_bit_1": "0",
+                "chunk_bit_2": "0",
+                "chunk_flags": "0x00000000",
+                "sack_nounce_sum": "0",
+                "chunk_length": "16",
+                "sack_cumulative_tsn_ack": "3584266530",
+                "sack_a_rwnd": "106496",
+                "sack_number_of_gap_blocks": "0",
+                "sack_number_of_duplicated_tsns": "0",
+                "data_i_bit": "0",
+                "data_u_bit": "0",
+                "data_b_bit": "1",
+                "data_e_bit": "1",
+                "data_tsn": "638823490",
+                "retransmission": "154",
+                "_ws_expert": "Expert Info (Note/Sequence): Retransmitted TSN",
+                "retransmission_expert": "Retransmitted TSN",
+                "_ws_expert_message": "Retransmitted TSN",
+                "_ws_expert_severity": "4194304",
+                "_ws_expert_group": "33554432",
+                "retransmission_time": "0.000000242",
+                "data_sid": "0x00000000",
+                "data_ssn": "2",
+                "data_payload_proto_id": "60"
+            }
+        },
+        {
+            "num": "156",
+            "src": "10.10.2.5",
+            "dst": "10.10.0.5",
+            "protocol": "SCTP",
+            "length": 68,
+            "src_port": "38412",
+            "dst_port": "9487",
+            "payload": {
+                "srcport": "38412",
+                "dstport": "9487",
+                "verification_tag": "0x9e382d67",
+                "assoc_index": "65535",
+                "port": "38412",
+                "checksum": "0x8ff648fd",
+                "checksum_status": "2",
+                "chunk_type": "3",
+                "chunk_bit_1": "0",
+                "chunk_bit_2": "0",
+                "chunk_flags": "0x00000000",
+                "sack_nounce_sum": "0",
+                "chunk_length": "20",
+                "sack_cumulative_tsn_ack": "638823490",
+                "ack": "638823490",
+                "ack_frame": "154",
+                "sack_rtt": "0.000056683",
+                "sack_a_rwnd": "106432",
+                "sack_number_of_gap_blocks": "0",
+                "sack_number_of_duplicated_tsns": "1",
+                "sack_duplicate_tsn": "638823490"
+            }
+        },
+        {
+            "num": "158",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.200",
+            "protocol": "DATA",
+            "length": 123,
+            "src_port": "40996",
+            "dst_port": "7777",
+            "payload": {
+                "resStar": "3e899c00b9af50cde70d04f5097d4152"
+            }
+        },
+        {
+            "num": "161",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.11",
+            "protocol": "TCP",
+            "length": 123,
+            "src_port": "51952",
+            "dst_port": "80",
+            "payload": {
+                "resStar": "3e899c00b9af50cde70d04f5097d4152"
+            }
+        },
+        {
+            "num": "164",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.200",
+            "protocol": "DATA",
+            "length": 270,
+            "src_port": "40964",
+            "dst_port": "7777",
+            "payload": {
+                "nfInstanceId": "f1373426-6386-41f0-8bd8-4dad5c556160",
+                "success": true,
+                "timeStamp": "2025-07-20T17:31:09.765239+08:00",
+                "authType": "5G_AKA",
+                "servingNetworkName": "5G:mnc001.mcc001.3gppnetwork.org"
+            }
+        },
+        {
+            "num": "167",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.12",
+            "protocol": "TCP",
+            "length": 270,
+            "src_port": "38770",
+            "dst_port": "80",
+            "payload": {
+                "nfInstanceId": "f1373426-6386-41f0-8bd8-4dad5c556160",
+                "success": true,
+                "timeStamp": "2025-07-20T17:31:09.765239+08:00",
+                "authType": "5G_AKA",
+                "servingNetworkName": "5G:mnc001.mcc001.3gppnetwork.org"
+            }
+        },
+        {
+            "num": "170",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.200",
+            "protocol": "DATA",
+            "length": 270,
+            "src_port": "40968",
+            "dst_port": "7777",
+            "payload": {
+                "nfInstanceId": "f1373426-6386-41f0-8bd8-4dad5c556160",
+                "success": true,
+                "timeStamp": "2025-07-20T17:31:09.765239+08:00",
+                "authType": "5G_AKA",
+                "servingNetworkName": "5G:mnc001.mcc001.3gppnetwork.org"
+            }
+        },
+        {
+            "num": "173",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.20",
+            "protocol": "DATA",
+            "length": 270,
+            "src_port": "40712",
+            "dst_port": "7777",
+            "payload": {
+                "nfInstanceId": "f1373426-6386-41f0-8bd8-4dad5c556160",
+                "success": true,
+                "timeStamp": "2025-07-20T17:31:09.765239+08:00",
+                "authType": "5G_AKA",
+                "servingNetworkName": "5G:mnc001.mcc001.3gppnetwork.org"
+            }
+        },
+        {
+            "num": "184",
+            "src": "127.0.0.12",
+            "dst": "127.0.0.1",
+            "protocol": "TCP",
+            "length": 270,
+            "src_port": "80",
+            "dst_port": "38770",
+            "payload": {
+                "nfInstanceId": "f1373426-6386-41f0-8bd8-4dad5c556160",
+                "success": true,
+                "timeStamp": "2025-07-20T17:31:09.765239+08:00",
+                "authType": "5G_AKA",
+                "servingNetworkName": "5G:mnc001.mcc001.3gppnetwork.org"
+            }
+        },
+        {
+            "num": "187",
+            "src": "127.0.0.200",
+            "dst": "127.0.0.1",
+            "protocol": "DATA",
+            "length": 270,
+            "src_port": "7777",
+            "dst_port": "40964",
+            "payload": {
+                "nfInstanceId": "f1373426-6386-41f0-8bd8-4dad5c556160",
+                "success": true,
+                "timeStamp": "2025-07-20T17:31:09.765239+08:00",
+                "authType": "5G_AKA",
+                "servingNetworkName": "5G:mnc001.mcc001.3gppnetwork.org"
+            }
+        },
+        {
+            "num": "190",
+            "src": "127.0.0.11",
+            "dst": "127.0.0.1",
+            "protocol": "TCP",
+            "length": 221,
+            "src_port": "80",
+            "dst_port": "51952",
+            "payload": {
+                "authResult": "AUTHENTICATION_SUCCESS",
+                "supi": "imsi-001010200000000",
+                "kseaf": "1c75136cee6f8aa6310dd08bfacb88870e8e87851431f8985c410331ac4a2fa8"
+            }
+        },
+        {
+            "num": "193",
+            "src": "127.0.0.200",
+            "dst": "127.0.0.1",
+            "protocol": "DATA",
+            "length": 221,
+            "src_port": "7777",
+            "dst_port": "40996",
+            "payload": {
+                "authResult": "AUTHENTICATION_SUCCESS",
+                "supi": "imsi-001010200000000",
+                "kseaf": "1c75136cee6f8aa6310dd08bfacb88870e8e87851431f8985c410331ac4a2fa8"
+            }
+        },
+        {
+            "num": "195",
+            "src": "10.10.2.5",
+            "dst": "10.10.0.5",
+            "protocol": "NGAP",
+            "length": 108,
+            "src_port": "38412",
+            "dst_port": "9487",
+            "payload": {
+                "per_extension_bit": "0",
+                "per_choice_index": "0",
+                "ngap_pdu": "0",
+                "initiatingmessage_element": "initiatingMessage",
+                "procedurecode": "4",
+                "per_enum_index": "1",
+                "criticality": "1",
+                "per_open_type_length": "39",
+                "value_element": "value",
+                "downlinknastransport_element": "DownlinkNASTransport",
+                "per_sequence_of_length": "3",
+                "protocolies": "3",
+                "protocolie_field_element": "ProtocolIE-Field",
+                "id": "10",
+                "amf_ue_ngap_id": "3",
+                "ran_ue_ngap_id": "1",
+                "per_octet_string_length": "19",
+                "nas_pdu": "7e:03:df:6c:04:40:00:7e:00:5d:02:02:02:a0:20:e1:36:01:02",
+                "nas_5gs_epd": "126",
+                "nas_5gs_spare_half_octet": "0",
+                "nas_5gs_security_header_type": "3",
+                "nas_5gs_msg_auth_code": "0xdf6c0440",
+                "nas_5gs_seq_no": "0"
+            }
+        },
+        {
+            "num": "196",
+            "src": "10.10.0.5",
+            "dst": "10.10.2.5",
+            "protocol": "NGAP",
+            "length": 176,
+            "src_port": "9487",
+            "dst_port": "38412",
+            "payload": {
+                "per_extension_bit": "0",
+                "per_choice_index": "0",
+                "ngap_pdu": "0",
+                "initiatingmessage_element": "initiatingMessage",
+                "procedurecode": "46",
+                "per_enum_index": "1",
+                "criticality": "1",
+                "per_open_type_length": "90",
+                "value_element": "value",
+                "uplinknastransport_element": "UplinkNASTransport",
+                "per_sequence_of_length": "4",
+                "protocolies": "4",
+                "protocolie_field_element": "ProtocolIE-Field",
+                "id": "10",
+                "amf_ue_ngap_id": "3",
+                "ran_ue_ngap_id": "1",
+                "per_octet_string_length": "51",
+                "nas_pdu": "7e:04:38:bb:d8:06:00:7e:00:5e:77:00:09:15:11:00:00:00:00:00:00:00:71:00:1a:7e:00:41:29:00:0d:01:00:f1:10:f0:ff:00:00:20:00:00:00:00:10:01:07:2e:02:a0:20",
+                "nas_5gs_epd": "126",
+                "nas_5gs_spare_half_octet": "0",
+                "nas_5gs_security_header_type": "4",
+                "nas_5gs_msg_auth_code": "0x38bbd806",
+                "nas_5gs_seq_no": "0",
+                "userlocationinformation": "1",
+                "userlocationinformationnr_element": "userLocationInformationNR",
+                "per_optional_field_bit": "0",
+                "nr_cgi_element": "nR-CGI",
+                "plmnidentity": "00:f1:10",
+                "e212_mcc": "1",
+                "e212_mnc": "1",
+                "nrcellidentity": "0x0000000000008000",
+                "tai_element": "tAI",
+                "tac": "1"
+            }
+        },
+        {
+            "num": "198",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.200",
+            "protocol": "DATA",
+            "length": 365,
+            "src_port": "40996",
+            "dst_port": "7777",
+            "payload": {
+                "amfInstanceId": "f169b5fe-6386-41f0-b7a3-8f277de8faaa",
+                "pei": "imeisv-1110000000000000",
+                "deregCallbackUri": "http://127.0.0.5:7777/namf-callback/v1/imsi-001010200000000/dereg-notify",
+                "initialRegistrationInd": true,
+                "guami": {
+                    "plmnId": {
+                        "mcc": "001",
+                        "mnc": "01"
+                    },
+                    "amfId": "020040"
+                },
+                "ratType": "NR"
+            }
+        },
+        {
+            "num": "201",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.12",
+            "protocol": "TCP",
+            "length": 365,
+            "src_port": "38770",
+            "dst_port": "80",
+            "payload": {
+                "amfInstanceId": "f169b5fe-6386-41f0-b7a3-8f277de8faaa",
+                "pei": "imeisv-1110000000000000",
+                "deregCallbackUri": "http://127.0.0.5:7777/namf-callback/v1/imsi-001010200000000/dereg-notify",
+                "initialRegistrationInd": true,
+                "guami": {
+                    "plmnId": {
+                        "mcc": "001",
+                        "mnc": "01"
+                    },
+                    "amfId": "020040"
+                },
+                "ratType": "NR"
+            }
+        },
+        {
+            "num": "204",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.200",
+            "protocol": "DATA",
+            "length": 365,
+            "src_port": "40968",
+            "dst_port": "7777",
+            "payload": {
+                "amfInstanceId": "f169b5fe-6386-41f0-b7a3-8f277de8faaa",
+                "pei": "imeisv-1110000000000000",
+                "deregCallbackUri": "http://127.0.0.5:7777/namf-callback/v1/imsi-001010200000000/dereg-notify",
+                "initialRegistrationInd": true,
+                "guami": {
+                    "plmnId": {
+                        "mcc": "001",
+                        "mnc": "01"
+                    },
+                    "amfId": "020040"
+                },
+                "ratType": "NR"
+            }
+        },
+        {
+            "num": "205",
+            "src": "10.10.0.5",
+            "dst": "10.10.2.5",
+            "protocol": "SCTP",
+            "length": 176,
+            "src_port": "9487",
+            "dst_port": "38412",
+            "payload": {
+                "srcport": "9487",
+                "dstport": "38412",
+                "verification_tag": "0x4e19ce59",
+                "assoc_index": "65535",
+                "port": "9487",
+                "checksum": "0x60560c28",
+                "checksum_status": "2",
+                "chunk_type": "3",
+                "chunk_bit_1": "0",
+                "chunk_bit_2": "0",
+                "chunk_flags": "0x00000000",
+                "sack_nounce_sum": "0",
+                "chunk_length": "16",
+                "sack_cumulative_tsn_ack": "3584266531",
+                "sack_a_rwnd": "106496",
+                "sack_number_of_gap_blocks": "0",
+                "sack_number_of_duplicated_tsns": "0",
+                "data_i_bit": "0",
+                "data_u_bit": "0",
+                "data_b_bit": "1",
+                "data_e_bit": "1",
+                "data_tsn": "638823491",
+                "retransmission": "196",
+                "_ws_expert": "Expert Info (Note/Sequence): Retransmitted TSN",
+                "retransmission_expert": "Retransmitted TSN",
+                "_ws_expert_message": "Retransmitted TSN",
+                "_ws_expert_severity": "4194304",
+                "_ws_expert_group": "33554432",
+                "retransmission_time": "0.001493296",
+                "data_sid": "0x00000000",
+                "data_ssn": "3",
+                "data_payload_proto_id": "60",
+                "chunk_padding": "00:00"
+            }
+        },
+        {
+            "num": "206",
+            "src": "10.10.2.5",
+            "dst": "10.10.0.5",
+            "protocol": "SCTP",
+            "length": 68,
+            "src_port": "38412",
+            "dst_port": "9487",
+            "payload": {
+                "srcport": "38412",
+                "dstport": "9487",
+                "verification_tag": "0x9e382d67",
+                "assoc_index": "65535",
+                "port": "38412",
+                "checksum": "0xcd19c8e6",
+                "checksum_status": "2",
+                "chunk_type": "3",
+                "chunk_bit_1": "0",
+                "chunk_bit_2": "0",
+                "chunk_flags": "0x00000000",
+                "sack_nounce_sum": "0",
+                "chunk_length": "20",
+                "sack_cumulative_tsn_ack": "638823491",
+                "ack": "638823491",
+                "ack_frame": "196",
+                "sack_rtt": "0.001518136",
+                "sack_a_rwnd": "106496",
+                "sack_number_of_gap_blocks": "0",
+                "sack_number_of_duplicated_tsns": "1",
+                "sack_duplicate_tsn": "638823491"
+            }
+        },
+        {
+            "num": "209",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.20",
+            "protocol": "DATA",
+            "length": 365,
+            "src_port": "40712",
+            "dst_port": "7777",
+            "payload": {
+                "amfInstanceId": "f169b5fe-6386-41f0-b7a3-8f277de8faaa",
+                "pei": "imeisv-1110000000000000",
+                "deregCallbackUri": "http://127.0.0.5:7777/namf-callback/v1/imsi-001010200000000/dereg-notify",
+                "initialRegistrationInd": true,
+                "guami": {
+                    "plmnId": {
+                        "mcc": "001",
+                        "mnc": "01"
+                    },
+                    "amfId": "020040"
+                },
+                "ratType": "NR"
+            }
+        },
+        {
+            "num": "216",
+            "src": "127.0.0.12",
+            "dst": "127.0.0.1",
+            "protocol": "TCP",
+            "length": 365,
+            "src_port": "80",
+            "dst_port": "38770",
+            "payload": {
+                "amfInstanceId": "f169b5fe-6386-41f0-b7a3-8f277de8faaa",
+                "pei": "imeisv-1110000000000000",
+                "deregCallbackUri": "http://127.0.0.5:7777/namf-callback/v1/imsi-001010200000000/dereg-notify",
+                "initialRegistrationInd": true,
+                "guami": {
+                    "plmnId": {
+                        "mcc": "001",
+                        "mnc": "01"
+                    },
+                    "amfId": "020040"
+                },
+                "ratType": "NR"
+            }
+        },
+        {
+            "num": "219",
+            "src": "127.0.0.200",
+            "dst": "127.0.0.1",
+            "protocol": "DATA",
+            "length": 365,
+            "src_port": "7777",
+            "dst_port": "40996",
+            "payload": {
+                "amfInstanceId": "f169b5fe-6386-41f0-b7a3-8f277de8faaa",
+                "pei": "imeisv-1110000000000000",
+                "deregCallbackUri": "http://127.0.0.5:7777/namf-callback/v1/imsi-001010200000000/dereg-notify",
+                "initialRegistrationInd": true,
+                "guami": {
+                    "plmnId": {
+                        "mcc": "001",
+                        "mnc": "01"
+                    },
+                    "amfId": "020040"
+                },
+                "ratType": "NR"
+            }
+        },
+        {
+            "num": "228",
+            "src": "127.0.0.20",
+            "dst": "127.0.0.1",
+            "protocol": "DATA",
+            "length": 193,
+            "src_port": "7777",
+            "dst_port": "40712",
+            "payload": {
+                "subscribedUeAmbr": {
+                    "uplink": "1000000 Kbps",
+                    "downlink": "1000000 Kbps"
+                },
+                "nssai": {
+                    "defaultSingleNssais": [
+                        {
+                            "sst": 1
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "num": "231",
+            "src": "127.0.0.200",
+            "dst": "127.0.0.1",
+            "protocol": "DATA",
+            "length": 193,
+            "src_port": "7777",
+            "dst_port": "40968",
+            "payload": {
+                "subscribedUeAmbr": {
+                    "uplink": "1000000 Kbps",
+                    "downlink": "1000000 Kbps"
+                },
+                "nssai": {
+                    "defaultSingleNssais": [
+                        {
+                            "sst": 1
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "num": "234",
+            "src": "127.0.0.12",
+            "dst": "127.0.0.1",
+            "protocol": "TCP",
+            "length": 193,
+            "src_port": "80",
+            "dst_port": "38770",
+            "payload": {
+                "subscribedUeAmbr": {
+                    "uplink": "1000000 Kbps",
+                    "downlink": "1000000 Kbps"
+                },
+                "nssai": {
+                    "defaultSingleNssais": [
+                        {
+                            "sst": 1
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "num": "237",
+            "src": "127.0.0.200",
+            "dst": "127.0.0.1",
+            "protocol": "DATA",
+            "length": 193,
+            "src_port": "7777",
+            "dst_port": "40996",
+            "payload": {
+                "subscribedUeAmbr": {
+                    "uplink": "1000000 Kbps",
+                    "downlink": "1000000 Kbps"
+                },
+                "nssai": {
+                    "defaultSingleNssais": [
+                        {
+                            "sst": 1
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "num": "246",
+            "src": "127.0.0.20",
+            "dst": "127.0.0.1",
+            "protocol": "DATA",
+            "length": 169,
+            "src_port": "7777",
+            "dst_port": "40712",
+            "payload": {
+                "subscribedSnssaiInfos": {
+                    "1": {
+                        "dnnInfos": [
+                            {
+                                "dnn": "internet",
+                                "defaultDnnIndicator": true
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            "num": "249",
+            "src": "127.0.0.200",
+            "dst": "127.0.0.1",
+            "protocol": "DATA",
+            "length": 169,
+            "src_port": "7777",
+            "dst_port": "40968",
+            "payload": {
+                "subscribedSnssaiInfos": {
+                    "1": {
+                        "dnnInfos": [
+                            {
+                                "dnn": "internet",
+                                "defaultDnnIndicator": true
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            "num": "252",
+            "src": "127.0.0.12",
+            "dst": "127.0.0.1",
+            "protocol": "TCP",
+            "length": 169,
+            "src_port": "80",
+            "dst_port": "38770",
+            "payload": {
+                "subscribedSnssaiInfos": {
+                    "1": {
+                        "dnnInfos": [
+                            {
+                                "dnn": "internet",
+                                "defaultDnnIndicator": true
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            "num": "255",
+            "src": "127.0.0.200",
+            "dst": "127.0.0.1",
+            "protocol": "DATA",
+            "length": 169,
+            "src_port": "7777",
+            "dst_port": "40996",
+            "payload": {
+                "subscribedSnssaiInfos": {
+                    "1": {
+                        "dnnInfos": [
+                            {
+                                "dnn": "internet",
+                                "defaultDnnIndicator": true
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            "num": "260",
+            "src": "127.0.0.12",
+            "dst": "127.0.0.1",
+            "protocol": "TCP",
+            "length": 79,
+            "src_port": "80",
+            "dst_port": "38770",
+            "payload": {}
+        },
+        {
+            "num": "263",
+            "src": "127.0.0.200",
+            "dst": "127.0.0.1",
+            "protocol": "DATA",
+            "length": 79,
+            "src_port": "7777",
+            "dst_port": "40996",
+            "payload": {}
+        },
+        {
+            "num": "266",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.200",
+            "protocol": "DATA",
+            "length": 374,
+            "src_port": "40996",
+            "dst_port": "7777",
+            "payload": {
+                "nfInstanceId": "f169b5fe-6386-41f0-b7a3-8f277de8faaa",
+                "implicitUnsubscribe": true,
+                "callbackReference": "http://127.0.0.5:7777/namf-callback/v1/imsi-001010200000000/sdmsubscription-notify",
+                "monitoredResourceUris": [
+                    "imsi-001010200000000/am-data"
+                ],
+                "supportedFeatures": "1000",
+                "uniqueSubscription": true
+            }
+        },
+        {
+            "num": "269",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.12",
+            "protocol": "TCP",
+            "length": 374,
+            "src_port": "38770",
+            "dst_port": "80",
+            "payload": {
+                "nfInstanceId": "f169b5fe-6386-41f0-b7a3-8f277de8faaa",
+                "implicitUnsubscribe": true,
+                "callbackReference": "http://127.0.0.5:7777/namf-callback/v1/imsi-001010200000000/sdmsubscription-notify",
+                "monitoredResourceUris": [
+                    "imsi-001010200000000/am-data"
+                ],
+                "supportedFeatures": "1000",
+                "uniqueSubscription": true
+            }
+        },
+        {
+            "num": "272",
+            "src": "127.0.0.12",
+            "dst": "127.0.0.1",
+            "protocol": "TCP",
+            "length": 374,
+            "src_port": "80",
+            "dst_port": "38770",
+            "payload": {
+                "nfInstanceId": "f169b5fe-6386-41f0-b7a3-8f277de8faaa",
+                "implicitUnsubscribe": true,
+                "callbackReference": "http://127.0.0.5:7777/namf-callback/v1/imsi-001010200000000/sdmsubscription-notify",
+                "monitoredResourceUris": [
+                    "imsi-001010200000000/am-data"
+                ],
+                "supportedFeatures": "1000",
+                "uniqueSubscription": true
+            }
+        },
+        {
+            "num": "275",
+            "src": "127.0.0.200",
+            "dst": "127.0.0.1",
+            "protocol": "DATA",
+            "length": 374,
+            "src_port": "7777",
+            "dst_port": "40996",
+            "payload": {
+                "nfInstanceId": "f169b5fe-6386-41f0-b7a3-8f277de8faaa",
+                "implicitUnsubscribe": true,
+                "callbackReference": "http://127.0.0.5:7777/namf-callback/v1/imsi-001010200000000/sdmsubscription-notify",
+                "monitoredResourceUris": [
+                    "imsi-001010200000000/am-data"
+                ],
+                "supportedFeatures": "1000",
+                "uniqueSubscription": true
+            }
+        },
+        {
+            "num": "278",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.200",
+            "protocol": "DATA",
+            "length": 736,
+            "src_port": "40996",
+            "dst_port": "7777",
+            "payload": {
+                "notificationUri": "http://127.0.0.5:7777/namf-callback/v1/imsi-001010200000000/am-policy-notify",
+                "supi": "imsi-001010200000000",
+                "accessType": "3GPP_ACCESS",
+                "pei": "imeisv-1110000000000000",
+                "userLoc": {
+                    "nrLocation": {
+                        "tai": {
+                            "plmnId": {
+                                "mcc": "001",
+                                "mnc": "01"
+                            },
+                            "tac": "000001"
+                        },
+                        "ncgi": {
+                            "plmnId": {
+                                "mcc": "001",
+                                "mnc": "01"
+                            },
+                            "nrCellId": "000008000"
+                        },
+                        "ueLocationTimestamp": "2025-07-20T09:31:09.733414Z"
+                    }
+                },
+                "timeZone": "+08:00",
+                "servingPlmn": {
+                    "mcc": "001",
+                    "mnc": "01"
+                },
+                "ratType": "NR",
+                "ueAmbr": {
+                    "uplink": "1000000 Kbps",
+                    "downlink": "1000000 Kbps"
+                },
+                "allowedSnssais": [
+                    {
+                        "sst": 1
+                    }
+                ],
+                "guami": {
+                    "plmnId": {
+                        "mcc": "001",
+                        "mnc": "01"
+                    },
+                    "amfId": "020040"
+                },
+                "serviceName": "namf-callback",
+                "suppFeat": "4"
+            }
+        },
+        {
+            "num": "281",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.13",
+            "protocol": "DATA",
+            "length": 736,
+            "src_port": "54608",
+            "dst_port": "7777",
+            "payload": {
+                "notificationUri": "http://127.0.0.5:7777/namf-callback/v1/imsi-001010200000000/am-policy-notify",
+                "supi": "imsi-001010200000000",
+                "accessType": "3GPP_ACCESS",
+                "pei": "imeisv-1110000000000000",
+                "userLoc": {
+                    "nrLocation": {
+                        "tai": {
+                            "plmnId": {
+                                "mcc": "001",
+                                "mnc": "01"
+                            },
+                            "tac": "000001"
+                        },
+                        "ncgi": {
+                            "plmnId": {
+                                "mcc": "001",
+                                "mnc": "01"
+                            },
+                            "nrCellId": "000008000"
+                        },
+                        "ueLocationTimestamp": "2025-07-20T09:31:09.733414Z"
+                    }
+                },
+                "timeZone": "+08:00",
+                "servingPlmn": {
+                    "mcc": "001",
+                    "mnc": "01"
+                },
+                "ratType": "NR",
+                "ueAmbr": {
+                    "uplink": "1000000 Kbps",
+                    "downlink": "1000000 Kbps"
+                },
+                "allowedSnssais": [
+                    {
+                        "sst": 1
+                    }
+                ],
+                "guami": {
+                    "plmnId": {
+                        "mcc": "001",
+                        "mnc": "01"
+                    },
+                    "amfId": "020040"
+                },
+                "serviceName": "namf-callback",
+                "suppFeat": "4"
+            }
+        },
+        {
+            "num": "288",
+            "src": "127.0.0.20",
+            "dst": "127.0.0.1",
+            "protocol": "DATA",
+            "length": 79,
+            "src_port": "7777",
+            "dst_port": "40712",
+            "payload": {}
+        },
+        {
+            "num": "292",
+            "src": "127.0.0.200",
+            "dst": "127.0.0.1",
+            "protocol": "DATA",
+            "length": 79,
+            "src_port": "7777",
+            "dst_port": "40972",
+            "payload": {}
+        },
+        {
+            "num": "301",
+            "src": "127.0.0.13",
+            "dst": "127.0.0.1",
+            "protocol": "DATA",
+            "length": 824,
+            "src_port": "7777",
+            "dst_port": "54608",
+            "payload": {
+                "request": {
+                    "notificationUri": "http://127.0.0.5:7777/namf-callback/v1/imsi-001010200000000/am-policy-notify",
+                    "supi": "imsi-001010200000000",
+                    "accessType": "3GPP_ACCESS",
+                    "pei": "imeisv-1110000000000000",
+                    "userLoc": {
+                        "nrLocation": {
+                            "tai": {
+                                "plmnId": {
+                                    "mcc": "001",
+                                    "mnc": "01"
+                                },
+                                "tac": "000001"
+                            },
+                            "ncgi": {
+                                "plmnId": {
+                                    "mcc": "001",
+                                    "mnc": "01"
+                                },
+                                "nrCellId": "000008000"
+                            },
+                            "ueLocationTimestamp": "2025-07-20T09:31:09.733414Z"
+                        }
+                    },
+                    "timeZone": "+08:00",
+                    "servingPlmn": {
+                        "mcc": "001",
+                        "mnc": "01"
+                    },
+                    "ratType": "NR",
+                    "ueAmbr": {
+                        "uplink": "1000000 Kbps",
+                        "downlink": "1000000 Kbps"
+                    },
+                    "allowedSnssais": [
+                        {
+                            "sst": 1
+                        }
+                    ],
+                    "guami": {
+                        "plmnId": {
+                            "mcc": "001",
+                            "mnc": "01"
+                        },
+                        "amfId": "020040"
+                    },
+                    "serviceName": "namf-callback",
+                    "suppFeat": "4"
+                },
+                "ueAmbr": {
+                    "uplink": "1000000 Kbps",
+                    "downlink": "1000000 Kbps"
+                },
+                "suppFeat": "4"
+            }
+        },
+        {
+            "num": "304",
+            "src": "127.0.0.200",
+            "dst": "127.0.0.1",
+            "protocol": "DATA",
+            "length": 824,
+            "src_port": "7777",
+            "dst_port": "40996",
+            "payload": {
+                "request": {
+                    "notificationUri": "http://127.0.0.5:7777/namf-callback/v1/imsi-001010200000000/am-policy-notify",
+                    "supi": "imsi-001010200000000",
+                    "accessType": "3GPP_ACCESS",
+                    "pei": "imeisv-1110000000000000",
+                    "userLoc": {
+                        "nrLocation": {
+                            "tai": {
+                                "plmnId": {
+                                    "mcc": "001",
+                                    "mnc": "01"
+                                },
+                                "tac": "000001"
+                            },
+                            "ncgi": {
+                                "plmnId": {
+                                    "mcc": "001",
+                                    "mnc": "01"
+                                },
+                                "nrCellId": "000008000"
+                            },
+                            "ueLocationTimestamp": "2025-07-20T09:31:09.733414Z"
+                        }
+                    },
+                    "timeZone": "+08:00",
+                    "servingPlmn": {
+                        "mcc": "001",
+                        "mnc": "01"
+                    },
+                    "ratType": "NR",
+                    "ueAmbr": {
+                        "uplink": "1000000 Kbps",
+                        "downlink": "1000000 Kbps"
+                    },
+                    "allowedSnssais": [
+                        {
+                            "sst": 1
+                        }
+                    ],
+                    "guami": {
+                        "plmnId": {
+                            "mcc": "001",
+                            "mnc": "01"
+                        },
+                        "amfId": "020040"
+                    },
+                    "serviceName": "namf-callback",
+                    "suppFeat": "4"
+                },
+                "ueAmbr": {
+                    "uplink": "1000000 Kbps",
+                    "downlink": "1000000 Kbps"
+                },
+                "suppFeat": "4"
+            }
+        },
+        {
+            "num": "306",
+            "src": "10.10.2.5",
+            "dst": "10.10.0.5",
+            "protocol": "NGAP",
+            "length": 216,
+            "src_port": "38412",
+            "dst_port": "9487",
+            "payload": {
+                "per_extension_bit": "0",
+                "per_choice_index": "0",
+                "ngap_pdu": "0",
+                "initiatingmessage_element": "initiatingMessage",
+                "procedurecode": "14",
+                "per_enum_index": "0",
+                "criticality": "0",
+                "per_open_type_length": "144",
+                "value_element": "value",
+                "initialcontextsetuprequest_element": "InitialContextSetupRequest",
+                "per_sequence_of_length": "8",
+                "protocolies": "8",
+                "protocolie_field_element": "ProtocolIE-Field",
+                "id": "10",
+                "amf_ue_ngap_id": "3",
+                "ran_ue_ngap_id": "1",
+                "guami_element": "GUAMI",
+                "per_optional_field_bit": "0",
+                "plmnidentity": "00:f1:10",
+                "e212_mcc": "1",
+                "e212_mnc": "1",
+                "amfregionid": "02",
+                "amfsetid": "00:40",
+                "amfpointer": "00",
+                "allowednssai": "1",
+                "allowednssai_item_element": "AllowedNSSAI-Item",
+                "s_nssai_element": "s-NSSAI",
+                "sst": "01",
+                "uesecuritycapabilities_element": "UESecurityCapabilities",
+                "per_extension_present_bit": "0",
+                "nrencryptionalgorithms": "40:00",
+                "nrencyptionalgorithms_nea1": "0",
+                "nrencyptionalgorithms_nea2": "1",
+                "nrencyptionalgorithms_nea3": "0",
+                "nrencyptionalgorithms_reserved": "0x00000000",
+                "nrintegrityprotectionalgorithms": "40:00",
+                "nrintegrityprotectionalgorithms_nia1": "0",
+                "nrintegrityprotectionalgorithms_nia2": "1",
+                "nrintegrityprotectionalgorithms_nia3": "0",
+                "nrintegrityprotectionalgorithms_reserved": "0x00000000",
+                "eutraencryptionalgorithms": "00:00",
+                "eutraencryptionalgorithms_eea1": "0",
+                "eutraencryptionalgorithms_eea2": "0",
+                "eutraencryptionalgorithms_eea3": "0",
+                "eutraencryptionalgorithms_reserved": "0x00000000",
+                "eutraintegrityprotectionalgorithms": "00:00",
+                "eutraintegrityprotectionalgorithms_eia1": "0",
+                "eutraintegrityprotectionalgorithms_eia2": "0",
+                "eutraintegrityprotectionalgorithms_eia3": "0",
+                "eutraintegrityprotectionalgorithms_reserved": "0x00000000",
+                "securitykey": "61:85:e6:bb:95:fe:b3:fa:9d:a5:71:ba:88:47:72:23:65:b3:95:84:7c:17:33:ac:a4:44:d9:d6:54:de:fb:30",
+                "maskedimeisv": "11:10:00:00:00:ff:ff:00",
+                "per_octet_string_length": "46",
+                "nas_pdu": "7e:02:9d:e0:1d:7e:01:7e:00:42:01:01:77:00:0b:f2:00:f1:10:02:00:40:c0:00:04:2c:54:07:40:00:f1:10:00:00:01:15:02:01:01:21:02:01:00:5e:01:92",
+                "nas_5gs_epd": "126",
+                "nas_5gs_spare_half_octet": "0",
+                "nas_5gs_security_header_type": "2",
+                "nas_5gs_msg_auth_code": "0x9de01d7e",
+                "nas_5gs_seq_no": "1"
+            }
+        },
+        {
+            "num": "307",
+            "src": "10.10.0.5",
+            "dst": "10.10.2.5",
+            "protocol": "NGAP",
+            "length": 100,
+            "src_port": "9487",
+            "dst_port": "38412",
+            "payload": {
+                "per_extension_bit": "0",
+                "per_choice_index": "1",
+                "ngap_pdu": "1",
+                "successfuloutcome_element": "successfulOutcome",
+                "procedurecode": "14",
+                "per_enum_index": "0",
+                "criticality": "0",
+                "per_open_type_length": "15",
+                "value_element": "value",
+                "initialcontextsetupresponse_element": "InitialContextSetupResponse",
+                "per_sequence_of_length": "2",
+                "protocolies": "2",
+                "protocolie_field_element": "ProtocolIE-Field",
+                "id": "10",
+                "amf_ue_ngap_id": "3",
+                "ran_ue_ngap_id": "1"
+            }
+        },
+        {
+            "num": "308",
+            "src": "10.10.0.5",
+            "dst": "10.10.2.5",
+            "protocol": "SCTP",
+            "length": 100,
+            "src_port": "9487",
+            "dst_port": "38412",
+            "payload": {
+                "srcport": "9487",
+                "dstport": "38412",
+                "verification_tag": "0x4e19ce59",
+                "assoc_index": "65535",
+                "port": "9487",
+                "checksum": "0x4c523afb",
+                "checksum_status": "2",
+                "chunk_type": "3",
+                "chunk_bit_1": "0",
+                "chunk_bit_2": "0",
+                "chunk_flags": "0x00000000",
+                "sack_nounce_sum": "0",
+                "chunk_length": "16",
+                "sack_cumulative_tsn_ack": "3584266532",
+                "sack_a_rwnd": "106496",
+                "sack_number_of_gap_blocks": "0",
+                "sack_number_of_duplicated_tsns": "0",
+                "data_i_bit": "0",
+                "data_u_bit": "0",
+                "data_b_bit": "1",
+                "data_e_bit": "1",
+                "data_tsn": "638823492",
+                "retransmission": "307",
+                "_ws_expert": "Expert Info (Note/Sequence): Retransmitted TSN",
+                "retransmission_expert": "Retransmitted TSN",
+                "_ws_expert_message": "Retransmitted TSN",
+                "_ws_expert_severity": "4194304",
+                "_ws_expert_group": "33554432",
+                "retransmission_time": "0.000255040",
+                "data_sid": "0x00000000",
+                "data_ssn": "4",
+                "data_payload_proto_id": "60",
+                "chunk_padding": "00"
+            }
+        },
+        {
+            "num": "309",
+            "src": "10.10.2.5",
+            "dst": "10.10.0.5",
+            "protocol": "SCTP",
+            "length": 68,
+            "src_port": "38412",
+            "dst_port": "9487",
+            "payload": {
+                "srcport": "38412",
+                "dstport": "9487",
+                "verification_tag": "0x9e382d67",
+                "assoc_index": "65535",
+                "port": "38412",
+                "checksum": "0x1dd43ca0",
+                "checksum_status": "2",
+                "chunk_type": "3",
+                "chunk_bit_1": "0",
+                "chunk_bit_2": "0",
+                "chunk_flags": "0x00000000",
+                "sack_nounce_sum": "0",
+                "chunk_length": "20",
+                "sack_cumulative_tsn_ack": "638823492",
+                "ack": "638823492",
+                "ack_frame": "307",
+                "sack_rtt": "0.000273517",
+                "sack_a_rwnd": "106496",
+                "sack_number_of_gap_blocks": "0",
+                "sack_number_of_duplicated_tsns": "1",
+                "sack_duplicate_tsn": "638823492"
+            }
+        },
+        {
+            "num": "310",
+            "src": "10.10.0.5",
+            "dst": "10.10.2.5",
+            "protocol": "NGAP",
+            "length": 120,
+            "src_port": "9487",
+            "dst_port": "38412",
+            "payload": {
+                "per_extension_bit": "0",
+                "per_choice_index": "0",
+                "ngap_pdu": "0",
+                "initiatingmessage_element": "initiatingMessage",
+                "procedurecode": "46",
+                "per_enum_index": "1",
+                "criticality": "1",
+                "per_open_type_length": "49",
+                "value_element": "value",
+                "uplinknastransport_element": "UplinkNASTransport",
+                "per_sequence_of_length": "4",
+                "protocolies": "4",
+                "protocolie_field_element": "ProtocolIE-Field",
+                "id": "10",
+                "amf_ue_ngap_id": "3",
+                "ran_ue_ngap_id": "1",
+                "per_octet_string_length": "10",
+                "nas_pdu": "7e:02:54:7f:2b:6f:01:7e:00:43",
+                "nas_5gs_epd": "126",
+                "nas_5gs_spare_half_octet": "0",
+                "nas_5gs_security_header_type": "2",
+                "nas_5gs_msg_auth_code": "0x547f2b6f",
+                "nas_5gs_seq_no": "1",
+                "userlocationinformation": "1",
+                "userlocationinformationnr_element": "userLocationInformationNR",
+                "per_optional_field_bit": "0",
+                "nr_cgi_element": "nR-CGI",
+                "plmnidentity": "00:f1:10",
+                "e212_mcc": "1",
+                "e212_mnc": "1",
+                "nrcellidentity": "0x0000000000008000",
+                "tai_element": "tAI",
+                "tac": "1"
+            }
+        },
+        {
+            "num": "311",
+            "src": "10.10.0.5",
+            "dst": "10.10.2.5",
+            "protocol": "SCTP",
+            "length": 120,
+            "src_port": "9487",
+            "dst_port": "38412",
+            "payload": {
+                "srcport": "9487",
+                "dstport": "38412",
+                "verification_tag": "0x4e19ce59",
+                "assoc_index": "65535",
+                "port": "9487",
+                "checksum": "0xe83d82a6",
+                "checksum_status": "2",
+                "chunk_type": "0",
+                "chunk_bit_1": "0",
+                "chunk_bit_2": "0",
+                "chunk_flags": "0x00000003",
+                "data_i_bit": "0",
+                "data_u_bit": "0",
+                "data_b_bit": "1",
+                "data_e_bit": "1",
+                "chunk_length": "69",
+                "data_tsn": "638823493",
+                "retransmission": "310",
+                "_ws_expert": "Expert Info (Note/Sequence): Retransmitted TSN",
+                "retransmission_expert": "Retransmitted TSN",
+                "_ws_expert_message": "Retransmitted TSN",
+                "_ws_expert_severity": "4194304",
+                "_ws_expert_group": "33554432",
+                "retransmission_time": "0.000712201",
+                "data_sid": "0x00000000",
+                "data_ssn": "5",
+                "data_payload_proto_id": "60",
+                "chunk_padding": "00:00:00"
+            }
+        },
+        {
+            "num": "312",
+            "src": "10.10.2.5",
+            "dst": "10.10.0.5",
+            "protocol": "SCTP",
+            "length": 68,
+            "src_port": "38412",
+            "dst_port": "9487",
+            "payload": {
+                "srcport": "38412",
+                "dstport": "9487",
+                "verification_tag": "0x9e382d67",
+                "assoc_index": "65535",
+                "port": "38412",
+                "checksum": "0x7b6f8562",
+                "checksum_status": "2",
+                "chunk_type": "3",
+                "chunk_bit_1": "0",
+                "chunk_bit_2": "0",
+                "chunk_flags": "0x00000000",
+                "sack_nounce_sum": "0",
+                "chunk_length": "20",
+                "sack_cumulative_tsn_ack": "638823493",
+                "ack": "638823493",
+                "ack_frame": "310",
+                "sack_rtt": "0.000755750",
+                "sack_a_rwnd": "106496",
+                "sack_number_of_gap_blocks": "0",
+                "sack_number_of_duplicated_tsns": "1",
+                "sack_duplicate_tsn": "638823493"
+            }
+        },
+        {
+            "num": "313",
+            "src": "10.10.0.5",
+            "dst": "10.10.2.5",
+            "protocol": "NGAP",
+            "length": 160,
+            "src_port": "9487",
+            "dst_port": "38412",
+            "payload": {
+                "per_extension_bit": "0",
+                "per_choice_index": "0",
+                "ngap_pdu": "0",
+                "initiatingmessage_element": "initiatingMessage",
+                "procedurecode": "46",
+                "per_enum_index": "1",
+                "criticality": "1",
+                "per_open_type_length": "89",
+                "value_element": "value",
+                "uplinknastransport_element": "UplinkNASTransport",
+                "per_sequence_of_length": "4",
+                "protocolies": "4",
+                "protocolie_field_element": "ProtocolIE-Field",
+                "id": "10",
+                "amf_ue_ngap_id": "3",
+                "ran_ue_ngap_id": "1",
+                "per_octet_string_length": "50",
+                "nas_pdu": "7e:02:36:38:4e:36:02:7e:00:67:01:00:14:2e:01:01:c1:ff:ff:91:7b:00:0a:80:00:0a:00:00:0d:00:00:03:00:12:01:81:22:01:01:25:09:08:69:6e:74:65:72:6e:65:74",
+                "nas_5gs_epd": "126",
+                "nas_5gs_spare_half_octet": "0",
+                "nas_5gs_security_header_type": "2",
+                "nas_5gs_msg_auth_code": "0x36384e36",
+                "nas_5gs_seq_no": "2",
+                "userlocationinformation": "1",
+                "userlocationinformationnr_element": "userLocationInformationNR",
+                "per_optional_field_bit": "0",
+                "nr_cgi_element": "nR-CGI",
+                "plmnidentity": "00:f1:10",
+                "e212_mcc": "1",
+                "e212_mnc": "1",
+                "nrcellidentity": "0x0000000000008000",
+                "tai_element": "tAI",
+                "tac": "1"
+            }
+        },
+        {
+            "num": "314",
+            "src": "10.10.0.5",
+            "dst": "10.10.2.5",
+            "protocol": "SCTP",
+            "length": 160,
+            "src_port": "9487",
+            "dst_port": "38412",
+            "payload": {
+                "srcport": "9487",
+                "dstport": "38412",
+                "verification_tag": "0x4e19ce59",
+                "assoc_index": "65535",
+                "port": "9487",
+                "checksum": "0x32fc0858",
+                "checksum_status": "2",
+                "chunk_type": "0",
+                "chunk_bit_1": "0",
+                "chunk_bit_2": "0",
+                "chunk_flags": "0x00000003",
+                "data_i_bit": "0",
+                "data_u_bit": "0",
+                "data_b_bit": "1",
+                "data_e_bit": "1",
+                "chunk_length": "109",
+                "data_tsn": "638823494",
+                "retransmission": "313",
+                "_ws_expert": "Expert Info (Note/Sequence): Retransmitted TSN",
+                "retransmission_expert": "Retransmitted TSN",
+                "_ws_expert_message": "Retransmitted TSN",
+                "_ws_expert_severity": "4194304",
+                "_ws_expert_group": "33554432",
+                "retransmission_time": "0.000000301",
+                "data_sid": "0x00000000",
+                "data_ssn": "6",
+                "data_payload_proto_id": "60",
+                "chunk_padding": "00:00:00"
+            }
+        },
+        {
+            "num": "315",
+            "src": "10.10.2.5",
+            "dst": "10.10.0.5",
+            "protocol": "SCTP",
+            "length": 68,
+            "src_port": "38412",
+            "dst_port": "9487",
+            "payload": {
+                "srcport": "38412",
+                "dstport": "9487",
+                "verification_tag": "0x9e382d67",
+                "assoc_index": "65535",
+                "port": "38412",
+                "checksum": "0x1e92e0db",
+                "checksum_status": "2",
+                "chunk_type": "3",
+                "chunk_bit_1": "0",
+                "chunk_bit_2": "0",
+                "chunk_flags": "0x00000000",
+                "sack_nounce_sum": "0",
+                "chunk_length": "20",
+                "sack_cumulative_tsn_ack": "638823494",
+                "ack": "638823494",
+                "ack_frame": "313",
+                "sack_rtt": "0.000079830",
+                "sack_a_rwnd": "106403",
+                "sack_number_of_gap_blocks": "0",
+                "sack_number_of_duplicated_tsns": "1",
+                "sack_duplicate_tsn": "638823494"
+            }
+        },
+        {
+            "num": "316",
+            "src": "10.10.2.5",
+            "dst": "10.10.0.5",
+            "protocol": "NGAP",
+            "length": 140,
+            "src_port": "38412",
+            "dst_port": "9487",
+            "payload": {
+                "per_extension_bit": "0",
+                "per_choice_index": "0",
+                "ngap_pdu": "0",
+                "initiatingmessage_element": "initiatingMessage",
+                "procedurecode": "4",
+                "per_enum_index": "1",
+                "criticality": "1",
+                "per_open_type_length": "71",
+                "value_element": "value",
+                "downlinknastransport_element": "DownlinkNASTransport",
+                "per_sequence_of_length": "3",
+                "protocolies": "3",
+                "protocolie_field_element": "ProtocolIE-Field",
+                "id": "10",
+                "amf_ue_ngap_id": "3",
+                "ran_ue_ngap_id": "1",
+                "per_octet_string_length": "51",
+                "nas_pdu": "7e:02:fa:f3:45:3d:02:7e:00:54:43:0f:90:00:4f:00:70:00:65:00:6e:00:35:00:47:00:53:45:09:90:00:4e:00:65:00:78:00:74:46:23:47:52:70:02:90:13:90:23:49:01:00",
+                "nas_5gs_epd": "126",
+                "nas_5gs_spare_half_octet": "0",
+                "nas_5gs_security_header_type": "2",
+                "nas_5gs_msg_auth_code": "0xfaf3453d",
+                "nas_5gs_seq_no": "2"
+            }
+        },
+        {
+            "num": "318",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.200",
+            "protocol": "DATA",
+            "length": 1047,
+            "src_port": "40996",
+            "dst_port": "7777",
+            "payload": {
+                "supi": "imsi-001010200000000",
+                "pei": "imeisv-1110000000000000",
+                "pduSessionId": 1,
+                "dnn": "internet",
+                "sNssai": {
+                    "sst": 1
+                },
+                "servingNfId": "f169b5fe-6386-41f0-b7a3-8f277de8faaa",
+                "guami": {
+                    "plmnId": {
+                        "mcc": "001",
+                        "mnc": "01"
+                    },
+                    "amfId": "020040"
+                },
+                "servingNetwork": {
+                    "mcc": "001",
+                    "mnc": "01"
+                },
+                "requestType": "INITIAL_REQUEST",
+                "n1SmMsg": {
+                    "contentId": "5gnas-sm"
+                },
+                "anType": "3GPP_ACCESS",
+                "ratType": "NR",
+                "ueLocation": {
+                    "nrLocation": {
+                        "tai": {
+                            "plmnId": {
+                                "mcc": "001",
+                                "mnc": "01"
+                            },
+                            "tac": "000001"
+                        },
+                        "ncgi": {
+                            "plmnId": {
+                                "mcc": "001",
+                                "mnc": "01"
+                            },
+                            "nrCellId": "000008000"
+                        },
+                        "ueLocationTimestamp": "2025-07-20T09:31:09.733414Z"
+                    }
+                },
+                "ueTimeZone": "+08:00",
+                "smContextStatusUri": "http://127.0.0.5:7777/namf-callback/v1/imsi-001010200000000/sm-context-status/1",
+                "pcfId": "f17725cc-6386-41f0-98f2-5f41ad1102b2"
+            }
+        },
+        {
+            "num": "321",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.4",
+            "protocol": "TCP",
+            "length": 1047,
+            "src_port": "57006",
+            "dst_port": "80",
+            "payload": {
+                "supi": "imsi-001010200000000",
+                "pei": "imeisv-1110000000000000",
+                "pduSessionId": 1,
+                "dnn": "internet",
+                "sNssai": {
+                    "sst": 1
+                },
+                "servingNfId": "f169b5fe-6386-41f0-b7a3-8f277de8faaa",
+                "guami": {
+                    "plmnId": {
+                        "mcc": "001",
+                        "mnc": "01"
+                    },
+                    "amfId": "020040"
+                },
+                "servingNetwork": {
+                    "mcc": "001",
+                    "mnc": "01"
+                },
+                "requestType": "INITIAL_REQUEST",
+                "n1SmMsg": {
+                    "contentId": "5gnas-sm"
+                },
+                "anType": "3GPP_ACCESS",
+                "ratType": "NR",
+                "ueLocation": {
+                    "nrLocation": {
+                        "tai": {
+                            "plmnId": {
+                                "mcc": "001",
+                                "mnc": "01"
+                            },
+                            "tac": "000001"
+                        },
+                        "ncgi": {
+                            "plmnId": {
+                                "mcc": "001",
+                                "mnc": "01"
+                            },
+                            "nrCellId": "000008000"
+                        },
+                        "ueLocationTimestamp": "2025-07-20T09:31:09.733414Z"
+                    }
+                },
+                "ueTimeZone": "+08:00",
+                "smContextStatusUri": "http://127.0.0.5:7777/namf-callback/v1/imsi-001010200000000/sm-context-status/1",
+                "pcfId": "f17725cc-6386-41f0-98f2-5f41ad1102b2"
+            }
+        },
+        {
+            "num": "326",
+            "src": "10.10.0.5",
+            "dst": "10.10.2.5",
+            "protocol": "NGAP",
+            "length": 136,
+            "src_port": "9487",
+            "dst_port": "38412",
+            "payload": {
+                "per_extension_bit": "0",
+                "per_choice_index": "0",
+                "ngap_pdu": "0",
+                "initiatingmessage_element": "initiatingMessage",
+                "procedurecode": "46",
+                "per_enum_index": "1",
+                "criticality": "1",
+                "per_open_type_length": "49",
+                "value_element": "value",
+                "uplinknastransport_element": "UplinkNASTransport",
+                "per_sequence_of_length": "4",
+                "protocolies": "4",
+                "protocolie_field_element": "ProtocolIE-Field",
+                "id": "10",
+                "amf_ue_ngap_id": "3",
+                "ran_ue_ngap_id": "1",
+                "per_octet_string_length": "10",
+                "nas_pdu": "7e:02:9e:bd:28:78:03:7e:00:55",
+                "nas_5gs_epd": "126",
+                "nas_5gs_spare_half_octet": "0",
+                "nas_5gs_security_header_type": "2",
+                "nas_5gs_msg_auth_code": "0x9ebd2878",
+                "nas_5gs_seq_no": "3",
+                "userlocationinformation": "1",
+                "userlocationinformationnr_element": "userLocationInformationNR",
+                "per_optional_field_bit": "0",
+                "nr_cgi_element": "nR-CGI",
+                "plmnidentity": "00:f1:10",
+                "e212_mcc": "1",
+                "e212_mnc": "1",
+                "nrcellidentity": "0x0000000000008000",
+                "tai_element": "tAI",
+                "tac": "1"
+            }
+        },
+        {
+            "num": "327",
+            "src": "10.10.0.5",
+            "dst": "10.10.2.5",
+            "protocol": "SCTP",
+            "length": 136,
+            "src_port": "9487",
+            "dst_port": "38412",
+            "payload": {
+                "srcport": "9487",
+                "dstport": "38412",
+                "verification_tag": "0x4e19ce59",
+                "assoc_index": "65535",
+                "port": "9487",
+                "checksum": "0x232bdc5b",
+                "checksum_status": "2",
+                "chunk_type": "3",
+                "chunk_bit_1": "0",
+                "chunk_bit_2": "0",
+                "chunk_flags": "0x00000000",
+                "sack_nounce_sum": "0",
+                "chunk_length": "16",
+                "sack_cumulative_tsn_ack": "3584266533",
+                "sack_a_rwnd": "106496",
+                "sack_number_of_gap_blocks": "0",
+                "sack_number_of_duplicated_tsns": "0",
+                "data_i_bit": "0",
+                "data_u_bit": "0",
+                "data_b_bit": "1",
+                "data_e_bit": "1",
+                "data_tsn": "638823495",
+                "retransmission": "326",
+                "_ws_expert": "Expert Info (Note/Sequence): Retransmitted TSN",
+                "retransmission_expert": "Retransmitted TSN",
+                "_ws_expert_message": "Retransmitted TSN",
+                "_ws_expert_severity": "4194304",
+                "_ws_expert_group": "33554432",
+                "retransmission_time": "0.000000243",
+                "data_sid": "0x00000000",
+                "data_ssn": "7",
+                "data_payload_proto_id": "60",
+                "chunk_padding": "00:00:00"
+            }
+        },
+        {
+            "num": "328",
+            "src": "10.10.2.5",
+            "dst": "10.10.0.5",
+            "protocol": "SCTP",
+            "length": 68,
+            "src_port": "38412",
+            "dst_port": "9487",
+            "payload": {
+                "srcport": "38412",
+                "dstport": "9487",
+                "verification_tag": "0x9e382d67",
+                "assoc_index": "65535",
+                "port": "38412",
+                "checksum": "0xdcc5ff9a",
+                "checksum_status": "2",
+                "chunk_type": "3",
+                "chunk_bit_1": "0",
+                "chunk_bit_2": "0",
+                "chunk_flags": "0x00000000",
+                "sack_nounce_sum": "0",
+                "chunk_length": "20",
+                "sack_cumulative_tsn_ack": "638823495",
+                "ack": "638823495",
+                "ack_frame": "326",
+                "sack_rtt": "0.000059335",
+                "sack_a_rwnd": "106443",
+                "sack_number_of_gap_blocks": "0",
+                "sack_number_of_duplicated_tsns": "1",
+                "sack_duplicate_tsn": "638823495"
+            }
+        },
+        {
+            "num": "346",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.200",
+            "protocol": "DATA",
+            "length": 472,
+            "src_port": "40998",
+            "dst_port": "7777",
+            "payload": {
+                "nfInstanceId": "f199fa48-6386-41f0-8340-55015ab1938d",
+                "implicitUnsubscribe": true,
+                "callbackReference": "http://smf.5gc.mnc001.mcc001.3gppnetwork.org/nsmf-callback/v1/sdmsubscription-notify/imsi-001010200000000",
+                "monitoredResourceUris": [
+                    "imsi-001010200000000/sm-data"
+                ],
+                "singleNssai": {
+                    "sst": 1
+                },
+                "dnn": "internet",
+                "plmnId": {
+                    "mcc": "001",
+                    "mnc": "01"
+                },
+                "supportedFeatures": "1000",
+                "uniqueSubscription": true
+            }
+        },
+        {
+            "num": "349",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.12",
+            "protocol": "TCP",
+            "length": 472,
+            "src_port": "38770",
+            "dst_port": "80",
+            "payload": {
+                "nfInstanceId": "f199fa48-6386-41f0-8340-55015ab1938d",
+                "implicitUnsubscribe": true,
+                "callbackReference": "http://smf.5gc.mnc001.mcc001.3gppnetwork.org/nsmf-callback/v1/sdmsubscription-notify/imsi-001010200000000",
+                "monitoredResourceUris": [
+                    "imsi-001010200000000/sm-data"
+                ],
+                "singleNssai": {
+                    "sst": 1
+                },
+                "dnn": "internet",
+                "plmnId": {
+                    "mcc": "001",
+                    "mnc": "01"
+                },
+                "supportedFeatures": "1000",
+                "uniqueSubscription": true
+            }
+        },
+        {
+            "num": "352",
+            "src": "127.0.0.12",
+            "dst": "127.0.0.1",
+            "protocol": "TCP",
+            "length": 472,
+            "src_port": "80",
+            "dst_port": "38770",
+            "payload": {
+                "nfInstanceId": "f199fa48-6386-41f0-8340-55015ab1938d",
+                "implicitUnsubscribe": true,
+                "callbackReference": "http://smf.5gc.mnc001.mcc001.3gppnetwork.org/nsmf-callback/v1/sdmsubscription-notify/imsi-001010200000000",
+                "monitoredResourceUris": [
+                    "imsi-001010200000000/sm-data"
+                ],
+                "singleNssai": {
+                    "sst": 1
+                },
+                "dnn": "internet",
+                "plmnId": {
+                    "mcc": "001",
+                    "mnc": "01"
+                },
+                "supportedFeatures": "1000",
+                "uniqueSubscription": true
+            }
+        },
+        {
+            "num": "355",
+            "src": "127.0.0.200",
+            "dst": "127.0.0.1",
+            "protocol": "DATA",
+            "length": 472,
+            "src_port": "7777",
+            "dst_port": "40998",
+            "payload": {
+                "nfInstanceId": "f199fa48-6386-41f0-8340-55015ab1938d",
+                "implicitUnsubscribe": true,
+                "callbackReference": "http://smf.5gc.mnc001.mcc001.3gppnetwork.org/nsmf-callback/v1/sdmsubscription-notify/imsi-001010200000000",
+                "monitoredResourceUris": [
+                    "imsi-001010200000000/sm-data"
+                ],
+                "singleNssai": {
+                    "sst": 1
+                },
+                "dnn": "internet",
+                "plmnId": {
+                    "mcc": "001",
+                    "mnc": "01"
+                },
+                "supportedFeatures": "1000",
+                "uniqueSubscription": true
+            }
+        },
+        {
+            "num": "360",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.200",
+            "protocol": "DATA",
+            "length": 856,
+            "src_port": "40998",
+            "dst_port": "7777",
+            "payload": {
+                "supi": "imsi-001010200000000",
+                "pduSessionId": 1,
+                "pduSessionType": "IPV4",
+                "chargingcharacteristics": "00000800",
+                "dnn": "internet",
+                "notificationUri": "http://smf.5gc.mnc001.mcc001.3gppnetwork.org/nsmf-callback/v1/sm-policy-notify/3",
+                "ratType": "NR",
+                "servingNetwork": {
+                    "mcc": "001",
+                    "mnc": "01"
+                },
+                "userLocationInfo": {
+                    "nrLocation": {
+                        "tai": {
+                            "plmnId": {
+                                "mcc": "001",
+                                "mnc": "01"
+                            },
+                            "tac": "000001"
+                        },
+                        "ncgi": {
+                            "plmnId": {
+                                "mcc": "001",
+                                "mnc": "01"
+                            },
+                            "nrCellId": "000008000"
+                        },
+                        "ueLocationTimestamp": "2025-07-20T09:31:09.733414Z"
+                    }
+                },
+                "ueTimeZone": "+08:00",
+                "ipv4Address": "10.46.0.4",
+                "subsSessAmbr": {
+                    "uplink": "1000000 Kbps",
+                    "downlink": "1000000 Kbps"
+                },
+                "subsDefQos": {
+                    "5qi": 9,
+                    "arp": {
+                        "priorityLevel": 8,
+                        "preemptCap": "NOT_PREEMPT",
+                        "preemptVuln": "NOT_PREEMPTABLE"
+                    },
+                    "priorityLevel": 8
+                },
+                "sliceInfo": {
+                    "sst": 1
+                },
+                "suppFeat": "4000000"
+            }
+        },
+        {
+            "num": "361",
+            "src": "127.0.0.4",
+            "dst": "127.0.0.1",
+            "protocol": "TCP",
+            "length": 79,
+            "src_port": "80",
+            "dst_port": "57006",
+            "payload": {}
+        },
+        {
+            "num": "365",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.13",
+            "protocol": "DATA",
+            "length": 856,
+            "src_port": "54608",
+            "dst_port": "7777",
+            "payload": {
+                "supi": "imsi-001010200000000",
+                "pduSessionId": 1,
+                "pduSessionType": "IPV4",
+                "chargingcharacteristics": "00000800",
+                "dnn": "internet",
+                "notificationUri": "http://smf.5gc.mnc001.mcc001.3gppnetwork.org/nsmf-callback/v1/sm-policy-notify/3",
+                "ratType": "NR",
+                "servingNetwork": {
+                    "mcc": "001",
+                    "mnc": "01"
+                },
+                "userLocationInfo": {
+                    "nrLocation": {
+                        "tai": {
+                            "plmnId": {
+                                "mcc": "001",
+                                "mnc": "01"
+                            },
+                            "tac": "000001"
+                        },
+                        "ncgi": {
+                            "plmnId": {
+                                "mcc": "001",
+                                "mnc": "01"
+                            },
+                            "nrCellId": "000008000"
+                        },
+                        "ueLocationTimestamp": "2025-07-20T09:31:09.733414Z"
+                    }
+                },
+                "ueTimeZone": "+08:00",
+                "ipv4Address": "10.46.0.4",
+                "subsSessAmbr": {
+                    "uplink": "1000000 Kbps",
+                    "downlink": "1000000 Kbps"
+                },
+                "subsDefQos": {
+                    "5qi": 9,
+                    "arp": {
+                        "priorityLevel": 8,
+                        "preemptCap": "NOT_PREEMPT",
+                        "preemptVuln": "NOT_PREEMPTABLE"
+                    },
+                    "priorityLevel": 8
+                },
+                "sliceInfo": {
+                    "sst": 1
+                },
+                "suppFeat": "4000000"
+            }
+        },
+        {
+            "num": "367",
+            "src": "127.0.0.200",
+            "dst": "127.0.0.1",
+            "protocol": "DATA",
+            "length": 79,
+            "src_port": "7777",
+            "dst_port": "40996",
+            "payload": {}
+        },
+        {
+            "num": "375",
+            "src": "127.0.0.20",
+            "dst": "127.0.0.1",
+            "protocol": "DATA",
+            "length": 176,
+            "src_port": "7777",
+            "dst_port": "40712",
+            "payload": {
+                "smPolicySnssaiData": {
+                    "1": {
+                        "snssai": {
+                            "sst": 1
+                        },
+                        "smPolicyDnnData": {
+                            "internet": {
+                                "dnn": "internet"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "num": "378",
+            "src": "127.0.0.200",
+            "dst": "127.0.0.1",
+            "protocol": "DATA",
+            "length": 176,
+            "src_port": "7777",
+            "dst_port": "40972",
+            "payload": {
+                "smPolicySnssaiData": {
+                    "1": {
+                        "snssai": {
+                            "sst": 1
+                        },
+                        "smPolicyDnnData": {
+                            "internet": {
+                                "dnn": "internet"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "num": "381",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.200",
+            "protocol": "DATA",
+            "length": 242,
+            "src_port": "40972",
+            "dst_port": "7777",
+            "payload": {
+                "supi": "imsi-001010200000000",
+                "ipv4Addr": "10.46.0.4",
+                "dnn": "internet",
+                "pcfIpEndPoints": [
+                    {
+                        "ipv4Address": "127.0.0.13",
+                        "port": 7777
+                    }
+                ],
+                "snssai": {
+                    "sst": 1
+                },
+                "suppFeat": "2"
+            }
+        },
+        {
+            "num": "385",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.15",
+            "protocol": "DATA",
+            "length": 242,
+            "src_port": "37470",
+            "dst_port": "7777",
+            "payload": {
+                "supi": "imsi-001010200000000",
+                "ipv4Addr": "10.46.0.4",
+                "dnn": "internet",
+                "pcfIpEndPoints": [
+                    {
+                        "ipv4Address": "127.0.0.13",
+                        "port": 7777
+                    }
+                ],
+                "snssai": {
+                    "sst": 1
+                },
+                "suppFeat": "2"
+            }
+        },
+        {
+            "num": "388",
+            "src": "127.0.0.15",
+            "dst": "127.0.0.1",
+            "protocol": "DATA",
+            "length": 242,
+            "src_port": "7777",
+            "dst_port": "37470",
+            "payload": {
+                "supi": "imsi-001010200000000",
+                "ipv4Addr": "10.46.0.4",
+                "dnn": "internet",
+                "pcfIpEndPoints": [
+                    {
+                        "ipv4Address": "127.0.0.13",
+                        "port": 7777
+                    }
+                ],
+                "snssai": {
+                    "sst": 1
+                },
+                "suppFeat": "2"
+            }
+        },
+        {
+            "num": "391",
+            "src": "127.0.0.200",
+            "dst": "127.0.0.1",
+            "protocol": "DATA",
+            "length": 242,
+            "src_port": "7777",
+            "dst_port": "40972",
+            "payload": {
+                "supi": "imsi-001010200000000",
+                "ipv4Addr": "10.46.0.4",
+                "dnn": "internet",
+                "pcfIpEndPoints": [
+                    {
+                        "ipv4Address": "127.0.0.13",
+                        "port": 7777
+                    }
+                ],
+                "snssai": {
+                    "sst": 1
+                },
+                "suppFeat": "2"
+            }
+        },
+        {
+            "num": "396",
+            "src": "127.0.0.13",
+            "dst": "127.0.0.1",
+            "protocol": "DATA",
+            "length": 329,
+            "src_port": "7777",
+            "dst_port": "54608",
+            "payload": {
+                "sessRules": {
+                    "1": {
+                        "authSessAmbr": {
+                            "uplink": "1000000 Kbps",
+                            "downlink": "1000000 Kbps"
+                        },
+                        "authDefQos": {
+                            "5qi": 9,
+                            "arp": {
+                                "priorityLevel": 8,
+                                "preemptCap": "NOT_PREEMPT",
+                                "preemptVuln": "NOT_PREEMPTABLE"
+                            },
+                            "priorityLevel": 8
+                        },
+                        "sessRuleId": "1"
+                    }
+                },
+                "suppFeat": "4000000"
+            }
+        },
+        {
+            "num": "399",
+            "src": "127.0.0.200",
+            "dst": "127.0.0.1",
+            "protocol": "DATA",
+            "length": 329,
+            "src_port": "7777",
+            "dst_port": "40998",
+            "payload": {
+                "sessRules": {
+                    "1": {
+                        "authSessAmbr": {
+                            "uplink": "1000000 Kbps",
+                            "downlink": "1000000 Kbps"
+                        },
+                        "authDefQos": {
+                            "5qi": 9,
+                            "arp": {
+                                "priorityLevel": 8,
+                                "preemptCap": "NOT_PREEMPT",
+                                "preemptVuln": "NOT_PREEMPTABLE"
+                            },
+                            "priorityLevel": 8
+                        },
+                        "sessRuleId": "1"
+                    }
+                },
+                "suppFeat": "4000000"
+            }
+        },
+        {
+            "num": "401",
+            "src": "127.0.0.4",
+            "dst": "127.0.0.7",
+            "protocol": "PFCP",
+            "length": 640,
+            "src_port": "8805",
+            "dst_port": "8805",
+            "payload": {
+                "flags": "0x00000021",
+                "version": "1",
+                "spare_b4": "0",
+                "spare_b3": "0",
+                "spare_b2": "0",
+                "mp_flag": "0",
+                "s": "1",
+                "msg_type": "50",
+                "length": "592",
+                "seid": "0x0000000000000000",
+                "seqno": "17699",
+                "spare_oct": "0",
+                "ie_type": "60",
+                "ie_len": "5",
+                "spare_h1": "0",
+                "node_id_type": "0",
+                "node_id_ipv4": "127.0.0.4",
+                "f_seid_flags": "0x00000002",
+                "spare_b7": "0",
+                "spare_b6": "0",
+                "spare_b5": "0",
+                "f_seid_flags_v4": "1",
+                "f_seid_flags_v6": "0",
+                "f_seid_ipv4": "127.0.0.4",
+                "pdr_id": "1",
+                "precedence": "65535",
+                "source_interface": "1",
+                "network_instance": "internet",
+                "ue_ip_address_flags": "0x00000006",
+                "spare_b7_b4": "0",
+                "ue_ip_address_flag_v6d": "0",
+                "ue_ip_address_flag_sd": "1",
+                "ue_ip_address_flag_v4": "1",
+                "ue_ip_address_flag_v6": "0",
+                "ue_ip_addr_ipv4": "10.46.0.4",
+                "tgpp_interface_type": "17",
+                "far_id_flg": "0",
+                "far_id": "1",
+                "urr_id_flg": "0",
+                "urr_id": "1",
+                "qer_id_flg": "0",
+                "qer_id": "1",
+                "f_teid_flags": "0x0000000f",
+                "fteid_flg_spare": "0",
+                "f_teid_flags_ch_id": "1",
+                "f_teid_flags_ch": "1",
+                "f_teid_flags_v6": "1",
+                "f_teid_flags_v4": "1",
+                "f_teid_choose_id": "05",
+                "spare_b7_b6": "0",
+                "qfi_value": "0x00000001",
+                "out_hdr_desc": "0",
+                "sdf_filter_flags": "0x00000001",
+                "sdf_filter_bid": "0",
+                "sdf_filter_fl": "0",
+                "sdf_filter_spi": "0",
+                "sdf_filter_ttc": "0",
+                "sdf_filter_fd": "1",
+                "spare": "0",
+                "flow_desc_len": "42",
+                "flow_desc": "permit out 58 from ff02::2/128 to assigned",
+                "apply_action_flags": "0x0000000c",
+                "spare_b7_b5": "0",
+                "apply_action_dupl": "0",
+                "apply_action_nocp": "1",
+                "apply_action_buff": "1",
+                "apply_action_forw": "0",
+                "apply_action_drop": "0",
+                "_ws_expert": "Expert Info (Note/Undecoded): IE data not decoded by WS yet",
+                "ie_data_not_decoded": "IE data not decoded by WS yet",
+                "_ws_expert_message": "IE data not decoded by WS yet",
+                "_ws_expert_severity": "4194304",
+                "_ws_expert_group": "83886080",
+                "bar_id": "1",
+                "dst_interface": "1",
+                "outer_hdr_desc": "256",
+                "outer_hdr_creation_teid": "0x00000003",
+                "outer_hdr_creation_ipv4": "127.0.0.4",
+                "measurement_method_flags": "0x00000002",
+                "spare_b7_b3": "0",
+                "measurement_method_flags_event": "0",
+                "measurement_method_flags_volume": "1",
+                "measurement_method_flags_durat": "0",
+                "reporting_triggers_flags_liusa": "0",
+                "reporting_triggers_flags_droth": "0",
+                "reporting_triggers_flags_stopt": "0",
+                "reporting_triggers_flags_start": "0",
+                "reporting_triggers_flags_quhti": "0",
+                "reporting_triggers_flags_timth": "0",
+                "reporting_triggers_flags_volth": "1",
+                "reporting_triggers_flags_perio": "0",
+                "reporting_triggers_flags_evequ": "0",
+                "reporting_triggers_flags_eveth": "0",
+                "reporting_triggers_flags_macar": "0",
+                "reporting_triggers_flags_envcl": "0",
+                "reporting_triggers_flags_timqu": "0",
+                "reporting_triggers_flags_volqu": "0",
+                "volume_threshold": "0x00000001",
+                "volume_threshold_flags_dlvol": "0",
+                "volume_threshold_flags_ulvol": "0",
+                "volume_threshold_flags_tovol": "1",
+                "volume_threshold_tovol": "104857600",
+                "gate_status": "0x00000000",
+                "gate_status_ulgate": "0",
+                "ul_mbr": "1000000",
+                "dl_mbr": "1000000",
+                "pdn_type": "1",
+                "user_id_flags": "0x00000003",
+                "user_id_flags_naif": "0",
+                "user_id_flags_msisdnf": "0",
+                "user_id_flags_imeif": "1",
+                "user_id_flags_imsif": "1",
+                "user_id_length_of_imsi": "8",
+                "e212_imsi": "001010200000000",
+                "e212_assoc_imsi": "001010200000000",
+                "e212_mcc": "1",
+                "e212_mnc": "10",
+                "user_id_length_of_imei": "8",
+                "user_id_imei": "1110000000000000",
+                "apn_dnn": "\\x8internet",
+                "ie_not_decoded": "IE not decoded yet(WS:IE id to large)"
+            }
+        },
+        {
+            "num": "402",
+            "src": "127.0.0.7",
+            "dst": "127.0.0.4",
+            "protocol": "PFCP",
+            "length": 160,
+            "src_port": "8805",
+            "dst_port": "8805",
+            "payload": {
+                "flags": "0x00000021",
+                "version": "1",
+                "spare_b4": "0",
+                "spare_b3": "0",
+                "spare_b2": "0",
+                "mp_flag": "0",
+                "s": "1",
+                "msg_type": "51",
+                "length": "112",
+                "seid": "0x00000000000001aa",
+                "seqno": "17699",
+                "spare_oct": "0",
+                "ie_type": "60",
+                "ie_len": "5",
+                "spare_h1": "0",
+                "node_id_type": "0",
+                "node_id_ipv4": "127.0.0.7",
+                "cause": "1",
+                "f_seid_flags": "0x00000002",
+                "spare_b7": "0",
+                "spare_b6": "0",
+                "spare_b5": "0",
+                "f_seid_flags_v4": "1",
+                "f_seid_flags_v6": "0",
+                "f_seid_ipv4": "127.0.0.7",
+                "pdr_id": "2",
+                "f_teid_flags": "0x00000001",
+                "fteid_flg_spare": "0",
+                "f_teid_flags_ch_id": "0",
+                "f_teid_flags_ch": "0",
+                "f_teid_flags_v6": "0",
+                "f_teid_flags_v4": "1",
+                "f_teid_teid": "0x000019ce",
+                "f_teid_ipv4_addr": "10.10.2.5",
+                "response_to": "401",
+                "response_time": "0.000263969"
+            }
+        },
+        {
+            "num": "404",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.200",
+            "protocol": "DATA",
+            "length": 792,
+            "src_port": "40998",
+            "dst_port": "7777",
+            "payload": {
+                "n1MessageContainer": {
+                    "n1MessageClass": "SM",
+                    "n1MessageContent": {
+                        "contentId": "5gnas-sm"
+                    }
+                },
+                "n2InfoContainer": {
+                    "n2InformationClass": "SM",
+                    "smInfo": {
+                        "pduSessionId": 1,
+                        "n2InfoContent": {
+                            "ngapIeType": "PDU_RES_SETUP_REQ",
+                            "ngapData": {
+                                "contentId": "ngap-sm"
+                            }
+                        }
+                    }
+                },
+                "pduSessionId": 1
+            }
+        },
+        {
+            "num": "418",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.5",
+            "protocol": "DATA",
+            "length": 792,
+            "src_port": "33158",
+            "dst_port": "7777",
+            "payload": {
+                "n1MessageContainer": {
+                    "n1MessageClass": "SM",
+                    "n1MessageContent": {
+                        "contentId": "5gnas-sm"
+                    }
+                },
+                "n2InfoContainer": {
+                    "n2InformationClass": "SM",
+                    "smInfo": {
+                        "pduSessionId": 1,
+                        "n2InfoContent": {
+                            "ngapIeType": "PDU_RES_SETUP_REQ",
+                            "ngapData": {
+                                "contentId": "ngap-sm"
+                            }
+                        }
+                    }
+                },
+                "pduSessionId": 1
+            }
+        },
+        {
+            "num": "426",
+            "src": "10.10.2.5",
+            "dst": "10.10.0.5",
+            "protocol": "NGAP",
+            "length": 284,
+            "src_port": "38412",
+            "dst_port": "9487",
+            "payload": {
+                "per_extension_bit": "0",
+                "per_choice_index": "0",
+                "ngap_pdu": "0",
+                "initiatingmessage_element": "initiatingMessage",
+                "procedurecode": "29",
+                "per_enum_index": "0",
+                "criticality": "0",
+                "per_open_type_length": "212",
+                "value_element": "value",
+                "pdusessionresourcesetuprequest_element": "PDUSessionResourceSetupRequest",
+                "per_sequence_of_length": "4",
+                "protocolies": "4",
+                "protocolie_field_element": "ProtocolIE-Field",
+                "id": "10",
+                "amf_ue_ngap_id": "3",
+                "ran_ue_ngap_id": "1",
+                "pdusessionresourcesetuplistsureq": "1",
+                "pdusessionresourcesetupitemsureq_element": "PDUSessionResourceSetupItemSUReq",
+                "per_optional_field_bit": "1",
+                "pdusessionid": "1",
+                "per_octet_string_length": "124",
+                "pdusessionnas_pdu": "7e:02:71:69:6f:3f:03:7e:00:68:01:00:6d:2e:01:01:c2:11:00:09:01:00:06:31:31:01:01:ff:01:06:03:f4:24:03:f4:24:29:05:01:0a:2e:00:04:22:01:01:79:00:06:01:20:41:01:01:09:7b:00:35:80:00:0d:04:08:08:08:08:00:0d:04:08:08:04:04:00:03:10:20:01:48:60:48:60:00:00:00:00:00:00:00:00:88:88:00:03:10:20:01:48:60:48:60:00:00:00:00:00:00:00:00:88:44:25:09:08:69:6e:74:65:72:6e:65:74:12:01",
+                "nas_5gs_epd": "126",
+                "nas_5gs_spare_half_octet": "0",
+                "nas_5gs_security_header_type": "2",
+                "nas_5gs_msg_auth_code": "0x71696f3f",
+                "nas_5gs_seq_no": "3",
+                "s_nssai_element": "s-NSSAI",
+                "sst": "01",
+                "pdusessionresourcesetuprequesttransfer": "00:00:04:00:82:00:0a:0c:3b:9a:ca:00:30:3b:9a:ca:00:00:8b:00:0a:01:f0:0a:0a:02:05:00:00:19:ce:00:86:00:01:00:00:88:00:07:00:01:00:00:09:1c:00",
+                "pdusessionresourcesetuprequesttransfer_element": "PDUSessionResourceSetupRequestTransfer",
+                "pdusessionaggregatemaximumbitrate_element": "PDUSessionAggregateMaximumBitRate",
+                "per_extension_present_bit": "0",
+                "pdusessionaggregatemaximumbitratedl": "1000000000",
+                "pdusessionaggregatemaximumbitrateul": "1000000000",
+                "uptransportlayerinformation": "0",
+                "gtptunnel_element": "gTPTunnel",
+                "per_bit_string_length": "32",
+                "transportlayeraddress": "0a:0a:02:05",
+                "transportlayeraddressipv4": "10.10.2.5",
+                "gtp_teid": "00:00:19:ce",
+                "pdusessiontype": "0",
+                "qosflowsetuprequestlist": "1",
+                "qosflowsetuprequestitem_element": "QosFlowSetupRequestItem",
+                "qosflowidentifier": "1",
+                "qosflowlevelqosparameters_element": "qosFlowLevelQosParameters",
+                "qoscharacteristics": "0",
+                "nondynamic5qi_element": "nonDynamic5QI",
+                "fiveqi": "9",
+                "allocationandretentionpriority_element": "allocationAndRetentionPriority",
+                "prioritylevelarp": "8",
+                "pre_emptioncapability": "0",
+                "pre_emptionvulnerability": "0",
+                "ueaggregatemaximumbitrate_element": "UEAggregateMaximumBitRate",
+                "ueaggregatemaximumbitratedl": "1000000000",
+                "ueaggregatemaximumbitrateul": "1000000000"
+            }
+        },
+        {
+            "num": "429",
+            "src": "127.0.0.5",
+            "dst": "127.0.0.1",
+            "protocol": "DATA",
+            "length": 113,
+            "src_port": "7777",
+            "dst_port": "33158",
+            "payload": {
+                "cause": "N1_N2_TRANSFER_INITIATED"
+            }
+        },
+        {
+            "num": "431",
+            "src": "10.10.0.5",
+            "dst": "10.10.2.5",
+            "protocol": "NGAP",
+            "length": 120,
+            "src_port": "9487",
+            "dst_port": "38412",
+            "payload": {
+                "per_extension_bit": "0",
+                "per_choice_index": "1",
+                "ngap_pdu": "1",
+                "successfuloutcome_element": "successfulOutcome",
+                "procedurecode": "29",
+                "per_enum_index": "0",
+                "criticality": "0",
+                "per_open_type_length": "36",
+                "value_element": "value",
+                "pdusessionresourcesetupresponse_element": "PDUSessionResourceSetupResponse",
+                "per_sequence_of_length": "3",
+                "protocolies": "3",
+                "protocolie_field_element": "ProtocolIE-Field",
+                "id": "10",
+                "amf_ue_ngap_id": "3",
+                "ran_ue_ngap_id": "1",
+                "pdusessionresourcesetuplistsures": "1",
+                "pdusessionresourcesetupitemsures_element": "PDUSessionResourceSetupItemSURes",
+                "per_optional_field_bit": "0",
+                "pdusessionid": "1",
+                "per_octet_string_length": "13",
+                "pdusessionresourcesetupresponsetransfer": "00:03:e0:0a:0a:00:05:00:00:00:01:00:01",
+                "pdusessionresourcesetupresponsetransfer_element": "PDUSessionResourceSetupResponseTransfer",
+                "dlqosflowpertnlinformation_element": "dLQosFlowPerTNLInformation",
+                "uptransportlayerinformation": "0",
+                "gtptunnel_element": "gTPTunnel",
+                "per_extension_present_bit": "0",
+                "per_bit_string_length": "32",
+                "transportlayeraddress": "0a:0a:00:05",
+                "transportlayeraddressipv4": "10.10.0.5",
+                "gtp_teid": "00:00:00:01",
+                "associatedqosflowlist": "1",
+                "associatedqosflowitem_element": "AssociatedQosFlowItem",
+                "qosflowidentifier": "1"
+            }
+        },
+        {
+            "num": "433",
+            "src": "10.10.0.5",
+            "dst": "10.10.2.5",
+            "protocol": "SCTP",
+            "length": 120,
+            "src_port": "9487",
+            "dst_port": "38412",
+            "payload": {
+                "srcport": "9487",
+                "dstport": "38412",
+                "verification_tag": "0x4e19ce59",
+                "assoc_index": "65535",
+                "port": "9487",
+                "checksum": "0xcac66b37",
+                "checksum_status": "2",
+                "chunk_type": "3",
+                "chunk_bit_1": "0",
+                "chunk_bit_2": "0",
+                "chunk_flags": "0x00000000",
+                "sack_nounce_sum": "0",
+                "chunk_length": "16",
+                "sack_cumulative_tsn_ack": "3584266534",
+                "sack_a_rwnd": "106496",
+                "sack_number_of_gap_blocks": "0",
+                "sack_number_of_duplicated_tsns": "0",
+                "data_i_bit": "0",
+                "data_u_bit": "0",
+                "data_b_bit": "1",
+                "data_e_bit": "1",
+                "data_tsn": "638823496",
+                "retransmission": "431",
+                "_ws_expert": "Expert Info (Note/Sequence): Retransmitted TSN",
+                "retransmission_expert": "Retransmitted TSN",
+                "_ws_expert_message": "Retransmitted TSN",
+                "_ws_expert_severity": "4194304",
+                "_ws_expert_group": "33554432",
+                "retransmission_time": "0.000181692",
+                "data_sid": "0x00000000",
+                "data_ssn": "8",
+                "data_payload_proto_id": "60"
+            }
+        },
+        {
+            "num": "434",
+            "src": "10.10.2.5",
+            "dst": "10.10.0.5",
+            "protocol": "SCTP",
+            "length": 68,
+            "src_port": "38412",
+            "dst_port": "9487",
+            "payload": {
+                "srcport": "38412",
+                "dstport": "9487",
+                "verification_tag": "0x9e382d67",
+                "assoc_index": "65535",
+                "port": "38412",
+                "checksum": "0xec7a0bb9",
+                "checksum_status": "2",
+                "chunk_type": "3",
+                "chunk_bit_1": "0",
+                "chunk_bit_2": "0",
+                "chunk_flags": "0x00000000",
+                "sack_nounce_sum": "0",
+                "chunk_length": "20",
+                "sack_cumulative_tsn_ack": "638823496",
+                "ack": "638823496",
+                "ack_frame": "431",
+                "sack_rtt": "0.000197618",
+                "sack_a_rwnd": "106456",
+                "sack_number_of_gap_blocks": "0",
+                "sack_number_of_duplicated_tsns": "1",
+                "sack_duplicate_tsn": "638823496"
+            }
+        },
+        {
+            "num": "436",
+            "src": "127.0.0.200",
+            "dst": "127.0.0.1",
+            "protocol": "DATA",
+            "length": 113,
+            "src_port": "7777",
+            "dst_port": "40998",
+            "payload": {
+                "cause": "N1_N2_TRANSFER_INITIATED"
+            }
+        },
+        {
+            "num": "438",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.200",
+            "protocol": "DATA",
+            "length": 355,
+            "src_port": "40996",
+            "dst_port": "7777",
+            "payload": {
+                "n2SmInfo": {
+                    "contentId": "ngap-sm"
+                },
+                "n2SmInfoType": "PDU_RES_SETUP_RSP"
+            }
+        },
+        {
+            "num": "442",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.4",
+            "protocol": "TCP",
+            "length": 355,
+            "src_port": "57006",
+            "dst_port": "80",
+            "payload": {
+                "n2SmInfo": {
+                    "contentId": "ngap-sm"
+                },
+                "n2SmInfoType": "PDU_RES_SETUP_RSP"
+            }
+        },
+        {
+            "num": "444",
+            "src": "127.0.0.4",
+            "dst": "127.0.0.7",
+            "protocol": "PFCP",
+            "length": 119,
+            "src_port": "8805",
+            "dst_port": "8805",
+            "payload": {
+                "flags": "0x00000021",
+                "version": "1",
+                "spare_b4": "0",
+                "spare_b3": "0",
+                "spare_b2": "0",
+                "mp_flag": "0",
+                "s": "1",
+                "msg_type": "52",
+                "length": "71",
+                "seid": "0x0000000000000cba",
+                "seqno": "17700",
+                "spare_oct": "0",
+                "ie_type": "10",
+                "ie_len": "55",
+                "far_id_flg": "0",
+                "far_id": "1",
+                "apply_action_flags": "0x00000002",
+                "spare_b7_b5": "0",
+                "apply_action_dupl": "0",
+                "apply_action_nocp": "0",
+                "apply_action_buff": "0",
+                "apply_action_forw": "1",
+                "apply_action_drop": "0",
+                "_ws_expert": "Expert Info (Note/Undecoded): IE data not decoded by WS yet",
+                "ie_data_not_decoded": "IE data not decoded by WS yet",
+                "_ws_expert_message": "IE data not decoded by WS yet",
+                "_ws_expert_severity": "4194304",
+                "_ws_expert_group": "83886080",
+                "spare_h1": "0",
+                "dst_interface": "0",
+                "network_instance": "internet",
+                "outer_hdr_desc": "256",
+                "outer_hdr_creation_teid": "0x00000001",
+                "outer_hdr_creation_ipv4": "10.10.0.5",
+                "tgpp_interface_type": "11"
+            }
+        },
+        {
+            "num": "445",
+            "src": "127.0.0.7",
+            "dst": "127.0.0.4",
+            "protocol": "PFCP",
+            "length": 65,
+            "src_port": "8805",
+            "dst_port": "8805",
+            "payload": {
+                "flags": "0x00000021",
+                "version": "1",
+                "spare_b4": "0",
+                "spare_b3": "0",
+                "spare_b2": "0",
+                "mp_flag": "0",
+                "s": "1",
+                "msg_type": "53",
+                "length": "17",
+                "seid": "0x00000000000001aa",
+                "seqno": "17700",
+                "spare_oct": "0",
+                "ie_type": "19",
+                "ie_len": "1",
+                "cause": "1",
+                "response_to": "444",
+                "response_time": "0.000104841"
+            }
+        },
+        {
+            "num": "450",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.12",
+            "protocol": "TCP",
+            "length": 225,
+            "src_port": "38770",
+            "dst_port": "80",
+            "payload": {
+                "smfInstanceId": "f199fa48-6386-41f0-8340-55015ab1938d",
+                "pduSessionId": 1,
+                "singleNssai": {
+                    "sst": 1
+                },
+                "dnn": "internet",
+                "plmnId": {
+                    "mcc": "001",
+                    "mnc": "01"
+                }
+            }
+        },
+        {
+            "num": "453",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.200",
+            "protocol": "DATA",
+            "length": 225,
+            "src_port": "40968",
+            "dst_port": "7777",
+            "payload": {
+                "smfInstanceId": "f199fa48-6386-41f0-8340-55015ab1938d",
+                "pduSessionId": 1,
+                "singleNssai": {
+                    "sst": 1
+                },
+                "dnn": "internet",
+                "plmnId": {
+                    "mcc": "001",
+                    "mnc": "01"
+                }
+            }
+        },
+        {
+            "num": "456",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.20",
+            "protocol": "DATA",
+            "length": 225,
+            "src_port": "40712",
+            "dst_port": "7777",
+            "payload": {
+                "smfInstanceId": "f199fa48-6386-41f0-8340-55015ab1938d",
+                "pduSessionId": 1,
+                "singleNssai": {
+                    "sst": 1
+                },
+                "dnn": "internet",
+                "plmnId": {
+                    "mcc": "001",
+                    "mnc": "01"
+                }
+            }
+        },
+        {
+            "num": "461",
+            "src": "127.0.0.12",
+            "dst": "127.0.0.1",
+            "protocol": "TCP",
+            "length": 225,
+            "src_port": "80",
+            "dst_port": "38770",
+            "payload": {
+                "smfInstanceId": "f199fa48-6386-41f0-8340-55015ab1938d",
+                "pduSessionId": 1,
+                "singleNssai": {
+                    "sst": 1
+                },
+                "dnn": "internet",
+                "plmnId": {
+                    "mcc": "001",
+                    "mnc": "01"
+                }
+            }
+        },
+        {
+            "num": "476",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.200",
+            "protocol": "DATA",
+            "length": 177,
+            "src_port": "40936",
+            "dst_port": "7777",
+            "payload": [
+                {
+                    "op": "replace",
+                    "path": "/nfStatus",
+                    "value": "REGISTERED"
+                },
+                {
+                    "op": "replace",
+                    "path": "/load",
+                    "value": 0
+                }
+            ]
+        },
+        {
+            "num": "479",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.10",
+            "protocol": "TCP",
+            "length": 177,
+            "src_port": "37044",
+            "dst_port": "80",
+            "payload": [
+                {
+                    "op": "replace",
+                    "path": "/nfStatus",
+                    "value": "REGISTERED"
+                },
+                {
+                    "op": "replace",
+                    "path": "/load",
+                    "value": 0
+                }
+            ]
+        },
+        {
+            "num": "486",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.200",
+            "protocol": "DATA",
+            "length": 177,
+            "src_port": "40964",
+            "dst_port": "7777",
+            "payload": [
+                {
+                    "op": "replace",
+                    "path": "/nfStatus",
+                    "value": "REGISTERED"
+                },
+                {
+                    "op": "replace",
+                    "path": "/load",
+                    "value": 0
+                }
+            ]
+        },
+        {
+            "num": "489",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.10",
+            "protocol": "TCP",
+            "length": 177,
+            "src_port": "37044",
+            "dst_port": "80",
+            "payload": [
+                {
+                    "op": "replace",
+                    "path": "/nfStatus",
+                    "value": "REGISTERED"
+                },
+                {
+                    "op": "replace",
+                    "path": "/load",
+                    "value": 0
+                }
+            ]
+        },
+        {
+            "num": "496",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.10",
+            "protocol": "TCP",
+            "length": 177,
+            "src_port": "37044",
+            "dst_port": "80",
+            "payload": [
+                {
+                    "op": "replace",
+                    "path": "/nfStatus",
+                    "value": "REGISTERED"
+                },
+                {
+                    "op": "replace",
+                    "path": "/load",
+                    "value": 0
+                }
+            ]
+        },
+        {
+            "num": "501",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.200",
+            "protocol": "DATA",
+            "length": 177,
+            "src_port": "40998",
+            "dst_port": "7777",
+            "payload": [
+                {
+                    "op": "replace",
+                    "path": "/nfStatus",
+                    "value": "REGISTERED"
+                },
+                {
+                    "op": "replace",
+                    "path": "/load",
+                    "value": 0
+                }
+            ]
+        },
+        {
+            "num": "504",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.10",
+            "protocol": "TCP",
+            "length": 177,
+            "src_port": "37044",
+            "dst_port": "80",
+            "payload": [
+                {
+                    "op": "replace",
+                    "path": "/nfStatus",
+                    "value": "REGISTERED"
+                },
+                {
+                    "op": "replace",
+                    "path": "/load",
+                    "value": 0
+                }
+            ]
+        },
+        {
+            "num": "511",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.200",
+            "protocol": "DATA",
+            "length": 177,
+            "src_port": "40942",
+            "dst_port": "7777",
+            "payload": [
+                {
+                    "op": "replace",
+                    "path": "/nfStatus",
+                    "value": "REGISTERED"
+                },
+                {
+                    "op": "replace",
+                    "path": "/load",
+                    "value": 1
+                }
+            ]
+        },
+        {
+            "num": "514",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.10",
+            "protocol": "TCP",
+            "length": 177,
+            "src_port": "37044",
+            "dst_port": "80",
+            "payload": [
+                {
+                    "op": "replace",
+                    "path": "/nfStatus",
+                    "value": "REGISTERED"
+                },
+                {
+                    "op": "replace",
+                    "path": "/load",
+                    "value": 1
+                }
+            ]
+        },
+        {
+            "num": "522",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.200",
+            "protocol": "DATA",
+            "length": 177,
+            "src_port": "40956",
+            "dst_port": "7777",
+            "payload": [
+                {
+                    "op": "replace",
+                    "path": "/nfStatus",
+                    "value": "REGISTERED"
+                },
+                {
+                    "op": "replace",
+                    "path": "/load",
+                    "value": 0
+                }
+            ]
+        },
+        {
+            "num": "525",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.10",
+            "protocol": "TCP",
+            "length": 177,
+            "src_port": "37044",
+            "dst_port": "80",
+            "payload": [
+                {
+                    "op": "replace",
+                    "path": "/nfStatus",
+                    "value": "REGISTERED"
+                },
+                {
+                    "op": "replace",
+                    "path": "/load",
+                    "value": 0
+                }
+            ]
+        },
+        {
+            "num": "532",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.200",
+            "protocol": "DATA",
+            "length": 177,
+            "src_port": "40968",
+            "dst_port": "7777",
+            "payload": [
+                {
+                    "op": "replace",
+                    "path": "/nfStatus",
+                    "value": "REGISTERED"
+                },
+                {
+                    "op": "replace",
+                    "path": "/load",
+                    "value": 0
+                }
+            ]
+        },
+        {
+            "num": "535",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.10",
+            "protocol": "TCP",
+            "length": 177,
+            "src_port": "37044",
+            "dst_port": "80",
+            "payload": [
+                {
+                    "op": "replace",
+                    "path": "/nfStatus",
+                    "value": "REGISTERED"
+                },
+                {
+                    "op": "replace",
+                    "path": "/load",
+                    "value": 0
+                }
+            ]
+        },
+        {
+            "num": "541",
+            "src": "10.10.2.5",
+            "dst": "10.10.0.5",
+            "protocol": "SCTP",
+            "length": 108,
+            "src_port": "38412",
+            "dst_port": "9487",
+            "payload": {
+                "srcport": "38412",
+                "dstport": "9487",
+                "verification_tag": "0x9e382d67",
+                "assoc_index": "65535",
+                "port": "38412",
+                "checksum": "0x5b96dfc6",
+                "checksum_status": "2",
+                "chunk_type": "4",
+                "chunk_bit_1": "0",
+                "chunk_bit_2": "0",
+                "chunk_flags": "0x00000000",
+                "chunk_length": "60",
+                "parameter_type": "0x00000001",
+                "parameter_bit_1": "0",
+                "parameter_bit_2": "0",
+                "parameter_length": "56",
+                "parameter_heartbeat_information": "02:00:25:0f:0a:0a:00:05:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:a4:a4:0b:01:00:00:00:a3:e2:d4:76:0e:18:44:04:00:00:00:00:00:00:00:00"
+            }
+        },
+        {
+            "num": "542",
+            "src": "10.10.0.5",
+            "dst": "10.10.2.5",
+            "protocol": "SCTP",
+            "length": 108,
+            "src_port": "9487",
+            "dst_port": "38412",
+            "payload": {
+                "srcport": "9487",
+                "dstport": "38412",
+                "verification_tag": "0x4e19ce59",
+                "assoc_index": "65535",
+                "port": "9487",
+                "checksum": "0xe4c819ed",
+                "checksum_status": "2",
+                "chunk_type": "5",
+                "chunk_bit_1": "0",
+                "chunk_bit_2": "0",
+                "chunk_flags": "0x00000000",
+                "chunk_length": "60",
+                "parameter_type": "0x00000001",
+                "parameter_bit_1": "0",
+                "parameter_bit_2": "0",
+                "parameter_length": "56",
+                "parameter_heartbeat_information": "02:00:25:0f:0a:0a:00:05:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:a4:a4:0b:01:00:00:00:a3:e2:d4:76:0e:18:44:04:00:00:00:00:00:00:00:00"
+            }
+        },
+        {
+            "num": "543",
+            "src": "10.10.0.5",
+            "dst": "10.10.2.5",
+            "protocol": "SCTP",
+            "length": 108,
+            "src_port": "9487",
+            "dst_port": "38412",
+            "payload": {
+                "srcport": "9487",
+                "dstport": "38412",
+                "verification_tag": "0x4e19ce59",
+                "assoc_index": "65535",
+                "port": "9487",
+                "checksum": "0xe4c819ed",
+                "checksum_status": "2",
+                "chunk_type": "5",
+                "chunk_bit_1": "0",
+                "chunk_bit_2": "0",
+                "chunk_flags": "0x00000000",
+                "chunk_length": "60",
+                "parameter_type": "0x00000001",
+                "parameter_bit_1": "0",
+                "parameter_bit_2": "0",
+                "parameter_length": "56",
+                "parameter_heartbeat_information": "02:00:25:0f:0a:0a:00:05:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:a4:a4:0b:01:00:00:00:a3:e2:d4:76:0e:18:44:04:00:00:00:00:00:00:00:00"
+            }
+        },
+        {
+            "num": "556",
+            "src": "127.0.0.7",
+            "dst": "127.0.0.4",
+            "protocol": "PFCP",
+            "length": 60,
+            "src_port": "8805",
+            "dst_port": "8805",
+            "payload": {
+                "flags": "0x00000020",
+                "version": "1",
+                "spare_b4": "0",
+                "spare_b3": "0",
+                "spare_b2": "0",
+                "mp_flag": "0",
+                "s": "0",
+                "msg_type": "1",
+                "length": "12",
+                "seqno": "17692",
+                "spare_oct": "0",
+                "ie_type": "96",
+                "ie_len": "4",
+                "recovery_time_stamp": "Jul 18, 2025 11:26:07.000000000 CST"
+            }
+        },
+        {
+            "num": "557",
+            "src": "127.0.0.4",
+            "dst": "127.0.0.7",
+            "protocol": "PFCP",
+            "length": 60,
+            "src_port": "8805",
+            "dst_port": "8805",
+            "payload": {
+                "flags": "0x00000020",
+                "version": "1",
+                "spare_b4": "0",
+                "spare_b3": "0",
+                "spare_b2": "0",
+                "mp_flag": "0",
+                "s": "0",
+                "msg_type": "2",
+                "length": "12",
+                "seqno": "17692",
+                "spare_oct": "0",
+                "ie_type": "96",
+                "ie_len": "4",
+                "recovery_time_stamp": "Jul 18, 2025 11:26:07.000000000 CST",
+                "response_to": "556",
+                "response_time": "0.000347855"
+            }
+        },
+        {
+            "num": "558",
+            "src": "127.0.0.4",
+            "dst": "127.0.0.7",
+            "protocol": "PFCP",
+            "length": 60,
+            "src_port": "8805",
+            "dst_port": "8805",
+            "payload": {
+                "flags": "0x00000020",
+                "version": "1",
+                "spare_b4": "0",
+                "spare_b3": "0",
+                "spare_b2": "0",
+                "mp_flag": "0",
+                "s": "0",
+                "msg_type": "1",
+                "length": "12",
+                "seqno": "17701",
+                "spare_oct": "0",
+                "ie_type": "96",
+                "ie_len": "4",
+                "recovery_time_stamp": "Jul 18, 2025 11:26:07.000000000 CST"
+            }
+        },
+        {
+            "num": "559",
+            "src": "127.0.0.7",
+            "dst": "127.0.0.4",
+            "protocol": "PFCP",
+            "length": 60,
+            "src_port": "8805",
+            "dst_port": "8805",
+            "payload": {
+                "flags": "0x00000020",
+                "version": "1",
+                "spare_b4": "0",
+                "spare_b3": "0",
+                "spare_b2": "0",
+                "mp_flag": "0",
+                "s": "0",
+                "msg_type": "2",
+                "length": "12",
+                "seqno": "17701",
+                "spare_oct": "0",
+                "ie_type": "96",
+                "ie_len": "4",
+                "recovery_time_stamp": "Jul 18, 2025 11:26:07.000000000 CST",
+                "response_to": "558",
+                "response_time": "0.000173059"
+            }
+        },
+        {
+            "num": "561",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.200",
+            "protocol": "DATA",
+            "length": 177,
+            "src_port": "40972",
+            "dst_port": "7777",
+            "payload": [
+                {
+                    "op": "replace",
+                    "path": "/nfStatus",
+                    "value": "REGISTERED"
+                },
+                {
+                    "op": "replace",
+                    "path": "/load",
+                    "value": 0
+                }
+            ]
+        },
+        {
+            "num": "564",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.10",
+            "protocol": "TCP",
+            "length": 177,
+            "src_port": "37044",
+            "dst_port": "80",
+            "payload": [
+                {
+                    "op": "replace",
+                    "path": "/nfStatus",
+                    "value": "REGISTERED"
+                },
+                {
+                    "op": "replace",
+                    "path": "/load",
+                    "value": 0
+                }
+            ]
+        },
+        {
+            "num": "571",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.200",
+            "protocol": "DATA",
+            "length": 177,
+            "src_port": "40994",
+            "dst_port": "7777",
+            "payload": [
+                {
+                    "op": "replace",
+                    "path": "/nfStatus",
+                    "value": "REGISTERED"
+                },
+                {
+                    "op": "replace",
+                    "path": "/load",
+                    "value": 0
+                }
+            ]
+        },
+        {
+            "num": "574",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.10",
+            "protocol": "TCP",
+            "length": 177,
+            "src_port": "37044",
+            "dst_port": "80",
+            "payload": [
+                {
+                    "op": "replace",
+                    "path": "/nfStatus",
+                    "value": "REGISTERED"
+                },
+                {
+                    "op": "replace",
+                    "path": "/load",
+                    "value": 0
+                }
+            ]
+        },
+        {
+            "num": "581",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.200",
+            "protocol": "DATA",
+            "length": 177,
+            "src_port": "40996",
+            "dst_port": "7777",
+            "payload": [
+                {
+                    "op": "replace",
+                    "path": "/nfStatus",
+                    "value": "REGISTERED"
+                },
+                {
+                    "op": "replace",
+                    "path": "/load",
+                    "value": 0
+                }
+            ]
+        },
+        {
+            "num": "584",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.10",
+            "protocol": "TCP",
+            "length": 177,
+            "src_port": "37044",
+            "dst_port": "80",
+            "payload": [
+                {
+                    "op": "replace",
+                    "path": "/nfStatus",
+                    "value": "REGISTERED"
+                },
+                {
+                    "op": "replace",
+                    "path": "/load",
+                    "value": 0
+                }
+            ]
+        },
+        {
+            "num": "652",
+            "src": "10.10.2.5",
+            "dst": "10.10.0.5",
+            "protocol": "SCTP",
+            "length": 108,
+            "src_port": "38412",
+            "dst_port": "9487",
+            "payload": {
+                "srcport": "38412",
+                "dstport": "9487",
+                "verification_tag": "0x9e382d67",
+                "assoc_index": "65535",
+                "port": "38412",
+                "checksum": "0xaf2f69c9",
+                "checksum_status": "2",
+                "chunk_type": "4",
+                "chunk_bit_1": "0",
+                "chunk_bit_2": "0",
+                "chunk_flags": "0x00000000",
+                "chunk_length": "60",
+                "parameter_type": "0x00000001",
+                "parameter_bit_1": "0",
+                "parameter_bit_2": "0",
+                "parameter_length": "56",
+                "parameter_heartbeat_information": "02:00:25:0f:0a:0a:00:05:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:be:a4:0b:01:00:00:00:a3:e2:d4:76:0e:18:44:04:00:00:00:00:00:00:00:00"
+            }
+        },
+        {
+            "num": "653",
+            "src": "10.10.0.5",
+            "dst": "10.10.2.5",
+            "protocol": "SCTP",
+            "length": 108,
+            "src_port": "9487",
+            "dst_port": "38412",
+            "payload": {
+                "srcport": "9487",
+                "dstport": "38412",
+                "verification_tag": "0x4e19ce59",
+                "assoc_index": "65535",
+                "port": "9487",
+                "checksum": "0x1071afe2",
+                "checksum_status": "2",
+                "chunk_type": "5",
+                "chunk_bit_1": "0",
+                "chunk_bit_2": "0",
+                "chunk_flags": "0x00000000",
+                "chunk_length": "60",
+                "parameter_type": "0x00000001",
+                "parameter_bit_1": "0",
+                "parameter_bit_2": "0",
+                "parameter_length": "56",
+                "parameter_heartbeat_information": "02:00:25:0f:0a:0a:00:05:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:be:a4:0b:01:00:00:00:a3:e2:d4:76:0e:18:44:04:00:00:00:00:00:00:00:00"
+            }
+        },
+        {
+            "num": "654",
+            "src": "10.10.0.5",
+            "dst": "10.10.2.5",
+            "protocol": "SCTP",
+            "length": 108,
+            "src_port": "9487",
+            "dst_port": "38412",
+            "payload": {
+                "srcport": "9487",
+                "dstport": "38412",
+                "verification_tag": "0x4e19ce59",
+                "assoc_index": "65535",
+                "port": "9487",
+                "checksum": "0x1071afe2",
+                "checksum_status": "2",
+                "chunk_type": "5",
+                "chunk_bit_1": "0",
+                "chunk_bit_2": "0",
+                "chunk_flags": "0x00000000",
+                "chunk_length": "60",
+                "parameter_type": "0x00000001",
+                "parameter_bit_1": "0",
+                "parameter_bit_2": "0",
+                "parameter_length": "56",
+                "parameter_heartbeat_information": "02:00:25:0f:0a:0a:00:05:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:00:be:a4:0b:01:00:00:00:a3:e2:d4:76:0e:18:44:04:00:00:00:00:00:00:00:00"
+            }
+        },
+        {
+            "num": "656",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.200",
+            "protocol": "DATA",
+            "length": 177,
+            "src_port": "40936",
+            "dst_port": "7777",
+            "payload": [
+                {
+                    "op": "replace",
+                    "path": "/nfStatus",
+                    "value": "REGISTERED"
+                },
+                {
+                    "op": "replace",
+                    "path": "/load",
+                    "value": 0
+                }
+            ]
+        },
+        {
+            "num": "659",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.10",
+            "protocol": "TCP",
+            "length": 177,
+            "src_port": "37044",
+            "dst_port": "80",
+            "payload": [
+                {
+                    "op": "replace",
+                    "path": "/nfStatus",
+                    "value": "REGISTERED"
+                },
+                {
+                    "op": "replace",
+                    "path": "/load",
+                    "value": 0
+                }
+            ]
+        },
+        {
+            "num": "666",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.200",
+            "protocol": "DATA",
+            "length": 177,
+            "src_port": "40964",
+            "dst_port": "7777",
+            "payload": [
+                {
+                    "op": "replace",
+                    "path": "/nfStatus",
+                    "value": "REGISTERED"
+                },
+                {
+                    "op": "replace",
+                    "path": "/load",
+                    "value": 0
+                }
+            ]
+        },
+        {
+            "num": "669",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.10",
+            "protocol": "TCP",
+            "length": 177,
+            "src_port": "37044",
+            "dst_port": "80",
+            "payload": [
+                {
+                    "op": "replace",
+                    "path": "/nfStatus",
+                    "value": "REGISTERED"
+                },
+                {
+                    "op": "replace",
+                    "path": "/load",
+                    "value": 0
+                }
+            ]
+        },
+        {
+            "num": "676",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.10",
+            "protocol": "TCP",
+            "length": 177,
+            "src_port": "37044",
+            "dst_port": "80",
+            "payload": [
+                {
+                    "op": "replace",
+                    "path": "/nfStatus",
+                    "value": "REGISTERED"
+                },
+                {
+                    "op": "replace",
+                    "path": "/load",
+                    "value": 0
+                }
+            ]
+        },
+        {
+            "num": "681",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.200",
+            "protocol": "DATA",
+            "length": 177,
+            "src_port": "40998",
+            "dst_port": "7777",
+            "payload": [
+                {
+                    "op": "replace",
+                    "path": "/nfStatus",
+                    "value": "REGISTERED"
+                },
+                {
+                    "op": "replace",
+                    "path": "/load",
+                    "value": 0
+                }
+            ]
+        },
+        {
+            "num": "684",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.10",
+            "protocol": "TCP",
+            "length": 177,
+            "src_port": "37044",
+            "dst_port": "80",
+            "payload": [
+                {
+                    "op": "replace",
+                    "path": "/nfStatus",
+                    "value": "REGISTERED"
+                },
+                {
+                    "op": "replace",
+                    "path": "/load",
+                    "value": 0
+                }
+            ]
+        },
+        {
+            "num": "691",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.200",
+            "protocol": "DATA",
+            "length": 177,
+            "src_port": "40942",
+            "dst_port": "7777",
+            "payload": [
+                {
+                    "op": "replace",
+                    "path": "/nfStatus",
+                    "value": "REGISTERED"
+                },
+                {
+                    "op": "replace",
+                    "path": "/load",
+                    "value": 1
+                }
+            ]
+        },
+        {
+            "num": "694",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.10",
+            "protocol": "TCP",
+            "length": 177,
+            "src_port": "37044",
+            "dst_port": "80",
+            "payload": [
+                {
+                    "op": "replace",
+                    "path": "/nfStatus",
+                    "value": "REGISTERED"
+                },
+                {
+                    "op": "replace",
+                    "path": "/load",
+                    "value": 1
+                }
+            ]
+        },
+        {
+            "num": "701",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.200",
+            "protocol": "DATA",
+            "length": 177,
+            "src_port": "40956",
+            "dst_port": "7777",
+            "payload": [
+                {
+                    "op": "replace",
+                    "path": "/nfStatus",
+                    "value": "REGISTERED"
+                },
+                {
+                    "op": "replace",
+                    "path": "/load",
+                    "value": 0
+                }
+            ]
+        },
+        {
+            "num": "704",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.10",
+            "protocol": "TCP",
+            "length": 177,
+            "src_port": "37044",
+            "dst_port": "80",
+            "payload": [
+                {
+                    "op": "replace",
+                    "path": "/nfStatus",
+                    "value": "REGISTERED"
+                },
+                {
+                    "op": "replace",
+                    "path": "/load",
+                    "value": 0
+                }
+            ]
+        },
+        {
+            "num": "711",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.200",
+            "protocol": "DATA",
+            "length": 177,
+            "src_port": "40968",
+            "dst_port": "7777",
+            "payload": [
+                {
+                    "op": "replace",
+                    "path": "/nfStatus",
+                    "value": "REGISTERED"
+                },
+                {
+                    "op": "replace",
+                    "path": "/load",
+                    "value": 0
+                }
+            ]
+        },
+        {
+            "num": "714",
+            "src": "127.0.0.1",
+            "dst": "127.0.0.10",
+            "protocol": "TCP",
+            "length": 177,
+            "src_port": "37044",
+            "dst_port": "80",
+            "payload": [
+                {
+                    "op": "replace",
+                    "path": "/nfStatus",
+                    "value": "REGISTERED"
+                },
+                {
+                    "op": "replace",
+                    "path": "/load",
+                    "value": 0
+                }
+            ]
+        }
+    ]
+}
