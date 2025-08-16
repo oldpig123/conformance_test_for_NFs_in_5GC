@@ -9,7 +9,7 @@ from neo4j import GraphDatabase
 # docx_file_path = "3GPP/33501-j30_new.docx" # Path to the DOCX file
 docx_file_path = [
     "3GPP/33501-j30_new.docx",  # Path to the DOCX file
-    "3GPP/23502-j40.docx"
+    "3GPP/23502-j40_new.docx"
 ]
 
 NEO4J_URI = "bolt://localhost:7687"  # Neo4j connection URI
@@ -20,7 +20,7 @@ class TGPP_KG_Builder:
     def __init__(self, neo4j_uri=NEO4J_URI, neo4j_user=NEO4J_USER, neo4j_password=NEO4J_PASSWORD):
         print("Initializing 3GPP Knowledge Graph Builder...")
         # Load NLP model
-        self.nlp = spacy.load("en_core_web_sm")
+        self.nlp = spacy.load("en_core_web_trf")
         # Load embeddings model
         self.model = SentenceTransformer('Linq-AI-Research/Linq-Embed-Mistral')
         # Connect to Neo4j database
