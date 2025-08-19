@@ -22,7 +22,8 @@ class TGPP_KG_Builder:
         # Load NLP model
         self.nlp = spacy.load("en_core_web_trf")
         # Load embeddings model
-        self.model = SentenceTransformer('Linq-AI-Research/Linq-Embed-Mistral')
+        # self.model = SentenceTransformer('Linq-AI-Research/Linq-Embed-Mistral')
+        self.model = SentenceTransformer('Qwen/Qwen3-Embedding-8B')
         # Connect to Neo4j database
         self.driver = GraphDatabase.driver(neo4j_uri, auth=(neo4j_user, neo4j_password))
         print("Initialization complete.")
