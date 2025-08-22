@@ -22,8 +22,9 @@ class TGPP_KG_Builder:
         # Load NLP model
         self.nlp = spacy.load("en_core_web_trf")
         # Load embeddings model
-        # self.model = SentenceTransformer('Linq-AI-Research/Linq-Embed-Mistral')
         self.model = SentenceTransformer('Qwen/Qwen3-Embedding-8B')
+        self.model_1 = SentenceTransformer('Linq-AI-Research/Linq-Embed-Mistral')
+        self.model_2 = SentenceTransformer('Qwen/Qwen3-Embedding-8B')
         # Connect to Neo4j database
         self.driver = GraphDatabase.driver(neo4j_uri, auth=(neo4j_user, neo4j_password))
         print("Initialization complete.")
@@ -129,15 +130,17 @@ class TGPP_KG_Builder:
         #     "embedding": embedding,
         #     "entities": entities
         # }
-        
-        embedding = self.model.encode(requirement['text'], convert_to_tensor=True).tolist()
+
+        embedding_1 = self.model_1.encode(requirement['text'], convert_to_tensor=True).tolist()
+        embedding_2 = self.model_2.encode(requirement['text'], convert_to_tensor=True).tolist()
         doc = self.nlp(requirement['text'])
         entities = list(set([chunk.text for chunk in doc.noun_chunks if len(chunk.text.split()) < 4]))
         
         return {
             "title": requirement['title'],
             "text": requirement['text'],
-            "embedding": embedding,
+            "embedding_1": embedding_1,
+            "embedding_2": embedding_2,
             "entities": entities,
             "source": os.path.basename(source_file)  # Add source file name
         }
