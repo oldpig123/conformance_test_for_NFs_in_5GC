@@ -1,603 +1,632 @@
-import docx
+import os
 import re
-import spacy
-from neo4j import GraphDatabase
-import json
-from typing import Dict, List, Tuple, Set
-from dataclasses import dataclass
 from pathlib import Path
+from typing import List, Dict, Set, Tuple, NamedTuple
+import docx
+from neo4j import GraphDatabase
+import spacy
+from transformers import AutoTokenizer, AutoModelForTokenClassification, AutoModelForSequenceClassification
+from transformers import pipeline
+import torch
+import json
+from collections import defaultdict, Counter
+from tqdm import tqdm
 
-# Configuration
+# --- Configuration ---
 NEO4J_URI = "bolt://localhost:7688"
 NEO4J_USER = "neo4j"
 NEO4J_PASSWORD = "12345678"
+DOCS_PATH = Path("3GPP")
 
-@dataclass
-class Entity:
+# --- Data Structures ---
+class Entity(NamedTuple):
     name: str
     entity_type: str
-    properties: Dict = None
+    properties: Dict = {}
 
-@dataclass
-class Relationship:
-    source: str
-    target: str
+class Relationship(NamedTuple):
+    source_name: str
+    target_name: str
     rel_type: str
-    properties: Dict = None
+    properties: Dict = {}
 
-class GPP_Procedure_KG_Builder:
-    def __init__(self, neo4j_uri=NEO4J_URI, neo4j_user=NEO4J_USER, neo4j_password=NEO4J_PASSWORD):
-        print("Initializing 3GPP Procedure Knowledge Graph Builder...")
+class AIKnowledgeGraphBuilder:
+    """
+    Uses AI/ML models to automatically discover entities and relationships without manual ontology.
+    """
+    def __init__(self, uri, user, password):
+        self.driver = GraphDatabase.driver(uri, auth=(user, password))
         
-        # Initialize NLP
-        self.nlp = spacy.load("en_core_web_trf")
+        # Initialize AI models
+        print("Loading AI models...")
+        self._setup_ai_models()
         
-        # Initialize Neo4j driver
-        self.driver = GraphDatabase.driver(neo4j_uri, auth=(neo4j_user, neo4j_password))
+        # Dynamic ontology learned from documents
+        self.discovered_entities = defaultdict(int)
+        self.discovered_relationships = defaultdict(int)
         
-        # Define our ontology
-        self.setup_ontology()
-        print("Initialization complete.")
+        print("AI KnowledgeGraphBuilder initialized.")
 
-    def setup_ontology(self):
-        """Define the entities and relationships we want to extract"""
+    def _setup_ai_models(self):
+        """Initialize pre-trained AI models for NER and relation extraction."""
+        # Check GPU availability
+        self.device = 0 if torch.cuda.is_available() else -1
+        print(f"Using device: {'GPU' if self.device >= 0 else 'CPU'}")
         
-        # Network Functions in 5G
-        self.network_functions = {
-            'AMF', 'AUSF', 'UDM', 'SEAF', 'UPF', 'SMF', 'NSSF', 'NEF', 'NRF', 'PCF', 'UDSF',
-            'AF', 'SMSF', 'NWDAF', 'CHF', 'BSF', 'LMF', 'GMLC', 'SLF'
-        }
-        
-        # Other actors
-        self.actors = {
-            'UE', 'USIM', 'ME', 'gNB', 'NG-RAN', 'DN', 'HSS', 'HLR'
-        }
-        
-        # Key cryptographic parameters and identifiers
-        self.crypto_params = {
-            'K_AMF', 'K_SEAF', 'K_AUSF', 'K_encr', 'K_int', 'SUCI', 'SUPI', 'RAND', 'AUTN', 
-            'XRES', 'HXRES', 'CK', 'IK', 'RES', 'AUTS', 'SQN', 'MAC', 'AK', 'KAUSF', 'KSEAF',
-            'Kasme', 'NH', 'NCC', 'GUTI', 'TMSI', 'IMSI', 'IMEI'
-        }
-        
-        # Common procedures
-        self.procedures = {
-            '5G-AKA', 'EAP-AKA', 'Registration', 'Deregistration', 'Authentication', 
-            'Key Derivation', 'Handover', 'Service Request', 'PDU Session Establishment',
-            'Initial Context Setup', 'UE Configuration Update'
-        }
-        
-        # Message patterns to look for
-        self.message_patterns = [
-            r'(\w+)\s+(?:Request|Response|Indication|Confirm)',
-            r'N\w+_\w+_\w+',  # Interface messages like Nausf_UEAuthentication_Authenticate
-            r'[A-Z][a-z]+\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*'  # Multi-word messages
-        ]
+        try:
+            # NER model for technical documents with GPU support
+            print("Loading NER pipeline...")
+            self.ner_pipeline = pipeline(
+                "ner", 
+                model="dbmdz/bert-large-cased-finetuned-conll03-english",
+                aggregation_strategy="simple",
+                device=self.device  # Enable GPU if available
+            )
+            
+            # For relationship extraction with GPU support
+            print("Loading relation classification pipeline...")
+            self.relation_pipeline = pipeline(
+                "text-classification",
+                model="cross-encoder/nli-deberta-v3-base",
+                device=self.device  # Enable GPU if available
+            )
+            
+            # Load spaCy with GPU support
+            print("Loading spaCy model...")
+            if torch.cuda.is_available():
+                # Use GPU-enabled spaCy model
+                spacy.require_gpu()
+                self.nlp = spacy.load("en_core_web_trf")
+                print("spaCy loaded with GPU support")
+            else:
+                self.nlp = spacy.load("en_core_web_sm")
+                print("spaCy loaded with CPU (GPU not available)")
+            
+            print("AI models loaded successfully.")
+            
+        except Exception as e:
+            print(f"Error loading AI models: {e}")
+            print("Falling back to CPU-only models...")
+            self.device = -1
+            self.nlp = spacy.load("en_core_web_sm")
+            self.ner_pipeline = None
+            self.relation_pipeline = None
 
     def close(self):
+        """Closes the Neo4j database connection."""
         if self.driver:
             self.driver.close()
             print("Neo4j connection closed.")
 
-    def extract_text_from_docx(self, file_path: str) -> List[Dict]:
-        """Extract structured text from DOCX with section information"""
-        print(f"Extracting text from {file_path}...")
-        
+    def extract_text_from_docx(self, file_path: Path) -> List[Dict]:
+        """Extracts text from DOCX with better section detection."""
+        print(f"Extracting text from: {file_path.name}")
         try:
             doc = docx.Document(file_path)
             sections = []
-            current_section = ""
-            current_clause = ""
-            current_text = ""
+            current_section = {"title": "Introduction", "text": "", "clause": "0"}
             
-            for para in doc.paragraphs:
+            # Add progress bar for paragraph processing
+            for para in tqdm(doc.paragraphs, desc=f"Processing {file_path.name}", leave=False):
                 text = para.text.strip()
                 if not text:
                     continue
+                
+                # More precise section header detection
+                is_header = False
+                
+                # Method 1: Check paragraph style (most reliable)
+                if para.style.name.startswith('Heading'):
+                    is_header = True
+                
+                # Method 2: Check for numbered sections (e.g., "4.2.1 Title")
+                elif re.match(r'^\d+(\.\d+)*\s+[A-Z]', text):
+                    is_header = True
+                
+                # Method 3: Check for appendix sections (e.g., "A.1 Title")
+                elif re.match(r'^[A-Z]\.\d+(\.\d+)*\s+[A-Z]', text):
+                    is_header = True
+                
+                # Method 4: Short text that's all uppercase AND doesn't end with punctuation
+                # (but be more restrictive)
+                elif (len(text) < 80 and 
+                      text.isupper() and 
+                      not text.endswith(('.', ':', ';', '!', '?')) and
+                      len(text.split()) > 1 and  # Must have at least 2 words
+                      len(text.split()) < 8):    # But not too many words
+                    is_header = True
+                
+                # Method 5: Starts with a number/letter and has title case pattern
+                elif (re.match(r'^(\d+(\.\d+)*|[A-Z](\.\d+)*)\s+[A-Z][a-z]', text) and
+                      len(text.split()) < 12 and  # Reasonable title length
+                      not text.endswith('.')):    # Titles don't usually end with periods
+                    is_header = True
+                
+                # If we found a header and current section has content, save it
+                if is_header and current_section["text"].strip():
+                    sections.append(current_section.copy())
+                    # Extract clause number (first part before space)
+                    clause_match = re.match(r'^(\d+(\.\d+)*|[A-Z](\.\d+)*)', text)
+                    clause = clause_match.group(1) if clause_match else "unknown"
                     
-                # Check if it's a heading (section/clause)
-                if para.style.name.startswith('Heading') or re.match(r'^\d+\.[\d\.]*\s+', text):
-                    # Save previous section
-                    if current_text:
-                        sections.append({
-                            'section': current_section,
-                            'clause': current_clause,
-                            'text': current_text.strip(),
-                            'document': Path(file_path).name
-                        })
-                    
-                    # Extract clause number and section title
-                    clause_match = re.match(r'^(\d+\.[\d\.]*)\s+(.*)', text)
-                    if clause_match:
-                        current_clause = clause_match.group(1)
-                        current_section = clause_match.group(2)
-                    else:
-                        current_section = text
-                        current_clause = ""
-                    
-                    current_text = ""
+                    current_section = {
+                        "title": text,
+                        "text": "",
+                        "clause": clause
+                    }
                 else:
-                    current_text += text + "\n"
+                    # Add text to current section
+                    current_section["text"] += " " + text
             
-            # Add the last section
-            if current_text:
-                sections.append({
-                    'section': current_section,
-                    'clause': current_clause,
-                    'text': current_text.strip(),
-                    'document': Path(file_path).name
-                })
+            # Don't forget the last section
+            if current_section["text"].strip():
+                sections.append(current_section)
             
-            print(f"Extracted {len(sections)} sections from {file_path}")
+            print(f"  -> Found {len(sections)} sections.")
             return sections
             
         except Exception as e:
             print(f"Error reading {file_path}: {e}")
             return []
 
-    def extract_entities_and_relations(self, section: Dict) -> Tuple[List[Entity], List[Relationship]]:
-        """Extract entities and relationships from a section - IMPROVED VERSION"""
-        text = section['text']
-        doc = self.nlp(text)
-        
+    def extract_entities_ai(self, text: str, section: Dict) -> List[Entity]:
+        """Extract entities using AI models with GPU acceleration."""
         entities = []
-        relationships = []
-        
-        # Extract entities
         found_entities = set()
         
-        # 1. Predefined entities (existing code)
-        for nf in self.network_functions:
-            if nf in text:
-                entities.append(Entity(nf, "NetworkFunction"))
-                found_entities.add(nf)
+        # Method 1: Use transformer-based NER with GPU if available
+        if self.ner_pipeline:
+            try:
+                # Process text in larger chunks when using GPU
+                chunk_size = 1024 if self.device >= 0 else 512
+                chunks = [text[i:i+chunk_size] for i in range(0, len(text), chunk_size)]
+                
+                # Add progress bar for chunk processing
+                for chunk in tqdm(chunks, desc="NER processing", leave=False):
+                    if len(chunk.strip()) < 10:  # Skip very short chunks
+                        continue
+                        
+                    # GPU-accelerated NER
+                    with torch.cuda.device(self.device) if self.device >= 0 else torch.no_grad():
+                        ner_results = self.ner_pipeline(chunk)
+                    
+                    for entity in ner_results:
+                        entity_name = entity['word'].strip()
+                        confidence = entity['score']
+                        
+                        if confidence > 0.8 and entity_name not in found_entities and len(entity_name) > 2:
+                            entity_type = self._classify_entity_ai(entity_name, chunk)
+                            if entity_type:
+                                props = {
+                                    'confidence': confidence,
+                                    'source_clause': section.get('clause', 'unknown'),
+                                    'source_section': section.get('title', 'unknown'),
+                                    'extraction_device': 'GPU' if self.device >= 0 else 'CPU'
+                                }
+                                entities.append(Entity(name=entity_name, entity_type=entity_type, properties=props))
+                                found_entities.add(entity_name)
+                                
+            except Exception as e:
+                print(f"GPU NER pipeline error: {e}")
+                print("Falling back to pattern-based extraction...")
         
-        for actor in self.actors:
-            if actor in text:
-                entities.append(Entity(actor, "Actor"))
-                found_entities.add(actor)
+        # Method 2: Known 5G Network Functions (precise list)
+        known_5g_network_functions = {
+            'AMF', 'SMF', 'UPF', 'AUSF', 'UDM', 'UDR', 'PCF', 'NSSF', 
+            'NEF', 'NRF', 'SMSF', 'LMF', 'GMLC', 'SCP', 'SEPP', 'NWDAF',
+            'CHF', 'BSF', 'UDSF', 'DCCF', 'UCMF', 'EASDF', 'SEAF'
+        }
         
-        for param in self.crypto_params:
-            if param in text or param.replace('_', '') in text:
-                entities.append(Entity(param, "CryptoParameter"))
-                found_entities.add(param)
+        # Extract known network functions with high precision
+        for nf_name in known_5g_network_functions:
+            if re.search(r'\b' + re.escape(nf_name) + r'\b', text, re.IGNORECASE):
+                if nf_name not in found_entities:
+                    props = {
+                        'discovery_method': 'known_nf',
+                        'source_clause': section.get('clause', 'unknown'),
+                        'source_section': section.get('title', 'unknown')
+                    }
+                    entities.append(Entity(name=nf_name, entity_type='NetworkFunction', properties=props))
+                    found_entities.add(nf_name)
+                    self.discovered_entities['NetworkFunction'] += 1
         
-        for proc in self.procedures:
-            if proc.lower() in text.lower():
-                entities.append(Entity(proc, "Procedure", {
-                    'clause': section.get('clause', ''),
-                    'section': section.get('section', '')
-                }))
-                found_entities.add(proc)
+        # Method 3: Pattern-based entity extraction for other types (flexible)
+        technical_patterns = {
+            'Key': [
+                r'\bK_[A-Z_]+\b',
+                r'\b[A-Z]+\*\b',  # XRES*, HXRES*
+            ],
+            'Parameter': [
+                r'\b[A-Z]{3,6}\b(?=\s+(?:parameter|identifier|value))',
+                r'\b(?:SUCI|SUPI|GUTI|IMSI|IMEI)\b',
+            ],
+            'Procedure': [
+                r'\b\w+\s+procedure\b',
+                r'\b\w+\s+authentication\b',
+                r'\b\w+\s+registration\b',
+            ],
+            'Message': [
+                r'\b\w+\s+(?:request|response|indication|confirm)\b',
+            ],
+            'Actor': [
+                r'\b(?:UE|gNB|ng-eNB|USIM|ME|NG-RAN|DN|AF)\b',
+            ]
+        }
         
-        # 2. USE SPACY NER to find additional entities
-        for ent in doc.ents:
-            if ent.label_ in ['ORG', 'PRODUCT', 'EVENT', 'FAC']:  # Relevant entity types
-                if len(ent.text) > 2 and ent.text not in found_entities:
-                    entities.append(Entity(ent.text, "NamedEntity"))
-                    found_entities.add(ent.text)
+        # Add progress bar for pattern matching
+        pattern_progress = tqdm(technical_patterns.items(), desc="Pattern matching", leave=False)
+        for entity_type, patterns in pattern_progress:
+            pattern_progress.set_postfix({"entity_type": entity_type})
+            for pattern in patterns:
+                matches = re.finditer(pattern, text, re.IGNORECASE)
+                for match in matches:
+                    entity_name = match.group().strip()
+                    if (entity_name not in found_entities and 
+                        len(entity_name) > 2 and
+                        not entity_name.lower() in ['the', 'and', 'for', 'with', 'from']):  # Filter common words
+                        
+                        props = {
+                            'discovery_method': 'pattern',
+                            'source_clause': section.get('clause', 'unknown'),
+                            'source_section': section.get('title', 'unknown')
+                        }
+                        entities.append(Entity(name=entity_name, entity_type=entity_type, properties=props))
+                        found_entities.add(entity_name)
+                        self.discovered_entities[entity_type] += 1
         
-        # 3. Extract Messages using improved patterns
-        messages = set()
-        improved_message_patterns = [
-            r'(\w+)\s+(?:Request|Response|Indication|Confirm|Command|Reply|Acknowledgment)',
-            r'N\w+_\w+_\w+',  # Interface messages
-            r'[A-Z][a-z]+\s+[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*'  # Multi-word messages
-            r'[A-Z]{2,}\s+[A-Z]{2,}',  # Acronym combinations
-            r'\b[A-Z]+\s+message\b',  # Messages explicitly called "message"
+        # Method 4: spaCy NER as fallback (but not for NetworkFunction)
+        doc = self.nlp(text)
+        for ent in tqdm(doc.ents, desc="spaCy NER", leave=False):
+            entity_name = ent.text.strip()
+            if (entity_name not in found_entities and 
+                len(entity_name) > 2 and
+                not entity_name.lower() in ['the', 'and', 'for', 'with', 'from']):
+                
+                entity_type = self._map_spacy_label(ent.label_)
+                # Skip NetworkFunction from spaCy - we only use known list for those
+                if entity_type and entity_type != 'NetworkFunction':
+                    props = {
+                        'discovery_method': 'spacy',
+                        'spacy_label': ent.label_,
+                        'source_clause': section.get('clause', 'unknown'),
+                        'source_section': section.get('title', 'unknown')
+                    }
+                    entities.append(Entity(name=entity_name, entity_type=entity_type, properties=props))
+                    found_entities.add(entity_name)
+        
+        return entities
+
+    def _classify_entity_ai(self, entity_name: str, context: str) -> str:
+        """Use AI to classify entity type based on context with known NF list."""
+        entity_upper = entity_name.upper()
+        context_lower = context.lower()
+        
+        # Define known 5G network functions explicitly (same list as above)
+        known_nfs = {'AMF', 'SMF', 'UPF', 'AUSF', 'UDM', 'UDR', 'PCF', 'NSSF', 
+                     'NEF', 'NRF', 'SMSF', 'LMF', 'GMLC', 'SCP', 'SEPP', 'NWDAF',
+                     'CHF', 'BSF', 'UDSF', 'DCCF', 'UCMF', 'EASDF', 'SEAF'}
+        
+        # Only classify as NetworkFunction if it's in our known list
+        if entity_upper in known_nfs:
+            return 'NetworkFunction'
+        elif entity_name.startswith('K_') or entity_name.endswith('*'):
+            return 'Key'
+        elif 'procedure' in context_lower:
+            return 'Procedure'
+        elif any(word in context_lower for word in ['parameter', 'identifier', 'value']):
+            return 'Parameter'
+        elif any(word in context_lower for word in ['request', 'response', 'message']):
+            return 'Message'
+        elif entity_name.upper() in ['UE', 'GNB', 'NG-ENB', 'USIM', 'ME', 'NG-RAN', 'DN', 'AF']:
+            return 'Actor'
+        else:
+            # For other entities, use a generic type or let AI decide
+            return 'Entity'
+
+    def _map_spacy_label(self, spacy_label: str) -> str:
+        """Map spaCy entity labels to our domain (excluding NetworkFunction)."""
+        mapping = {
+            'ORG': 'Actor',
+            'PRODUCT': 'Entity',  # Don't map to NetworkFunction anymore
+            'EVENT': 'Procedure',
+            'PERSON': None,  # Ignore persons in technical docs
+            'GPE': None,     # Ignore geographical entities
+        }
+        return mapping.get(spacy_label, 'Entity')
+
+    def extract_relationships_ai(self, text: str, entities: List[Entity], section: Dict) -> List[Relationship]:
+        """Extract relationships using AI and pattern discovery."""
+        relationships = []
+        entity_names = {e.name for e in entities}
+        
+        if len(entity_names) < 2:
+            return relationships
+        
+        print(f"  -> Extracting relationships from {len(entity_names)} entities")
+        
+        # Method 1: Dependency parsing for verb-based relationships
+        doc = self.nlp(text)
+        relationships.extend(self._extract_verb_relationships(doc, entity_names))
+        
+        # Method 2: Co-occurrence based relationships
+        relationships.extend(self._extract_cooccurrence_relationships(text, entities))
+        
+        # Method 3: Template-based extraction
+        relationships.extend(self._extract_template_relationships(text, entity_names))
+        
+        return relationships
+
+    def _extract_verb_relationships(self, doc, entity_names: Set[str]) -> List[Relationship]:
+        """Extract relationships based on verbs and dependency structure."""
+        relationships = []
+        
+        # Define verb categories and their corresponding relationship types
+        verb_categories = {
+            'communication': (['send', 'transmit', 'receive', 'forward'], 'COMMUNICATES_WITH'),
+            'derivation': (['derive', 'generate', 'compute', 'calculate'], 'DERIVES'),
+            'containment': (['contain', 'include', 'comprise'], 'CONTAINS'),
+            'participation': (['participate', 'involve', 'engage'], 'PARTICIPATES_IN'),
+            'authentication': (['authenticate', 'verify', 'validate'], 'AUTHENTICATES'),
+        }
+        
+        # Add progress bar for token processing
+        for token in tqdm(doc, desc="Verb analysis", leave=False):
+            if token.pos_ == 'VERB':
+                for category, (verbs, rel_type) in verb_categories.items():
+                    if token.lemma_ in verbs:
+                        # Find subject and object
+                        subject = None
+                        obj = None
+                        
+                        for child in token.children:
+                            if child.dep_ in ['nsubj', 'nsubjpass'] and child.text in entity_names:
+                                subject = child.text
+                            elif child.dep_ in ['dobj', 'pobj', 'attr'] and child.text in entity_names:
+                                obj = child.text
+                        
+                        if subject and obj and subject != obj:
+                            relationships.append(Relationship(subject, obj, rel_type, {
+                                'verb': token.lemma_,
+                                'confidence': 0.8
+                            }))
+                            self.discovered_relationships[rel_type] += 1
+        
+        return relationships
+
+    def _extract_cooccurrence_relationships(self, text: str, entities: List[Entity]) -> List[Relationship]:
+        """Extract relationships based on entity co-occurrence in sentences."""
+        relationships = []
+        sentences = re.split(r'[.!?]', text)
+        
+        # Add progress bar for sentence processing
+        for sentence in tqdm(sentences, desc="Co-occurrence analysis", leave=False):
+            sentence_entities = [e for e in entities if e.name in sentence]
+            
+            if len(sentence_entities) >= 2:
+                # Create relationships between co-occurring entities
+                for i, entity1 in enumerate(sentence_entities):
+                    for entity2 in sentence_entities[i+1:]:
+                        rel_type = self._infer_relationship_type(entity1, entity2, sentence)
+                        if rel_type:
+                            relationships.append(Relationship(
+                                entity1.name, 
+                                entity2.name, 
+                                rel_type, 
+                                {'confidence': 0.6, 'method': 'cooccurrence'}
+                            ))
+        
+        return relationships
+
+    def _infer_relationship_type(self, entity1: Entity, entity2: Entity, context: str) -> str:
+        """Infer relationship type based on entity types and context."""
+        type1, type2 = entity1.entity_type, entity2.entity_type
+        context_lower = context.lower()
+        
+        # Define rules based on entity type combinations
+        if type1 == 'Procedure' or type2 == 'Procedure':
+            return 'PART_OF'
+        elif (type1 in ['Key', 'Parameter'] and type2 in ['NetworkFunction', 'Actor']) or \
+             (type2 in ['Key', 'Parameter'] and type1 in ['NetworkFunction', 'Actor']):
+            if any(word in context_lower for word in ['derive', 'generate', 'compute']):
+                return 'DERIVES'
+            else:
+                return 'USES'
+        elif type1 == 'Message' or type2 == 'Message':
+            if any(word in context_lower for word in ['send', 'transmit', 'receive']):
+                return 'SENDS'
+            else:
+                return 'CONTAINS'
+        elif type1 in ['NetworkFunction', 'Actor'] and type2 in ['NetworkFunction', 'Actor']:
+            return 'INTERACTS_WITH'
+        else:
+            return 'RELATED_TO'
+
+    def _extract_template_relationships(self, text: str, entity_names: Set[str]) -> List[Relationship]:
+        """Extract relationships using flexible templates."""
+        relationships = []
+        
+        # Dynamic templates that adapt to the text
+        templates = [
+            (r'(\w+)\s+(?:sends?|transmits?)\s+.*?\s+to\s+(\w+)', 'SENDS_TO'),
+            (r'(\w+)\s+(?:derives?|generates?)\s+(\w+)', 'DERIVES'),
+            (r'(\w+)\s+(?:contains?|includes?)\s+(\w+)', 'CONTAINS'),
+            (r'(\w+)\s+is\s+part\s+of\s+(\w+)', 'PART_OF'),
+            (r'(\w+)\s+(?:authenticates?|verifies?)\s+(\w+)', 'AUTHENTICATES'),
         ]
         
-        for pattern in improved_message_patterns:
-            matches = re.findall(pattern, text)
+        # Add progress bar for template matching
+        for pattern, rel_type in tqdm(templates, desc="Template matching", leave=False):
+            matches = re.finditer(pattern, text, re.IGNORECASE)
             for match in matches:
-                if isinstance(match, tuple):
-                    match = ' '.join(match)
-                if len(match) > 2 and match not in found_entities:
-                    messages.add(match)
-                    entities.append(Entity(match, "Message"))
-                    found_entities.add(match)
+                entity1, entity2 = match.groups()
+                if entity1 in entity_names and entity2 in entity_names:
+                    relationships.append(Relationship(entity1, entity2, rel_type, {
+                        'method': 'template',
+                        'confidence': 0.7
+                    }))
         
-        # 4. Extract relationships using improved pattern matching
-        relationships.extend(self._extract_relationships(text, found_entities, messages))
+        return relationships
+
+    def extract_from_section(self, section: Dict) -> Tuple[List[Entity], List[Relationship]]:
+        """Main extraction function using AI techniques."""
+        text = section['text']
+        
+        if len(text) < 50:  # Skip very short sections
+            return [], []
+        
+        # Extract entities using AI
+        entities = self.extract_entities_ai(text, section)
+        
+        # Extract relationships using AI
+        relationships = self.extract_relationships_ai(text, entities, section)
         
         return entities, relationships
 
-    def _extract_relationships(self, text: str, entities: Set[str], messages: Set[str]) -> List[Relationship]:
-        """Extract relationships using improved pattern matching"""
-        relationships = []
-        
-        # Convert entities to list for easier processing
-        entity_list = list(entities)
-        
-        # 1. IMPROVED SENDS patterns (more flexible)
-        send_patterns = [
-            # Basic sends patterns
-            r'(\w+)\s+sends?\s+([^\.]+?)\s+to\s+(\w+)',
-            r'(\w+)\s+transmits?\s+([^\.]+?)\s+to\s+(\w+)',
-            r'(\w+)\s+forwards?\s+([^\.]+?)\s+to\s+(\w+)',
-            
-            # More natural language patterns
-            r'(\w+)\s+(?:shall\s+)?(?:send|transmit|forward)\s+([^\.]+?)\s+to\s+(?:the\s+)?(\w+)',
-            r'([A-Z]+)\s+→\s+([A-Z]+)',  # Arrow notation
-            r'From\s+(\w+)\s+to\s+(\w+)',
-            r'(\w+)\s+requests?\s+([^\.]+?)\s+from\s+(\w+)',
-            r'(\w+)\s+provides?\s+([^\.]+?)\s+to\s+(\w+)',
-            
-            # Message flow patterns
-            r'(\w+)\s+issues?\s+([^\.]+?)\s+to\s+(\w+)',
-            r'(\w+)\s+delivers?\s+([^\.]+?)\s+to\s+(\w+)',
-            r'(\w+)\s+returns?\s+([^\.]+?)\s+to\s+(\w+)',
-        ]
-        
-        for pattern in send_patterns:
-            matches = re.findall(pattern, text, re.IGNORECASE)
-            for match in matches:
-                if len(match) == 3:
-                    sender, message, receiver = match
-                    sender = sender.strip()
-                    receiver = receiver.strip()
-                    if sender in entities and receiver in entities:
-                        relationships.append(Relationship(
-                            sender, receiver, "SENDS",
-                            {"message": message.strip()}
-                        ))
-                elif len(match) == 2:  # For arrow notation
-                    sender, receiver = match
-                    if sender in entities and receiver in entities:
-                        relationships.append(Relationship(
-                            sender, receiver, "COMMUNICATES_WITH"
-                        ))
-
-        # 2. IMPROVED DERIVES patterns
-        derive_patterns = [
-            # Key derivation patterns
-            r'(\w+)\s+(?:is\s+)?derives?\s+([A-Z_]+)',
-            r'([A-Z_]+)\s+(?:is\s+)?derived\s+(?:from\s+)?([A-Z_]+)',
-            r'([A-Z_]+)\s+=\s+KDF\s*\([^)]*([A-Z_]+)[^)]*\)',  # KDF functions
-            r'derives?\s+([A-Z_]+)\s+from\s+([A-Z_]+)',
-            r'([A-Z_]+)\s+(?:shall\s+)?(?:be\s+)?calculated\s+(?:from\s+)?([A-Z_]+)',
-            r'([A-Z_]+)\s+(?:shall\s+)?(?:be\s+)?computed\s+(?:from\s+)?([A-Z_]+)',
-            r'generates?\s+([A-Z_]+)\s+(?:from\s+)?([A-Z_]+)',
-        ]
-        
-        for pattern in derive_patterns:
-            matches = re.findall(pattern, text, re.IGNORECASE)
-            for match in matches:
-                if len(match) == 2:
-                    source, target = match
-                    source = source.strip()
-                    target = target.strip()
-                    # Check if both are crypto parameters or entities
-                    if (source in self.crypto_params or source in entities) and \
-                       (target in self.crypto_params or target in entities):
-                        relationships.append(Relationship(
-                            source, target, "DERIVES"
-                        ))
-
-        # 3. CONTAINS patterns (messages contain parameters)
-        contains_patterns = [
-            r'([^\.]+?)\s+contains?\s+([A-Z_]+)',
-            r'([^\.]+?)\s+includes?\s+([A-Z_]+)',
-            r'([A-Z_]+)\s+(?:is\s+)?(?:included\s+)?in\s+([^\.]+)',
-            r'([^\.]+?)\s+carries?\s+([A-Z_]+)',
-            r'([^\.]+?)\s+(?:shall\s+)?(?:include|contain)\s+([A-Z_]+)',
-        ]
-        
-        for pattern in contains_patterns:
-            matches = re.findall(pattern, text, re.IGNORECASE)
-            for match in matches:
-                container, contained = match
-                container = container.strip()
-                contained = contained.strip()
-                if contained in self.crypto_params or contained in entities:
-                    relationships.append(Relationship(
-                        container, contained, "CONTAINS"
-                    ))
-
-        # 4. INITIATES patterns
-        initiate_patterns = [
-            r'(\w+)\s+initiates?\s+([^\.]+)',
-            r'([^\.]+?)\s+(?:is\s+)?initiated\s+by\s+(\w+)',
-            r'(\w+)\s+starts?\s+([^\.]+)',
-            r'(\w+)\s+triggers?\s+([^\.]+)',
-            r'(\w+)\s+(?:shall\s+)?(?:begin|start|initiate)\s+([^\.]+)',
-            r'([^\.]+?)\s+(?:shall\s+)?(?:be\s+)?(?:started|initiated|triggered)\s+by\s+(\w+)',
-        ]
-        
-        for pattern in initiate_patterns:
-            matches = re.findall(pattern, text, re.IGNORECASE)
-            for match in matches:
-                if len(match) == 2:
-                    initiator, procedure = match
-                    initiator = initiator.strip()
-                    procedure = procedure.strip()
-                    if initiator in entities:
-                        relationships.append(Relationship(
-                            initiator, procedure, "INITIATES"
-                        ))
-
-        # 5. AUTHENTICATES patterns
-        auth_patterns = [
-            r'(\w+)\s+authenticates?\s+(\w+)',
-            r'(\w+)\s+(?:shall\s+)?(?:verify|validate)\s+(\w+)',
-            r'(\w+)\s+(?:performs?\s+)?authentication\s+(?:of\s+)?(\w+)',
-            r'authentication\s+(?:of\s+)?(\w+)\s+(?:by\s+)?(\w+)',
-        ]
-        
-        for pattern in auth_patterns:
-            matches = re.findall(pattern, text, re.IGNORECASE)
-            for match in matches:
-                authenticator, authenticated = match
-                authenticator = authenticator.strip()
-                authenticated = authenticated.strip()
-                if authenticator in entities and authenticated in entities:
-                    relationships.append(Relationship(
-                        authenticator, authenticated, "AUTHENTICATES"
-                    ))
-
-        # 6. STORES patterns
-        store_patterns = [
-            r'(\w+)\s+stores?\s+([A-Z_]+)',
-            r'([A-Z_]+)\s+(?:is\s+)?stored\s+(?:in|at)\s+(\w+)',
-            r'(\w+)\s+(?:shall\s+)?(?:keep|maintain|store)\s+([A-Z_]+)',
-        ]
-        
-        for pattern in store_patterns:
-            matches = re.findall(pattern, text, re.IGNORECASE)
-            for match in matches:
-                if len(match) == 2:
-                    store_entity, stored_item = match
-                    store_entity = store_entity.strip()
-                    stored_item = stored_item.strip()
-                    if store_entity in entities and (stored_item in self.crypto_params or stored_item in entities):
-                        relationships.append(Relationship(
-                            store_entity, stored_item, "STORES"
-                        ))
-
-        # 7. VALIDATES patterns
-        validate_patterns = [
-            r'(\w+)\s+validates?\s+([^\.]+)',
-            r'(\w+)\s+verifies?\s+([^\.]+)',
-            r'(\w+)\s+checks?\s+([^\.]+)',
-            r'([^\.]+?)\s+(?:is\s+)?(?:validated|verified|checked)\s+by\s+(\w+)',
-        ]
-        
-        for pattern in validate_patterns:
-            matches = re.findall(pattern, text, re.IGNORECASE)
-            for match in matches:
-                validator, validated = match
-                validator = validator.strip()
-                validated = validated.strip()
-                if validator in entities:
-                    relationships.append(Relationship(
-                        validator, validated, "VALIDATES"
-                    ))
-
-        # 8. USES patterns
-        use_patterns = [
-            r'(\w+)\s+uses?\s+([A-Z_]+)',
-            r'(\w+)\s+employs?\s+([A-Z_]+)',
-            r'(\w+)\s+utilizes?\s+([A-Z_]+)',
-            r'([A-Z_]+)\s+(?:is\s+)?used\s+by\s+(\w+)',
-        ]
-        
-        for pattern in use_patterns:
-            matches = re.findall(pattern, text, re.IGNORECASE)
-            for match in matches:
-                if len(match) == 2:
-                    user, used = match
-                    user = user.strip()
-                    used = used.strip()
-                    if user in entities and (used in self.crypto_params or used in entities):
-                        relationships.append(Relationship(
-                            user, used, "USES"
-                        ))
-
-        # 9. PART_OF patterns (for procedures and steps)
-        part_of_patterns = [
-            r'([^\.]+?)\s+(?:is\s+)?(?:part\s+of|belongs\s+to)\s+([^\.]+)',
-            r'([^\.]+?)\s+(?:in|during)\s+([^\.]+?)\s+procedure',
-            r'step\s+\d+\s+of\s+([^\.]+)',
-        ]
-        
-        for pattern in part_of_patterns:
-            matches = re.findall(pattern, text, re.IGNORECASE)
-            for match in matches:
-                if len(match) == 2:
-                    part, whole = match
-                    part = part.strip()
-                    whole = whole.strip()
-                    relationships.append(Relationship(
-                        part, whole, "PART_OF"
-                    ))
-
-        # 10. REQUIRES patterns
-        require_patterns = [
-            r'(\w+)\s+requires?\s+([^\.]+)',
-            r'(\w+)\s+needs?\s+([^\.]+)',
-            r'([^\.]+?)\s+(?:is\s+)?required\s+(?:by|for)\s+(\w+)',
-            r'(\w+)\s+depends?\s+on\s+([^\.]+)',
-        ]
-        
-        for pattern in require_patterns:
-            matches = re.findall(pattern, text, re.IGNORECASE)
-            for match in matches:
-                if len(match) == 2:
-                    requirer, required = match
-                    requirer = requirer.strip()
-                    required = required.strip()
-                    if requirer in entities:
-                        relationships.append(Relationship(
-                            requirer, required, "REQUIRES"
-                        ))
-
-        return relationships
-
-    def create_knowledge_graph(self, file_paths: List[str]):
-        """Main method to create the knowledge graph from multiple files"""
-        print("Starting knowledge graph creation...")
-        
-        all_entities = []
+    def build_graph_from_files(self, file_paths: List[Path]):
+        """Build knowledge graph using AI-driven discovery."""
+        print("\n--- Starting AI-based Knowledge Graph Construction ---")
+        all_entities = {}
         all_relationships = []
-        
-        for file_path in file_paths:
-            print(f"\nProcessing {file_path}...")
+
+        # Add progress bar for file processing
+        for file_path in tqdm(file_paths, desc="Processing documents"):
+            print(f"\nProcessing {file_path.name}...")
+            
             sections = self.extract_text_from_docx(file_path)
             
-            for section in sections:
-                entities, relationships = self.extract_entities_and_relations(section)
+            # Add progress bar for section processing
+            section_progress = tqdm(sections, desc=f"Sections in {file_path.name}", leave=False)
+            for section in section_progress:
+                section_progress.set_postfix({"clause": section.get('clause', 'unknown')})
                 
-                # Add document reference to entities
+                entities, relationships = self.extract_from_section(section)
+                
                 for entity in entities:
-                    if entity.properties is None:
-                        entity.properties = {}
-                    entity.properties['source_document'] = section['document']
-                    entity.properties['source_section'] = section.get('section', '')
-                    entity.properties['source_clause'] = section.get('clause', '')
+                    key = (entity.name, entity.entity_type)
+                    if key not in all_entities:
+                        all_entities[key] = entity
                 
-                all_entities.extend(entities)
                 all_relationships.extend(relationships)
         
-        print(f"\nExtracted {len(all_entities)} entities and {len(all_relationships)} relationships")
+        print(f"\n--- Extraction Complete ---")
+        print(f"Total unique entities found: {len(all_entities)}")
+        print(f"Total relationships found: {len(all_relationships)}")
         
-        # Load into Neo4j
-        self._load_to_neo4j(all_entities, all_relationships)
+        self._print_discovery_stats()
+        self._load_to_neo4j(list(all_entities.values()), all_relationships)
+        self._create_indexes()
+
+    def _print_discovery_stats(self):
+        """Print statistics about discovered entities and relationships."""
+        print("\n--- Discovery Statistics ---")
+        print("Entity types discovered:")
+        for entity_type, count in sorted(self.discovered_entities.items()):
+            print(f"  {entity_type}: {count}")
         
-        print("Knowledge graph creation completed!")
+        print("\nRelationship types discovered:")
+        for rel_type, count in sorted(self.discovered_relationships.items()):
+            print(f"  {rel_type}: {count}")
 
     def _load_to_neo4j(self, entities: List[Entity], relationships: List[Relationship]):
-        """Load entities and relationships into Neo4j"""
-        print("Loading data into Neo4j...")
-        
-        with self.driver.session() as session:
-            # Clear existing data (optional)
-            # session.run("MATCH (n) DETACH DELETE n")
-            
-            # Create entities
-            for entity in entities:
-                self._create_entity(session, entity)
-            
-            # Create relationships
-            for rel in relationships:
-                self._create_relationship(session, rel)
-        
-        print("Data loaded successfully!")
+        """Load data into Neo4j with enhanced properties."""
+        print("\n--- Loading Data into Neo4j ---")
+        with self.driver.session(database="neo4j") as session:
+            print("Clearing existing database...")
+            session.run("MATCH (n) DETACH DELETE n")
 
-    def _create_entity(self, session, entity: Entity):
-        """Create a single entity in Neo4j"""
-        props = entity.properties or {}
-        props['name'] = entity.name
-        
-        query = f"""
-        MERGE (e:{entity.entity_type} {{name: $name}})
-        SET e += $properties
-        """
-        
-        session.run(query, name=entity.name, properties=props)
+            print(f"Creating {len(entities)} nodes...")
+            # Add progress bar for entity creation
+            for entity in tqdm(entities, desc="Creating nodes"):
+                query = f"""
+                MERGE (n:{entity.entity_type} {{name: $name}})
+                SET n += $props
+                """
+                session.run(query, name=entity.name, props=entity.properties)
 
-    def _create_relationship(self, session, rel: Relationship):
-        """Create a single relationship in Neo4j"""
-        props = rel.properties or {}
+            print(f"Creating {len(relationships)} relationships...")
+            # Add progress bar for relationship creation
+            for rel in tqdm(relationships, desc="Creating relationships"):
+                query = f"""
+                MATCH (a {{name: $source_name}}), (b {{name: $target_name}})
+                MERGE (a)-[r:{rel.rel_type}]->(b)
+                SET r += $props
+                """
+                session.run(query, 
+                           source_name=rel.source_name, 
+                           target_name=rel.target_name, 
+                           props=rel.properties)
         
-        query = f"""
-        MATCH (a {{name: $source}})
-        MATCH (b {{name: $target}})
-        MERGE (a)-[r:{rel.rel_type}]->(b)
-        SET r += $properties
-        """
-        
-        session.run(query, source=rel.source, target=rel.target, properties=props)
+        print("--- Loading Complete ---")
 
-    def create_indexes(self):
-        """Create useful indexes for the knowledge graph"""
-        print("Creating indexes...")
-        
-        with self.driver.session() as session:
-            indexes = [
-                "CREATE INDEX entity_name IF NOT EXISTS FOR (n) ON (n.name)",
-                "CREATE INDEX nf_name IF NOT EXISTS FOR (n:NetworkFunction) ON (n.name)",
-                "CREATE INDEX actor_name IF NOT EXISTS FOR (n:Actor) ON (n.name)",
-                "CREATE INDEX procedure_name IF NOT EXISTS FOR (n:Procedure) ON (n.name)",
-                "CREATE INDEX message_name IF NOT EXISTS FOR (n:Message) ON (n.name)",
-                "CREATE INDEX crypto_name IF NOT EXISTS FOR (n:CryptoParameter) ON (n.name)"
-            ]
-            
-            for index_query in indexes:
-                try:
-                    session.run(index_query)
-                except Exception as e:
-                    print(f"Index creation warning: {e}")
-        
-        print("Indexes created!")
+    def _create_indexes(self):
+        """Create dynamic indexes based on discovered entity types."""
+        print("\n--- Creating Dynamic Indexes ---")
+        with self.driver.session(database="neo4j") as session:
+            # Add progress bar for index creation
+            entity_types = list(self.discovered_entities.keys())
+            for entity_type in tqdm(entity_types, desc="Creating indexes"):
+                query = f"CREATE INDEX IF NOT EXISTS FOR (n:{entity_type}) ON (n.name)"
+                session.run(query)
+        print("Indexes created successfully.")
 
-    def run_sample_queries(self):
-        """Run sample queries to demonstrate the knowledge graph"""
-        print("\n=== Sample Queries ===")
+    def run_discovery_queries(self):
+        """Run queries to explore the discovered knowledge graph."""
+        print("\n--- Exploring Discovered Knowledge Graph ---")
         
-        with self.driver.session() as session:
-            # Count all relationship types
-            print("\n1. Relationship Type Counts:")
-            result = session.run("""
+        queries = [
+            ("Most connected entities", """
+                MATCH (n)
+                RETURN n.name as Entity, labels(n)[0] as Type, 
+                       size((n)--()) as Connections
+                ORDER BY Connections DESC
+                LIMIT 10
+            """),
+            ("Relationship type distribution", """
                 MATCH ()-[r]->()
-                RETURN type(r) as relationship_type, count(r) as count
-                ORDER BY count DESC
-            """)
-            for record in result:
-                print(f"   - {record['relationship_type']}: {record['count']}")
-            
-            # Show all network functions
-            print("\n2. All Network Functions:")
-            result = session.run("MATCH (nf:NetworkFunction) RETURN nf.name ORDER BY nf.name")
-            for record in result:
-                print(f"   - {record['nf.name']}")
-            
-            # Show authentication relationships
-            print("\n3. Authentication relationships:")
-            result = session.run("""
-                MATCH (a)-[:AUTHENTICATES]->(b)
-                RETURN a.name, b.name
-                LIMIT 10
-            """)
-            for record in result:
-                print(f"   - {record['a.name']} authenticates {record['b.name']}")
-            
-            # Show key derivations
-            print("\n4. Key derivations:")
-            result = session.run("""
-                MATCH (source)-[:DERIVES]->(target)
-                RETURN source.name, target.name
-                LIMIT 10
-            """)
-            for record in result:
-                print(f"   - {record['source.name']} derives {record['target.name']}")
+                RETURN type(r) as RelationType, count(r) as Count
+                ORDER BY Count DESC
+            """),
+            ("Entity type distribution", """
+                MATCH (n)
+                RETURN labels(n)[0] as EntityType, count(n) as Count
+                ORDER BY Count DESC
+            """),
+        ]
+        
+        with self.driver.session(database="neo4j") as session:
+            for title, query in tqdm(queries, desc="Running discovery queries"):
+                print(f"\n> {title}")
+                result = session.run(query)
+                for record in result:
+                    print(dict(record))
+
+# --- Main Execution ---
+def main():
+    """Main function to run the AI-based KG builder."""
+    # Check GPU availability
+    if torch.cuda.is_available():
+        print(f"GPU detected: {torch.cuda.get_device_name(0)}")
+        print(f"VRAM available: {torch.cuda.get_device_properties(0).total_memory // 1024**3} GB")
+    else:
+        print("No GPU detected, using CPU")
+    
+    doc_files = [p for p in DOCS_PATH.glob('*_new.docx')]
+    if not doc_files:
+        print(f"Error: No '*_new.docx' files found in {DOCS_PATH}")
+        return
+
+    builder = None
+    try:
+        builder = AIKnowledgeGraphBuilder(NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD)
+        builder.build_graph_from_files(doc_files)
+        builder.run_discovery_queries()
+    except Exception as e:
+        print(f"\nAn error occurred: {e}")
+        import traceback
+        traceback.print_exc()
+    finally:
+        if builder:
+            builder.close()
 
 if __name__ == "__main__":
-    # Initialize builder
-    builder = GPP_Procedure_KG_Builder()
-    
-    try:
-        # Get all DOCX files from 3GPP directory
-        gpp_dir = Path("3GPP")
-        docx_files = list(gpp_dir.glob("*_new.docx"))
-        
-        if not docx_files:
-            print("No DOCX files found in 3GPP directory!")
-            exit(1)
-        
-        print(f"Found {len(docx_files)} DOCX files:")
-        for file in docx_files:
-            print(f"  - {file}")
-        
-        # Create knowledge graph
-        builder.create_knowledge_graph([str(f) for f in docx_files])
-        
-        # Create indexes for better performance
-        builder.create_indexes()
-        
-        # Run sample queries
-        builder.run_sample_queries()
-        
-    except Exception as e:
-        print(f"Error: {e}")
-    finally:
-        builder.close()
+    main()
