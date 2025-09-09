@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 
 # Database Configuration
-NEO4J_URI = "bolt://localhost:7687"
+NEO4J_URI = "bolt://localhost:7688"
 NEO4J_USER = "neo4j"
 NEO4J_PASSWORD = "12345678"
 
@@ -30,10 +30,13 @@ NER_MODEL_OPTIONS = [
 
 # Embedding Models for Searchability (Requirement 8) - REVISED
 EMBEDDING_MODEL_OPTIONS = [
-    "Qwen/Qwen3-Embedding-8B",                      # High quality embeddings
+    
+
     "sentence-transformers/all-MiniLM-L6-v2",           # Fastest, good quality
     "sentence-transformers/all-mpnet-base-v2",          # Best quality
     "distilbert-base-uncased"                           # Fallback
+    "Qwen/Qwen3-Embedding-4B",                      # High quality, smaller
+    "Qwen/Qwen3-Embedding-8B"                      # High quality embeddings
 ]
 
 # Enhanced embedding configuration for long context

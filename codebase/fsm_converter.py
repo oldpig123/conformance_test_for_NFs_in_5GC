@@ -1,281 +1,323 @@
-from typing import List, Dict, Optional
+from typing import Dict, List, Optional, Tuple
 import json
+import os
 from pathlib import Path
-from datetime import datetime
-
-from data_structures import (
-    Entity, Relationship, FiniteStateMachine, FSMState, 
-    FSMTransition, ProcedureContext
-)
-from config import FSM_CONFIG
+from data_structures import FSMState, FSMTransition, FiniteStateMachine, Entity
 
 class FSMConverter:
-    """Convert knowledge graph procedures to Finite State Machines (Requirement 10)."""
+    """Convert 3GPP procedures to Finite State Machines for conformance testing."""
     
     def __init__(self):
         print("FSMConverter initialized")
+        # Ensure output directory exists
+        self.output_dir = Path("output")
+        self.output_dir.mkdir(exist_ok=True)
     
-    def convert_procedure_to_fsm(self, 
-                               procedure_name: str,
-                               entities: List[Entity],
-                               relationships: List[Relationship],
-                               context: Optional[ProcedureContext] = None) -> FiniteStateMachine:
-        """Convert a procedure from knowledge graph to FSM."""
+    def convert_procedure_to_fsm(self, procedure_name: str, steps: List[Dict], 
+                               step_descriptions: Dict[str, str], relationships: List[Dict]) -> FiniteStateMachine:
+        """Convert a 3GPP procedure to FSM representation."""
         print(f"Converting procedure '{procedure_name}' to FSM...")
         
-        # Find procedure-related entities
-        procedure_entities = self._filter_procedure_entities(procedure_name, entities)
-        procedure_relationships = self._filter_procedure_relationships(procedure_name, relationships)
+        if not steps:
+            print(f"  ⚠️ No steps found for {procedure_name}")
+            return None
         
-        # Extract steps (which become FSM states)
-        step_entities = [e for e in procedure_entities if e.entity_type == "Step"]
-        step_entities.sort(key=lambda x: self._extract_step_number(x.name))
+        # Create states from steps
+        states = []
+        step_names = [step['name'] for step in steps]
         
-        # Create FSM states
-        states = self._create_fsm_states(step_entities, context)
+        for i, step in enumerate(steps):
+            step_name = step['name']
+            description = step_descriptions.get(step_name, f"Execute step {step_name}")
+            
+            # Truncate description if too long
+            if len(description) > 100:
+                description = description[:100] + "..."
+            
+            # Create step entity for this FSM state (REQUIRED by data structure)
+            step_entity = Entity(
+                name=step_name,
+                entity_type="Step",
+                properties={
+                    "procedure": procedure_name,
+                    "step_number": i + 1,
+                    "extraction_method": "fsm_conversion",
+                    "is_initial": (i == 0),
+                    "is_final": (i == len(steps) - 1)
+                },
+                description=description,
+                search_keywords=[
+                    step_name.lower(),
+                    procedure_name.lower(),
+                    "step",
+                    f"step_{i+1}"
+                ]
+            )
+            
+            # Create FSM state with required step_entity
+            fsm_state = FSMState(
+                name=step_name,
+                step_entity=step_entity,  # REQUIRED parameter
+                is_initial=(i == 0),
+                is_final=(i == len(steps) - 1),
+                description=description
+            )
+            states.append(fsm_state)
         
-        # Create FSM transitions
-        transitions = self._create_fsm_transitions(step_entities, procedure_relationships, entities)
+        # Create transitions from relationships
+        transitions = []
         
-        # Determine initial and final states
-        initial_state = states[0].name if states else None
-        final_states = [states[-1].name] if states else []
+        # Add sequential transitions by default
+        for i in range(len(steps) - 1):
+            current_step = steps[i]['name']
+            next_step = steps[i + 1]['name']
+            
+            # Create transition using correct field names from data_structures.py
+            transition = FSMTransition(
+                source_state=current_step,
+                target_state=next_step,
+                trigger="step_complete",
+                condition="",
+                action="proceed_to_next_step"
+            )
+            transitions.append(transition)
         
+        # Add message-based transitions from relationships
+        message_transitions = self._extract_message_transitions(relationships, step_names)
+        transitions.extend(message_transitions)
+        
+        # Create FSM using correct field name from data_structures.py
         fsm = FiniteStateMachine(
-            procedure_name=procedure_name,
+            procedure_name=procedure_name,  # Matches data_structures.py
             states=states,
             transitions=transitions,
-            initial_state=initial_state,
-            final_states=final_states
+            initial_state=steps[0]['name'] if steps else None,
+            final_states=[steps[-1]['name']] if steps else []
         )
         
         print(f"✓ FSM created: {len(states)} states, {len(transitions)} transitions")
         return fsm
     
-    def _filter_procedure_entities(self, procedure_name: str, entities: List[Entity]) -> List[Entity]:
-        """Filter entities related to specific procedure."""
-        procedure_entities = []
-        
-        for entity in entities:
-            # Direct procedure match
-            if entity.name == procedure_name:
-                procedure_entities.append(entity)
-                continue
-            
-            # Step entities for this procedure
-            if (entity.entity_type == "Step" and 
-                procedure_name.replace(' ', '_').lower() in entity.name.lower()):
-                procedure_entities.append(entity)
-                continue
-            
-            # Entities with procedure property
-            if entity.properties.get('procedure') == procedure_name:
-                procedure_entities.append(entity)
-        
-        return procedure_entities
-    
-    def _filter_procedure_relationships(self, procedure_name: str, relationships: List[Relationship]) -> List[Relationship]:
-        """Filter relationships related to specific procedure."""
-        procedure_relationships = []
-        
-        for rel in relationships:
-            # Check if either source or target is related to the procedure
-            if (procedure_name.replace(' ', '_').lower() in rel.source_name.lower() or
-                procedure_name.replace(' ', '_').lower() in rel.target_name.lower() or
-                rel.source_name == procedure_name or
-                rel.target_name == procedure_name):
-                procedure_relationships.append(rel)
-        
-        return procedure_relationships
-    
-    def _create_fsm_states(self, step_entities: List[Entity], context: Optional[ProcedureContext]) -> List[FSMState]:
-        """Create FSM states from step entities."""
-        states = []
-        
-        for i, step_entity in enumerate(step_entities):
-            # Get step description
-            description = None
-            if context and step_entity.name in context.step_descriptions:
-                description = context.step_descriptions[step_entity.name]
-            elif step_entity.description:
-                description = step_entity.description
-            else:
-                description = f"Execute step {i+1} of the procedure"
-            
-            state = FSMState(
-                name=step_entity.name,
-                step_entity=step_entity,
-                is_initial=(i == 0),
-                is_final=(i == len(step_entities) - 1),
-                description=description
-            )
-            
-            states.append(state)
-        
-        return states
-    
-    def _create_fsm_transitions(self, step_entities: List[Entity], 
-                              relationships: List[Relationship],
-                              all_entities: List[Entity]) -> List[FSMTransition]:
-        """Create FSM transitions from relationships."""
+    def _extract_message_transitions(self, relationships: List[Dict], step_names: List[str]) -> List[FSMTransition]:
+        """Extract message-based transitions from relationships."""
         transitions = []
         
-        # Create transitions from FOLLOWED_BY relationships
-        followed_by_rels = [r for r in relationships if r.rel_type == "FOLLOWED_BY"]
+        # Group SEND relationships by step
+        step_sends = {}
+        for rel in relationships:
+            if rel.get('rel_type') == 'SEND' and rel.get('source_name') in step_names:
+                step = rel['source_name']
+                message = rel['target_name']
+                if step not in step_sends:
+                    step_sends[step] = []
+                step_sends[step].append(message)
         
-        for rel in followed_by_rels:
-            # Find trigger message if any
-            trigger_message = self._find_trigger_message(rel, relationships, all_entities)
+        # Create transitions based on sends
+        sorted_steps = sorted(step_names)
+        for i, step in enumerate(sorted_steps[:-1]):
+            next_step = sorted_steps[i + 1]
             
-            transition = FSMTransition(
-                source_state=rel.source_name,
-                target_state=rel.target_name,
-                trigger=trigger_message or "step_complete",
-                condition=f"complete_{rel.source_name}",
-                action=f"execute_{rel.target_name}",
-                message=trigger_message
-            )
+            # Get messages sent by current step
+            messages = step_sends.get(step, [])
             
-            transitions.append(transition)
+            if messages:
+                # Use first message as trigger
+                primary_message = messages[0]
+                transition = FSMTransition(
+                    source_state=step,
+                    target_state=next_step,
+                    trigger=primary_message,
+                    condition="",
+                    action=f"send_{primary_message.lower().replace(' ', '_')}"
+                )
+                transitions.append(transition)
         
         return transitions
     
-    def _find_trigger_message(self, step_relation: Relationship, 
-                            all_relationships: List[Relationship],
-                            all_entities: List[Entity]) -> Optional[str]:
-        """Find message that triggers transition between steps."""
-        # Look for messages sent in the source step
-        for rel in all_relationships:
-            if (rel.rel_type in ["SEND", "SEND_BY"] and 
-                step_relation.source_name in [rel.source_name, rel.target_name]):
-                
-                # Find the message entity
-                for entity in all_entities:
-                    if (entity.entity_type == "Message" and 
-                        entity.name in [rel.source_name, rel.target_name]):
-                        return entity.name
+    def validate_fsm(self, fsm: FiniteStateMachine) -> Tuple[bool, List[str]]:
+        """Validate FSM structure and return validation results."""
+        errors = []
         
-        return None
+        if not fsm.states:
+            errors.append("FSM has no states")
+        
+        if not fsm.initial_state:
+            errors.append("FSM has no initial state")
+        
+        if not fsm.final_states:
+            errors.append("FSM has no final states")
+        
+        # Check if initial state exists
+        state_names = [state.name for state in fsm.states]
+        if fsm.initial_state and fsm.initial_state not in state_names:
+            errors.append(f"Initial state '{fsm.initial_state}' not found in states")
+        
+        # Check if final states exist
+        for final_state in fsm.final_states:
+            if final_state not in state_names:
+                errors.append(f"Final state '{final_state}' not found in states")
+        
+        # Check transition validity
+        for transition in fsm.transitions:
+            if transition.source_state not in state_names:
+                errors.append(f"Transition from unknown state: {transition.source_state}")
+            if transition.target_state not in state_names:
+                errors.append(f"Transition to unknown state: {transition.target_state}")
+        
+        # Validate step entities (they are required in your data structure)
+        for state in fsm.states:
+            if not state.step_entity:
+                errors.append(f"State '{state.name}' has no associated step entity")
+            elif state.step_entity.entity_type != "Step":
+                errors.append(f"State '{state.name}' entity is not of type 'Step'")
+        
+        # Check reachability
+        if fsm.initial_state and not self._is_reachable(fsm):
+            errors.append("Some states are not reachable from initial state")
+        
+        is_valid = len(errors) == 0
+        return is_valid, errors
     
-    def _extract_step_number(self, step_name: str) -> int:
-        """Extract step number from step name for sorting."""
-        import re
-        match = re.search(r'step_(\d+)', step_name)
-        return int(match.group(1)) if match else 0
+    def _is_reachable(self, fsm: FiniteStateMachine) -> bool:
+        """Check if all states are reachable from initial state."""
+        if not fsm.initial_state or not fsm.transitions:
+            return len(fsm.states) <= 1
+        
+        visited = set()
+        to_visit = [fsm.initial_state]
+        
+        while to_visit:
+            current = to_visit.pop()
+            if current in visited:
+                continue
+            visited.add(current)
+            
+            # Find transitions from current state
+            for transition in fsm.transitions:
+                if transition.source_state == current and transition.target_state not in visited:
+                    to_visit.append(transition.target_state)
+        
+        state_names = [state.name for state in fsm.states]
+        return len(visited) == len(state_names)
     
-    def export_fsm_to_json(self, fsm: FiniteStateMachine, output_path: Path):
-        """Export FSM to JSON file for conformance testing tools."""
-        fsm_dict = fsm.to_dict()
+    def _sanitize_filename(self, filename: str) -> str:
+        """Sanitize filename by removing/replacing invalid characters."""
+        # Replace invalid characters with underscores
+        invalid_chars = '<>:"/\\|?*'
+        for char in invalid_chars:
+            filename = filename.replace(char, '_')
         
-        # Add conformance testing metadata (FIXED: removed Path.ctime())
-        fsm_dict['metadata'] = {
-            'format_version': '1.0',
-            'generator': '3GPP Knowledge Graph Builder',
-            'export_date': datetime.now().isoformat(),
-            'conformance_ready': True
-        }
+        # Replace multiple underscores with single underscore
+        while '__' in filename:
+            filename = filename.replace('__', '_')
         
-        with open(output_path, 'w') as f:
-            json.dump(fsm_dict, f, indent=2)
+        # Remove leading/trailing underscores and spaces
+        filename = filename.strip('_ ')
         
-        print(f"✓ FSM exported to {output_path}")
+        # Limit length
+        if len(filename) > 200:
+            filename = filename[:200]
+        
+        return filename
     
-    def export_fsm_to_dot(self, fsm: FiniteStateMachine, output_path: Path):
-        """Export FSM to DOT format for visualization."""
-        dot_content = self._generate_dot_content(fsm)
-        
-        with open(output_path, 'w') as f:
-            f.write(dot_content)
-        
-        print(f"✓ FSM DOT file exported to {output_path}")
+    def export_fsm_to_json(self, fsm: FiniteStateMachine, filename: str) -> bool:
+        """Export FSM to JSON file with proper directory creation."""
+        try:
+            # Sanitize the filename
+            safe_filename = self._sanitize_filename(filename)
+            
+            # Ensure it ends with .json
+            if not safe_filename.endswith('.json'):
+                safe_filename += '.json'
+            
+            # Create full path in output directory
+            output_path = self.output_dir / safe_filename
+            
+            # Ensure parent directory exists
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            # Convert FSM to dictionary using the built-in method
+            fsm_dict = fsm.to_dict()
+            
+            # Write to file
+            with open(output_path, 'w', encoding='utf-8') as f:
+                json.dump(fsm_dict, f, indent=2, ensure_ascii=False)
+            
+            print(f"✓ FSM exported to {output_path}")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Failed to export FSM to JSON: {e}")
+            return False
+    
+    def export_fsm_to_dot(self, fsm: FiniteStateMachine, filename: str) -> bool:
+        """Export FSM to DOT format for Graphviz visualization."""
+        try:
+            # Sanitize the filename
+            safe_filename = self._sanitize_filename(filename)
+            
+            # Ensure it ends with .dot
+            if not safe_filename.endswith('.dot'):
+                if safe_filename.endswith('.json'):
+                    safe_filename = safe_filename[:-5] + '.dot'
+                else:
+                    safe_filename += '.dot'
+            
+            # Create full path in output directory
+            output_path = self.output_dir / safe_filename
+            
+            # Ensure parent directory exists
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            # Generate DOT content
+            dot_content = self._generate_dot_content(fsm)
+            
+            # Write to file
+            with open(output_path, 'w', encoding='utf-8') as f:
+                f.write(dot_content)
+            
+            print(f"✓ FSM DOT file exported to {output_path}")
+            return True
+            
+        except Exception as e:
+            print(f"❌ Failed to export FSM to DOT: {e}")
+            return False
     
     def _generate_dot_content(self, fsm: FiniteStateMachine) -> str:
         """Generate DOT format content for FSM visualization."""
         lines = [
             "digraph FSM {",
             "  rankdir=TB;",
-            "  node [shape=circle];",
+            "  node [shape=box, style=rounded];",
             ""
         ]
         
         # Add states
         for state in fsm.states:
-            shape = "doublecircle" if state.is_final else "circle"
-            color = "green" if state.is_initial else "lightblue"
+            shape = "doublecircle" if state.is_final else "box"
+            color = "green" if state.is_initial else ("red" if state.is_final else "lightblue")
             
-            lines.append(f'  "{state.name}" [shape={shape}, fillcolor={color}, style=filled];')
+            # Get description from step_entity
+            if state.step_entity and state.step_entity.description:
+                desc = state.step_entity.description
+            else:
+                desc = state.description or ""
+            
+            # Truncate description for visualization
+            if len(desc) > 50:
+                desc = desc[:50] + "..."
+            
+            lines.append(f'  "{state.name}" [shape={shape}, style=filled, fillcolor={color}, '
+                        f'label="{state.name}\\n{desc}"];')
         
         lines.append("")
         
         # Add transitions
         for transition in fsm.transitions:
-            label = transition.trigger
-            if transition.message:
-                label += f"\\n{transition.message}"
-            
-            lines.append(f'  "{transition.source_state}" -> "{transition.target_state}" [label="{label}"];')
+            label = transition.trigger if transition.trigger else "ε"
+            lines.append(f'  "{transition.source_state}" -> "{transition.target_state}" '
+                        f'[label="{label}"];')
         
         lines.append("}")
         
         return "\n".join(lines)
-    
-    def validate_fsm(self, fsm: FiniteStateMachine) -> Dict[str, bool]:
-        """Validate FSM for conformance testing requirements."""
-        validation_results = {
-            'has_initial_state': fsm.initial_state is not None,
-            'has_final_states': len(fsm.final_states) > 0,
-            'states_connected': self._check_connectivity(fsm),
-            'no_orphaned_states': self._check_no_orphans(fsm),
-            'deterministic': self._check_deterministic(fsm)
-        }
-        
-        all_valid = all(validation_results.values())
-        validation_results['overall_valid'] = all_valid
-        
-        return validation_results
-    
-    def _check_connectivity(self, fsm: FiniteStateMachine) -> bool:
-        """Check if all states are reachable from initial state."""
-        if not fsm.initial_state:
-            return False
-        
-        reachable = set([fsm.initial_state])
-        changed = True
-        
-        while changed:
-            changed = False
-            for transition in fsm.transitions:
-                if transition.source_state in reachable and transition.target_state not in reachable:
-                    reachable.add(transition.target_state)
-                    changed = True
-        
-        all_states = set(state.name for state in fsm.states)
-        return len(reachable) == len(all_states)
-    
-    def _check_no_orphans(self, fsm: FiniteStateMachine) -> bool:
-        """Check that all states participate in transitions."""
-        states_in_transitions = set()
-        
-        for transition in fsm.transitions:
-            states_in_transitions.add(transition.source_state)
-            states_in_transitions.add(transition.target_state)
-        
-        all_states = set(state.name for state in fsm.states)
-        
-        # Initial state might not have incoming transitions
-        if fsm.initial_state:
-            states_in_transitions.add(fsm.initial_state)
-        
-        return len(states_in_transitions) == len(all_states)
-    
-    def _check_deterministic(self, fsm: FiniteStateMachine) -> bool:
-        """Check if FSM is deterministic (no ambiguous transitions)."""
-        state_triggers = {}
-        
-        for transition in fsm.transitions:
-            key = (transition.source_state, transition.trigger)
-            if key in state_triggers:
-                return False  # Multiple transitions with same trigger from same state
-            state_triggers[key] = transition.target_state
-        
-        return True

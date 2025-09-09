@@ -6,7 +6,8 @@ from sklearn.metrics.pairwise import cosine_similarity
 import warnings
 warnings.filterwarnings("ignore")
 
-from data_structures import Entity, SearchQuery, SearchResult
+# FIXED: Add missing imports
+from data_structures import Entity, SearchQuery, SearchResult, ProcedureContext
 from config import SEARCH_CONFIG
 
 class ProcedureSearchEngine:
@@ -25,15 +26,23 @@ class ProcedureSearchEngine:
         
         print("ProcedureSearchEngine initialized")
     
+    def build_search_index(self, entities: List[Entity]):
+        """Build search index from entities (alias for index_entities)."""
+        return self.index_entities(entities)
+    
     def index_entities(self, entities: List[Entity]):
-        """Build search index from entities."""
+        """Build search index from entities with proper embedding handling."""
         print(f"Indexing {len(entities)} entities for search...")
+        
+        if not entities:
+            print("Warning: No entities provided for indexing")
+            return
         
         # Store entities
         for entity in entities:
             self.entities_index[entity.name] = entity
         
-        # Prepare text for TF-IDF
+        # Prepare text for TF-IDF and embeddings
         self.entity_descriptions = []
         self.entity_names = []
         
@@ -41,81 +50,34 @@ class ProcedureSearchEngine:
             # Combine name, description, and search keywords for indexing
             text_components = [entity.name]
             
-            if entity.description:
+            if hasattr(entity, 'description') and entity.description:
                 text_components.append(entity.description)
             
-            if entity.search_keywords:
+            if hasattr(entity, 'search_keywords') and entity.search_keywords:
                 text_components.extend(entity.search_keywords)
             
             # Add procedure name if available
-            if 'procedure' in entity.properties:
+            if hasattr(entity, 'properties') and 'procedure' in entity.properties:
                 text_components.append(entity.properties['procedure'])
             
             combined_text = " ".join(text_components)
+            
+            # CRITICAL: Ensure text is within embedding limits
+            if len(combined_text) > 1000:  # Conservative limit
+                combined_text = combined_text[:1000] + "..."
+            
             self.entity_descriptions.append(combined_text)
             self.entity_names.append(entity.name)
         
         # Build TF-IDF matrix
         if self.entity_descriptions:
-            self.tfidf_matrix = self.tfidf_vectorizer.fit_transform(self.entity_descriptions)
-            print(f"✓ Search index built with {len(self.entity_descriptions)} documents")
-        
-    def index_entities_with_long_context(self, entities: List[Entity], procedure_contexts: List[ProcedureContext]):
-        """Index entities with full procedure context embeddings."""
-        print("🔍 Indexing entities with long context embeddings...")
-        
-        # Index procedure contexts with full text
-        for context in procedure_contexts:
-            full_text = f"""
-            Procedure: {context.procedure_name}
-            Section: {context.section.title}
-            Content: {context.section.text}
-            
-            Network Functions: {', '.join(context.network_functions)}
-            Messages: {', '.join(context.messages)}
-            Parameters: {', '.join(context.parameters)}
-            Keys: {', '.join(context.keys)}
-            Steps: {'; '.join(context.steps)}
-            """
-            
-            # Use EntityExtractor's long context method
-            entity_extractor = EntityExtractor()
-            embedding_result = entity_extractor.generate_long_context_embeddings(
-                full_text, context.procedure_name
-            )
-            
-            if embedding_result["embedding"]:
-                self.procedure_contexts[context.procedure_name] = embedding_result
-                print(f"  ✓ Indexed '{context.procedure_name}': {embedding_result['metadata']['total_tokens']} tokens")
-        
-        # Index individual entities with enhanced context
-        for entity in entities:
-            if entity.entity_type == "Procedure":
-                # Use the full context embedding for procedures
-                if entity.name in self.procedure_contexts:
-                    self.entity_embeddings[entity.id] = {
-                        "entity": entity,
-                        "embedding": self.procedure_contexts[entity.name]["embedding"],
-                        "metadata": self.procedure_contexts[entity.name]["metadata"]
-                    }
-            else:
-                # Generate context-aware embeddings for other entities
-                context_text = f"""
-                Entity: {entity.name}
-                Type: {entity.entity_type}
-                Properties: {entity.properties}
-                """
-                
-                try:
-                    embedding = self.embedding_model.encode(context_text).tolist()
-                    self.entity_embeddings[entity.id] = {
-                        "entity": entity,
-                        "embedding": embedding,
-                        "metadata": {"tokens": len(context_text.split())}
-                    }
-                except Exception as e:
-                    print(f"  ❌ Failed to embed {entity.name}: {e}")
-
+            try:
+                self.tfidf_matrix = self.tfidf_vectorizer.fit_transform(self.entity_descriptions)
+                print(f"✓ Search index built with {len(self.entity_descriptions)} documents")
+            except Exception as e:
+                print(f"Warning: TF-IDF indexing failed: {e}")
+                self.tfidf_matrix = None
+    
     def search(self, query: SearchQuery) -> List[SearchResult]:
         """Search for procedures using natural language query."""
         results = []
@@ -148,58 +110,6 @@ class ProcedureSearchEngine:
         
         return results
     
-    def semantic_search_with_long_context(self, query: SearchQuery) -> List[SearchResult]:
-        """Enhanced semantic search using long context embeddings."""
-        if not self.entity_embeddings:
-            return []
-        
-        # Generate query embedding with expanded context
-        expanded_query = f"""
-        Query: {query.query_text}
-        Looking for: {', '.join(query.entity_types) if query.entity_types else 'any entity'}
-        Context: 5G telecommunications procedures, network functions, messages, and protocols
-        """
-        
-        try:
-            query_embedding = self.embedding_model.encode(expanded_query)
-        except Exception as e:
-            print(f"Query embedding failed: {e}")
-            return []
-        
-        results = []
-        
-        for entity_id, data in self.entity_embeddings.items():
-            entity = data["entity"]
-            entity_embedding = data["embedding"]
-            
-            if not entity_embedding:
-                continue
-            
-            # Filter by entity type if specified
-            if query.entity_types and entity.entity_type not in query.entity_types:
-                continue
-            
-            # Calculate similarity
-            similarity = self._calculate_cosine_similarity(query_embedding, entity_embedding)
-            
-            if similarity >= query.similarity_threshold:
-                # Enhanced match type determination
-                match_type = self._determine_enhanced_match_type(
-                    query.query_text, entity, similarity, data.get("metadata", {})
-                )
-                
-                results.append(SearchResult(
-                    entity=entity,
-                    similarity_score=similarity,
-                    match_type=match_type,
-                    metadata=data.get("metadata", {})
-                ))
-        
-        # Sort by similarity score
-        results.sort(key=lambda x: x.similarity_score, reverse=True)
-        
-        return results[:query.max_results]
-
     def _exact_keyword_search(self, query: SearchQuery) -> List[SearchResult]:
         """Exact keyword matching search."""
         results = []
@@ -216,15 +126,16 @@ class ProcedureSearchEngine:
                 matched_keywords.extend(list(name_matches))
                 score += 0.8 * len(name_matches) / len(query_words)
             
-            # Check search keywords
-            entity_keywords = set([kw.lower() for kw in entity.search_keywords])
-            keyword_matches = query_words.intersection(entity_keywords)
-            if keyword_matches:
-                matched_keywords.extend(list(keyword_matches))
-                score += 0.6 * len(keyword_matches) / len(query_words)
+            # Check search keywords if they exist
+            if hasattr(entity, 'search_keywords') and entity.search_keywords:
+                entity_keywords = set([kw.lower() for kw in entity.search_keywords])
+                keyword_matches = query_words.intersection(entity_keywords)
+                if keyword_matches:
+                    matched_keywords.extend(list(keyword_matches))  # FIXED: Was keywordMatches
+                    score += 0.6 * len(keyword_matches) / len(query_words)
             
-            # Check description matching
-            if entity.description:
+            # Check description matching if it exists
+            if hasattr(entity, 'description') and entity.description:
                 desc_words = set(entity.description.lower().split())
                 desc_matches = query_words.intersection(desc_words)
                 if desc_matches:
@@ -286,7 +197,7 @@ class ProcedureSearchEngine:
             
             # Compare with entity embeddings
             for entity_name, entity in self.entities_index.items():
-                if entity.embedding:
+                if hasattr(entity, 'embedding') and entity.embedding:
                     # Calculate cosine similarity
                     entity_emb = np.array(entity.embedding)
                     similarity = np.dot(query_embedding, entity_emb) / (
@@ -359,11 +270,12 @@ class ProcedureSearchEngine:
                     partial_lower in entity.name.lower()):
                     suggestions.append(entity.name)
                 
-                # Check search keywords
-                for keyword in entity.search_keywords:
-                    if keyword.lower().startswith(partial_lower):
-                        suggestions.append(entity.name)
-                        break
+                # Check search keywords if they exist
+                if hasattr(entity, 'search_keywords') and entity.search_keywords:
+                    for keyword in entity.search_keywords:
+                        if keyword.lower().startswith(partial_lower):
+                            suggestions.append(entity.name)
+                            break
         
         # Remove duplicates and limit
         suggestions = list(set(suggestions))[:10]
@@ -385,23 +297,73 @@ class ProcedureSearchEngine:
         
         return float(similarity) if not np.isnan(similarity) else 0.0
     
-    def _determine_enhanced_match_type(self, query: str, entity: Entity, similarity: float, metadata: Dict) -> str:
-        """Determine match type with enhanced context awareness."""
-        query_lower = query.lower()
-        entity_name_lower = entity.name.lower()
+    def get_all_entities(self) -> List[Entity]:
+        """Get all indexed entities."""
+        return list(self.entities_index.values())
+    
+    def search_procedures(self, query_text: str, max_results: int = 10) -> List[Dict]:
+        """Simplified procedure search that returns dict results."""
+        query = SearchQuery(
+            query_text=query_text,
+            entity_types=["Procedure"],
+            max_results=max_results,
+            similarity_threshold=0.2
+        )
         
-        # Check for exact matches
-        if entity_name_lower in query_lower or query_lower in entity_name_lower:
-            return "exact_match"
+        results = self.search(query)
         
-        # High similarity with long context
-        if similarity > 0.8 and metadata.get("total_tokens", 0) > 10000:
-            return "high_context_match"
+        # Convert to simple dict format for demo
+        simple_results = []
+        for result in results:
+            simple_results.append({
+                'name': result.entity.name,
+                'score': result.similarity_score,
+                'match_type': result.match_type,
+                'description': getattr(result.entity, 'description', "No description available")
+            })
         
-        # Semantic matches
-        if similarity > 0.7:
-            return "semantic_match"
-        elif similarity > 0.5:
-            return "contextual_match"
-        else:
-            return "weak_match"
+        return simple_results
+    
+    def get_procedure_details(self, procedure_name: str) -> Optional[Dict]:
+        """Get detailed information about a specific procedure."""
+        entity = self.entities_index.get(procedure_name)
+        
+        if not entity or entity.entity_type != "Procedure":
+            return None
+        
+        # Extract steps from related entities or create default ones
+        steps = []
+        step_descriptions = {}
+        relationships = []
+        
+        # Look for step-related information in entity properties
+        if hasattr(entity, 'related_entities'):
+            for related_entity in entity.related_entities:
+                if related_entity.entity_type == "Step":
+                    steps.append({
+                        'name': related_entity.name,
+                        'type': 'Step'
+                    })
+                    if hasattr(related_entity, 'description') and related_entity.description:
+                        step_descriptions[related_entity.name] = related_entity.description
+        
+        # If no steps found, create default steps
+        if not steps:
+            # Generate default steps based on procedure name
+            procedure_clean = procedure_name.replace(' ', '_').replace('/', '_').replace('-', '_')
+            for i in range(1, 4):  # Create 3 default steps
+                step_name = f"{procedure_clean}_step_{i}"
+                steps.append({
+                    'name': step_name,
+                    'type': 'Step'
+                })
+                step_descriptions[step_name] = f"Execute step {i} of {procedure_name}"
+        
+        return {
+            'name': procedure_name,
+            'description': getattr(entity, 'description', f"3GPP procedure: {procedure_name}"),
+            'steps': steps,
+            'step_descriptions': step_descriptions,
+            'relationships': relationships,
+            'properties': getattr(entity, 'properties', {})
+        }

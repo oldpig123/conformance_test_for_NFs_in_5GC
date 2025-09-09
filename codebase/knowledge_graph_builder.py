@@ -4,6 +4,8 @@ from collections import defaultdict
 from tqdm import tqdm
 import warnings
 import re
+import gc
+import torch
 warnings.filterwarnings("ignore")
 
 from data_structures import Entity, Relationship, ProcedureContext
@@ -32,7 +34,7 @@ class KnowledgeGraphBuilder:
         print("✓ Knowledge Graph Builder initialized")
     
     def build_knowledge_graph(self, file_paths: List[Path]):
-        """Main pipeline execution following refined steps 0-6."""
+        """Main pipeline execution with memory management."""
         print("\n" + "="*70)
         print("  3GPP KNOWLEDGE GRAPH CONSTRUCTION PIPELINE")
         print("="*70)
@@ -48,6 +50,9 @@ class KnowledgeGraphBuilder:
             
             # Step 4h: Merge all knowledge graphs and load to database
             self._merge_and_load_to_database()
+            
+            # Step 5: Generate embeddings in batches to avoid OOM
+            self._generate_embeddings_in_batches()
             
             # Final statistics
             self._print_final_statistics()
@@ -180,6 +185,81 @@ class KnowledgeGraphBuilder:
         # Verify critical relationships
         self._verify_critical_relationships()
     
+    def _generate_embeddings_in_batches(self):
+        """Generate embeddings in batches to prevent OOM."""
+        print(f"\n=== STEP 6: GENERATING EMBEDDINGS IN BATCHES ===")
+        
+        if not self.procedure_contexts:
+            print("⚠️ No procedures to generate embeddings for")
+            return
+        
+        batch_size = 10  # Process 10 procedures at a time
+        total_procedures = len(self.procedure_contexts)
+        
+        for batch_start in range(0, total_procedures, batch_size):
+            batch_end = min(batch_start + batch_size, total_procedures)
+            batch_procedures = self.procedure_contexts[batch_start:batch_end]
+            
+            print(f"\nProcessing batch {batch_start//batch_size + 1}: procedures {batch_start+1}-{batch_end}")
+            
+            for i, context in enumerate(batch_procedures):
+                procedure_name = context.procedure_name
+                print(f"  📄 Generating embeddings for: {procedure_name} ({batch_start + i + 1}/{total_procedures})")
+                
+                try:
+                    # Create comprehensive but memory-safe procedure text
+                    # FIXED: Get relationships for this specific procedure
+                    procedure_relationships = [
+                        rel for rel in self.all_relationships 
+                        if rel.source_name == procedure_name or rel.target_name == procedure_name
+                    ]
+                    
+                    full_procedure_text = f"""
+                    PROCEDURE: {procedure_name}
+                    SECTION: {context.section.title}
+                    
+                    CONTENT: {context.section.text[:3000]}
+                    
+                    ENTITIES:
+                    Network Functions: {', '.join(context.network_functions[:10])}
+                    Messages: {', '.join(context.messages[:10])}
+                    Parameters: {', '.join(context.parameters[:10])}
+                    Keys: {', '.join(context.keys[:5])}
+                    
+                    STEPS: {'; '.join(context.steps[:5])}
+                    
+                    RELATIONSHIPS:
+                    {chr(10).join([f"- {rel.source_name} --{rel.rel_type}--> {rel.target_name}" 
+                                  for rel in procedure_relationships[:10]])}
+                    """
+                    
+                    # Generate embedding with memory management
+                    embedding = self.entity_extractor.generate_embeddings(full_procedure_text)
+                    
+                    if embedding:
+                        procedure_entity = self._find_entity_by_name(procedure_name, "Procedure")
+                        if procedure_entity:
+                            procedure_entity.properties["embedding"] = embedding
+                            print(f"    ✓ Embedded {procedure_name}")
+                    else:
+                        print(f"    ❌ Failed to embed {procedure_name}")
+                    
+                    # Memory cleanup after each procedure
+                    if torch.cuda.is_available():
+                        torch.cuda.empty_cache()
+                    
+                except Exception as e:
+                    print(f"    ❌ Error embedding {procedure_name}: {e}")
+                    continue
+            
+            # Cleanup after each batch
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+                gc.collect()
+                print(f"  Batch {batch_start//batch_size + 1} completed. GPU memory: {torch.cuda.memory_allocated() / 1e9:.1f}GB")
+        
+        print(f"\n✅ Embeddings generated for procedures")
+    
     def _verify_critical_relationships(self):
         """Verify required relationships exist."""
         print("\n=== Verifying Required Relationships ===")
@@ -238,6 +318,11 @@ class KnowledgeGraphBuilder:
         if key not in self.all_entities:
             self.all_entities[key] = Entity(name, entity_type, properties)
     
+    def _find_entity_by_name(self, name: str, entity_type: str):
+        """Find entity by name and type."""
+        key = (name, entity_type)
+        return self.all_entities.get(key)
+    
     # Incremental update methods (Requirement 6)
     def add_new_document(self, file_path: Path):
         """Add new document to existing knowledge graph."""
@@ -274,68 +359,3 @@ class KnowledgeGraphBuilder:
         # Implementation for document removal
         # Remove entities and relationships associated with the document
         pass
-    
-    def build_knowledge_graph(self, document_files: List[Path]):
-        """Enhanced knowledge graph building with long context embeddings."""
-        print(f"\n=== BUILDING KNOWLEDGE GRAPH WITH LONG CONTEXT ===")
-        
-        # Step 1: Load documents
-        all_sections = self.document_loader.load_documents(document_files)
-        
-        # Step 2: Process each document
-        for file_path in document_files:
-            print(f"\n--- Processing Document: {file_path.name} ---")
-            self._process_single_document(all_sections, file_path.stem)
-        
-        # Step 5: Enhanced embedding generation with full context
-        print(f"\n=== STEP 5: GENERATING LONG CONTEXT EMBEDDINGS ===")
-        
-        entity_extractor = EntityExtractor()
-        
-        for context in self.procedure_contexts:
-            procedure_name = context.procedure_name
-            print(f"\n📄 Generating long context embeddings for: {procedure_name}")
-            
-            # Create comprehensive procedure text
-            full_procedure_text = f"""
-            PROCEDURE: {procedure_name}
-            
-            SECTION TITLE: {context.section.title}
-            CLAUSE: {context.section.clause}
-            
-            FULL CONTENT:
-            {context.section.text}
-            
-            EXTRACTED ENTITIES:
-            Network Functions: {', '.join(context.network_functions)}
-            Messages: {', '.join(context.messages)}
-            Parameters: {', '.join(context.parameters)}
-            Keys: {', '.join(context.keys)}
-            
-            PROCEDURE STEPS:
-            {chr(10).join([f"{i+1}. {step}" for i, step in enumerate(context.steps)])}
-            
-            RELATIONSHIPS:
-            {chr(10).join([f"- {rel.source_name} --{rel.rel_type}--> {rel.target_name}" 
-                          for rel in context.relationships[:10]])}  # First 10 relationships
-            """
-            
-            # Generate long context embedding
-            embedding_result = entity_extractor.generate_long_context_embeddings(
-                full_procedure_text, procedure_name
-            )
-            
-            if embedding_result["embedding"]:
-                # Store embedding with procedure entity
-                procedure_entity = self._find_entity_by_name(procedure_name, "Procedure")
-                if procedure_entity:
-                    procedure_entity.properties["long_context_embedding"] = embedding_result["embedding"]
-                    procedure_entity.properties["embedding_metadata"] = embedding_result["metadata"]
-                    print(f"  ✓ Stored long context embedding: {embedding_result['metadata']['total_tokens']} tokens")
-        
-        print(f"\n✅ Long context embeddings generated for {len(self.procedure_contexts)} procedures")
-    
-    def _find_entity_by_name(self, name: str, entity_type: str):
-        """Find entity by name and type."""
-        key = (name, entity_type)
-        return self.all_entities.get(key)

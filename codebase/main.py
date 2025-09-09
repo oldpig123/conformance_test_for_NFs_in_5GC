@@ -70,16 +70,17 @@ def main():
 def demo_search_and_fsm(builder: KnowledgeGraphBuilder):
     """Demo search functionality and FSM conversion."""
     
-    # Initialize search engine
-    print("Initializing search engine...")
+    # Initialize search engine and FSM converter
+    print("Initializing search engine and FSM converter...")
     search_engine = ProcedureSearchEngine(builder.entity_extractor.embedding_model)
+    fsm_converter = FSMConverter()
+    
+    # Get all entities from builder
+    all_entities = list(builder.all_entities.values())
+    print(f"Found {len(all_entities)} total entities")
     
     # Index all entities for search
-    all_entities = list(builder.all_entities.values())
-    search_engine.index_entities(all_entities)
-    
-    # Initialize FSM converter
-    fsm_converter = FSMConverter()
+    search_engine.build_search_index(all_entities)
     
     # Demo queries
     demo_queries = [
@@ -95,138 +96,97 @@ def demo_search_and_fsm(builder: KnowledgeGraphBuilder):
     for query_text in demo_queries:
         print(f"\n🔍 Query: '{query_text}'")
         
-        # Create search query
-        query = SearchQuery(
-            query_text=query_text,
-            entity_types=["Procedure"],
-            max_results=3,
-            similarity_threshold=0.3
-        )
-        
-        # Search for procedures
-        results = search_engine.search(query)
-        
-        if results:
-            print(f"   Found {len(results)} procedures:")
+        try:
+            # Search for procedures using simplified interface
+            results = search_engine.search_procedures(query_text, max_results=3)
             
-            for i, result in enumerate(results, 1):
-                procedure_name = result.entity.name
-                score = result.similarity_score
-                match_type = result.match_type
+            if results:
+                print(f"   Found {len(results)} procedures:")
                 
-                print(f"   {i}. {procedure_name} (score: {score:.3f}, type: {match_type})")
-                
-                # Convert first result to FSM
-                if i == 1:
-                    print(f"   🔄 Converting '{procedure_name}' to FSM...")
+                for i, result in enumerate(results, 1):
+                    procedure_name = result['name']
+                    score = result['score']
+                    match_type = result['match_type']
                     
-                    try:
-                        # Get procedure context
-                        procedure_context = None
-                        for ctx in builder.procedure_contexts:
-                            if ctx.procedure_name == procedure_name:
-                                procedure_context = ctx
-                                break
+                    print(f"   {i}. {procedure_name} (score: {score:.3f}, type: {match_type})")
+                    
+                    # Convert first result to FSM
+                    if i == 1:
+                        print(f"   🔄 Converting '{procedure_name}' to FSM...")
                         
-                        # Convert to FSM
-                        fsm = fsm_converter.convert_procedure_to_fsm(
-                            procedure_name=procedure_name,
-                            entities=all_entities,
-                            relationships=builder.all_relationships,
-                            context=procedure_context
-                        )
-                        
-                        # Validate FSM
-                        validation = fsm_converter.validate_fsm(fsm)
-                        
-                        print(f"   ✓ FSM created: {len(fsm.states)} states, {len(fsm.transitions)} transitions")
-                        print(f"   ✓ Validation: {'PASSED' if validation['overall_valid'] else 'FAILED'}")
-                        
-                        # Export FSM
-                        output_dir = Path("output")
-                        output_dir.mkdir(exist_ok=True)
-                        
-                        # Export to JSON
-                        json_file = output_dir / f"{procedure_name.replace(' ', '_')}_fsm.json"
-                        fsm_converter.export_fsm_to_json(fsm, json_file)
-                        
-                        # Export to DOT for visualization
-                        dot_file = output_dir / f"{procedure_name.replace(' ', '_')}_fsm.dot"
-                        fsm_converter.export_fsm_to_dot(fsm, dot_file)
-                        
-                        print(f"   📁 FSM exported to: {json_file}")
-                        print(f"   📁 DOT file for visualization: {dot_file}")
-                        
-                        # Show FSM details
-                        show_fsm_details(fsm)
-                        
-                    except Exception as e:
-                        print(f"   ❌ FSM conversion failed: {e}")
-                        import traceback
-                        traceback.print_exc()
-        else:
-            print(f"   No procedures found for query.")
+                        try:
+                            # Get procedure details from builder directly
+                            procedure_data = get_procedure_details_from_builder(builder, procedure_name)
+                            
+                            if procedure_data:
+                                steps = procedure_data.get('steps', [])
+                                step_descriptions = procedure_data.get('step_descriptions', {})
+                                relationships = procedure_data.get('relationships', [])
+                                
+                                # Convert to FSM
+                                fsm = fsm_converter.convert_procedure_to_fsm(
+                                    procedure_name, steps, step_descriptions, relationships
+                                )
+                                
+                                if fsm:
+                                    # Validate FSM
+                                    is_valid, errors = fsm_converter.validate_fsm(fsm)
+                                    print(f"   ✓ Validation: {'PASSED' if is_valid else 'FAILED'}")
+                                    if errors:
+                                        for error in errors[:3]:  # Show first 3 errors
+                                            print(f"     - {error}")
+                                    
+                                    # Export FSM with fixed filename handling
+                                    safe_name = fsm_converter._sanitize_filename(procedure_name)
+                                    json_file = f"{safe_name}_fsm.json"
+                                    dot_file = f"{safe_name}_fsm.dot"
+                                    
+                                    # Export to JSON
+                                    if fsm_converter.export_fsm_to_json(fsm, json_file):
+                                        print(f"   📁 FSM exported to: output/{json_file}")
+                                    
+                                    # Export to DOT
+                                    if fsm_converter.export_fsm_to_dot(fsm, dot_file):
+                                        print(f"   📁 DOT file for visualization: output/{dot_file}")
+                                    
+                                    # Show FSM details
+                                    show_fsm_details(fsm)
+                                    
+                                else:
+                                    print("   ❌ FSM conversion failed: No FSM generated")
+                            else:
+                                print("   ❌ FSM conversion failed: No procedure data found")
+                                
+                        except Exception as e:
+                            print(f"   ❌ FSM conversion failed: {e}")
+                            import traceback
+                            traceback.print_exc()
+            else:
+                print(f"   No procedures found for query.")
+        
+        except Exception as e:
+            print(f"   ❌ Search failed: {e}")
+            import traceback
+            traceback.print_exc()
     
     # Demo: Direct procedure search
     print(f"\n--- DIRECT PROCEDURE SEARCH ---")
-    authentication_procedures = search_engine.search_authentication_procedures()
-    
-    if authentication_procedures:
-        print(f"Found {len(authentication_procedures)} authentication procedures:")
-        for result in authentication_procedures[:5]:  # Show top 5
-            print(f"  - {result.entity.name} (score: {result.similarity_score:.3f})")
+    try:
+        authentication_procedures = search_engine.search_authentication_procedures()
+        
+        if authentication_procedures:
+            print(f"Found {len(authentication_procedures)} authentication procedures:")
+            for i, result in enumerate(authentication_procedures[:5], 1):  # Show top 5
+                print(f"  {i}. {result.entity.name} (score: {result.similarity_score:.3f})")
+        else:
+            print("No authentication procedures found.")
+    except Exception as e:
+        print(f"Authentication search failed: {e}")
 
-def show_fsm_details(fsm):
-    """Show detailed FSM information."""
-    print(f"   📋 FSM Details for '{fsm.procedure_name}':")
-    print(f"      Initial State: {fsm.initial_state}")
-    print(f"      Final States: {', '.join(fsm.final_states)}")
+def get_procedure_details_from_builder(builder, procedure_name: str):
+    """Get detailed information about a specific procedure from builder."""
     
-    print(f"      States:")
-    for state in fsm.states[:3]:  # Show first 3 states
-        desc = state.description[:60] + "..." if len(state.description) > 60 else state.description
-        print(f"        - {state.name}: {desc}")
-    
-    print(f"      Transitions:")
-    for transition in fsm.transitions[:3]:  # Show first 3 transitions
-        print(f"        - {transition.source_state} → {transition.target_state} (trigger: {transition.trigger})")
-
-def search_specific_procedure(builder: KnowledgeGraphBuilder, query: str) -> str:
-    """Search for a specific procedure and return its name."""
-    print(f"🔍 Searching for: '{query}'")
-    
-    # Initialize search engine
-    search_engine = ProcedureSearchEngine(builder.entity_extractor.embedding_model)
-    all_entities = list(builder.all_entities.values())
-    search_engine.index_entities(all_entities)
-    
-    # Create search query
-    search_query = SearchQuery(
-        query_text=query,
-        entity_types=["Procedure"],
-        max_results=1,
-        similarity_threshold=0.3
-    )
-    
-    # Search
-    results = search_engine.search(search_query)
-    
-    if results:
-        procedure_name = results[0].entity.name
-        print(f"✓ Found procedure: {procedure_name}")
-        return procedure_name
-    else:
-        print(f"❌ No procedure found for query: {query}")
-        return None
-
-def convert_procedure_to_fsm(builder: KnowledgeGraphBuilder, procedure_name: str):
-    """Convert a specific procedure to FSM."""
-    print(f"🔄 Converting '{procedure_name}' to FSM...")
-    
-    # Initialize FSM converter
-    fsm_converter = FSMConverter()
-    
-    # Get procedure context
+    # Find the procedure context
     procedure_context = None
     for ctx in builder.procedure_contexts:
         if ctx.procedure_name == procedure_name:
@@ -234,36 +194,75 @@ def convert_procedure_to_fsm(builder: KnowledgeGraphBuilder, procedure_name: str
             break
     
     if not procedure_context:
-        print(f"❌ Procedure context not found for: {procedure_name}")
+        print(f"    No procedure context found for '{procedure_name}'")
         return None
     
-    # Convert to FSM
-    try:
-        fsm = fsm_converter.convert_procedure_to_fsm(
-            procedure_name=procedure_name,
-            entities=list(builder.all_entities.values()),
-            relationships=builder.all_relationships,
-            context=procedure_context
-        )
+    # Get relationships for this procedure
+    procedure_relationships = [
+        {
+            'source_name': rel.source_name,
+            'target_name': rel.target_name,
+            'rel_type': rel.rel_type
+        }
+        for rel in builder.all_relationships 
+        if rel.source_name == procedure_name or rel.target_name == procedure_name
+    ]
+    
+    # Create steps data from procedure context
+    steps = []
+    step_descriptions = {}
+    
+    # Get steps from procedure context
+    for step_name in procedure_context.steps:
+        steps.append({
+            'name': step_name,
+            'type': 'Step'
+        })
         
-        # Validate FSM
-        validation = fsm_converter.validate_fsm(fsm)
-        print(f"✓ FSM Validation: {'PASSED' if validation['overall_valid'] else 'FAILED'}")
-        
-        # Export FSM
-        output_dir = Path("output")
-        output_dir.mkdir(exist_ok=True)
-        
-        json_file = output_dir / f"{procedure_name.replace(' ', '_')}_fsm.json"
-        fsm_converter.export_fsm_to_json(fsm, json_file)
-        
-        print(f"✓ FSM exported to: {json_file}")
-        
-        return fsm
-        
-    except Exception as e:
-        print(f"❌ FSM conversion failed: {e}")
-        return None
+        # Get step description from context
+        if hasattr(procedure_context, 'step_descriptions') and procedure_context.step_descriptions:
+            step_descriptions[step_name] = procedure_context.step_descriptions.get(
+                step_name, f"Execute step {step_name}"
+            )
+        else:
+            step_descriptions[step_name] = f"Execute step {step_name}"
+    
+    # If no steps from context, create default ones
+    if not steps:
+        procedure_clean = procedure_name.replace(' ', '_').replace('/', '_').replace('-', '_')
+        for i in range(1, 4):  # Create 3 default steps
+            step_name = f"{procedure_clean}_step_{i}"
+            steps.append({
+                'name': step_name,
+                'type': 'Step'
+            })
+            step_descriptions[step_name] = f"Execute step {i} of {procedure_name}"
+    
+    print(f"    ✓ Found procedure data: {len(steps)} steps, {len(procedure_relationships)} relationships")
+    
+    return {
+        'name': procedure_name,
+        'description': f"3GPP procedure: {procedure_name}",
+        'steps': steps,
+        'step_descriptions': step_descriptions,
+        'relationships': procedure_relationships,
+        'properties': {}
+    }
+
+def show_fsm_details(fsm):
+    """Show detailed FSM information."""
+    print(f"   📋 FSM Details for '{fsm.procedure_name}':")  # Use procedure_name from data_structures
+    print(f"      Initial State: {fsm.initial_state}")
+    print(f"      Final States: {', '.join(fsm.final_states) if fsm.final_states else 'None'}")
+    
+    print(f"      States:")
+    for state in fsm.states[:3]:  # Show first 3 states
+        desc = state.step_entity.description[:60] + "..." if state.step_entity.description and len(state.step_entity.description) > 60 else (state.step_entity.description or "")
+        print(f"        - {state.name}: {desc}")
+    
+    print(f"      Transitions:")
+    for transition in fsm.transitions[:3]:  # Show first 3 transitions
+        print(f"        - {transition.source_state} → {transition.target_state} (trigger: {transition.trigger})")
 
 if __name__ == "__main__":
     main()

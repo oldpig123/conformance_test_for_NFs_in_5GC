@@ -192,26 +192,18 @@ class FiniteStateMachine:
 # NEW: Search Support Classes (Requirement 8)
 @dataclass
 class SearchQuery:
-    """Represents a search query."""
+    """Query for searching entities and procedures."""
     query_text: str
-    entity_types: List[str] = field(default_factory=list)
+    entity_types: Optional[List[str]] = None
     max_results: int = 10
-    similarity_threshold: float = 0.7
+    similarity_threshold: float = 0.3
+    filters: Optional[Dict[str, any]] = None
 
 @dataclass
 class SearchResult:
-    """Represents a search result."""
-    entity: Entity
+    """Result from entity/procedure search."""
+    entity: 'Entity'
     similarity_score: float
-    match_type: str  # "exact", "semantic", "keyword"
+    match_type: str  # 'exact', 'tfidf', 'semantic', etc.
     matched_keywords: List[str] = field(default_factory=list)
-    
-    def to_dict(self) -> Dict[str, any]:
-        return {
-            'entity_name': self.entity.name,
-            'entity_type': self.entity.entity_type,
-            'similarity_score': self.similarity_score,
-            'match_type': self.match_type,
-            'matched_keywords': self.matched_keywords,
-            'description': self.entity.description
-        }
+    metadata: Optional[Dict[str, any]] = None
