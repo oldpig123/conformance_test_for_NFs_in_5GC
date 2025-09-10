@@ -1,5 +1,4 @@
 import os
-import torch
 from pathlib import Path
 
 # Database Configuration
@@ -113,20 +112,17 @@ REQUIRED_RELATIONS = [
 
 # Search Configuration (Requirement 8)
 SEARCH_CONFIG = {
+    "use_long_context": True,
+    "similarity_threshold": 0.3,
     "max_results": 10,
-    "similarity_threshold": 0.7,
-    "embedding_dimension": 384
+    "enable_chunk_search": True,
+    "context_expansion": True
 }
 
-# Output Configuration
-OUTPUT_CONFIG = {
-    "knowledge_graph_output": Path("./output/knowledge_graphs/"),
-    "fsm_output": Path("./output/fsm/"),
-    "test_output": Path("./output/tests/"),
-    "reports_output": Path("./output/reports/"),
-    "logs_output": Path("./output/logs/")
+# FSM Configuration (Requirement 10)
+FSM_CONFIG = {
+    "initial_state": "START",
+    "final_state": "END",
+    "transition_trigger": "message_event",
+    "state_property": "step_name"
 }
-
-# Ensure output directories exist
-for output_dir in OUTPUT_CONFIG.values():
-    output_dir.mkdir(parents=True, exist_ok=True)
