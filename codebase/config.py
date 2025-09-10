@@ -32,11 +32,10 @@ NER_MODEL_OPTIONS = [
 # Embedding Models for Searchability (Requirement 8) - REVISED
 EMBEDDING_MODEL_OPTIONS = [
     
-
+    "Qwen/Qwen3-Embedding-4B",                      # High quality, smaller
     "sentence-transformers/all-MiniLM-L6-v2",           # Fastest, good quality
     "sentence-transformers/all-mpnet-base-v2",          # Best quality
-    "distilbert-base-uncased"                           # Fallback
-    "Qwen/Qwen3-Embedding-4B",                      # High quality, smaller
+    "distilbert-base-uncased",                           # Fallback
     "Qwen/Qwen3-Embedding-8B"                      # High quality embeddings
 ]
 
