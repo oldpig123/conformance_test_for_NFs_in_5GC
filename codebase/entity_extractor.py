@@ -29,6 +29,15 @@ class EntityExtractor:
         self.current_model_name = None  # Track the current model name
         self.tokenizer = tiktoken.get_encoding("cl100k_base")  # For token counting
         self.max_tokens = 32000  # Leave some buffer from 32768
+        
+        # Load whitelist from config for strict validation
+        self.valid_network_functions = set(nf.upper() for nf in KNOWN_NETWORK_FUNCTIONS)
+        self.valid_parameters = set(param.upper() for param in KNOWN_PARAMETERS)
+        self.valid_keys = set(key.upper() for key in KNOWN_KEYS)
+        self.valid_messages = set(msg.upper() for msg in KNOWN_MESSAGES)
+        
+        print(f"Loaded {len(self.valid_network_functions)} valid network functions for validation")
+        
         self._setup_models()
     
     def _setup_models(self):
@@ -98,6 +107,97 @@ class EntityExtractor:
         if not self.embedding_model:
             print("  ⚠️  No Embedding model loaded - search will be limited")
 
+    # NEW: Strict whitelist enforcement methods
+    def _enforce_nf_whitelist(self, extracted_nfs: List[str]) -> List[str]:
+        """Enforce strict network function whitelist validation."""
+        validated_nfs = []
+        rejected_count = 0
+        
+        for nf in extracted_nfs:
+            # Normalize candidate (handle variations like "5G-AMF" -> "AMF")
+            normalized_nf = self._normalize_nf_candidate(nf)
+            
+            if normalized_nf and normalized_nf in self.valid_network_functions:
+                validated_nfs.append(normalized_nf)
+                print(f"        ✓ Validated NF: {nf} -> {normalized_nf}")
+            else:
+                print(f"        ✗ Rejected NF: {nf} (not in whitelist)")
+                rejected_count += 1
+        
+        if rejected_count > 0:
+            print(f"      📋 Rejected {rejected_count} invalid network functions")
+        
+        return validated_nfs
+    
+    def _normalize_nf_candidate(self, candidate: str) -> Optional[str]:
+        """Normalize NF candidate and check variations."""
+        if not candidate:
+            return None
+        
+        # Convert to uppercase
+        candidate_upper = candidate.upper().strip()
+        
+        # Direct match
+        if candidate_upper in self.valid_network_functions:
+            return candidate_upper
+        
+        # Handle common variations
+        # Remove prefixes like "5G-", "UE-", "N1-", etc.
+        normalized = re.sub(r'^(5G-|UE-|N[0-9]+-|CN-)', '', candidate_upper)
+        if normalized in self.valid_network_functions:
+            return normalized
+        
+        # Remove suffixes like "-FUNCTION", "-SERVER", etc.
+        normalized = re.sub(r'(-FUNCTION|-SERVER|-GATEWAY|-NODE)$', '', candidate_upper)
+        if normalized in self.valid_network_functions:
+            return normalized
+        
+        # Handle abbreviations (e.g., "Authentication Server" -> "AUSF")
+        abbreviation_map = {
+            'AUTHENTICATION SERVER': 'AUSF',
+            'ACCESS MOBILITY MANAGEMENT': 'AMF',
+            'SESSION MANAGEMENT': 'SMF',
+            'USER PLANE': 'UPF',
+            'POLICY CONTROL': 'PCF',
+            'UNIFIED DATA MANAGEMENT': 'UDM',
+            'UNIFIED DATA REPOSITORY': 'UDR',
+            'NETWORK REPOSITORY': 'NRF',
+            'NETWORK SLICE SELECTION': 'NSSF'
+        }
+        
+        if candidate_upper in abbreviation_map:
+            return abbreviation_map[candidate_upper]
+        
+        return None
+    
+    def _enforce_parameter_whitelist(self, extracted_params: List[str]) -> List[str]:
+        """Enforce parameter whitelist validation."""
+        validated_params = []
+        
+        for param in extracted_params:
+            param_upper = param.upper().strip()
+            if param_upper in self.valid_parameters:
+                validated_params.append(param_upper)
+                print(f"        ✓ Validated Parameter: {param}")
+            else:
+                print(f"        ✗ Rejected Parameter: {param} (not in whitelist)")
+        
+        return validated_params
+    
+    def _enforce_key_whitelist(self, extracted_keys: List[str]) -> List[str]:
+        """Enforce key whitelist validation."""
+        validated_keys = []
+        
+        for key in extracted_keys:
+            key_upper = key.upper().strip()
+            if key_upper in self.valid_keys:
+                validated_keys.append(key_upper)
+                print(f"        ✓ Validated Key: {key}")
+            else:
+                print(f"        ✗ Rejected Key: {key} (not in whitelist)")
+        
+        return validated_keys
+
     def extract_entities_for_procedure(self, context: ProcedureContext) -> ExtractionResult:
         """Enhanced entity extraction with step descriptions (Requirement 9)."""
         try:
@@ -112,32 +212,35 @@ class EntityExtractor:
             # Method 3: Merge results
             merged_entities = self._merge_extraction_results(llm_entities, pattern_entities)
             
-            # Method 4: Ensure minimum entities
-            if self._is_empty_result(merged_entities):
-                merged_entities = self._generate_minimum_entities(context)
+            # NEW: Method 4: Enforce whitelist validation on all entities
+            validated_entities = self._apply_whitelist_validation(merged_entities)
+            
+            # Method 5: Ensure minimum entities
+            if self._is_empty_result(validated_entities):
+                validated_entities = self._generate_minimum_entities(context)
             
             # CRITICAL: Generate procedure-specific steps with descriptions
-            merged_entities = self._generate_steps_with_descriptions(merged_entities, context)
+            validated_entities = self._generate_steps_with_descriptions(validated_entities, context)
             
             # Generate search description for procedure (Requirement 8)
             context.search_description = self._generate_search_description(context)
             context.search_tags = self._generate_search_tags(context)
             
             # Update context
-            self._update_context_with_entities(context, merged_entities)
+            self._update_context_with_entities(context, validated_entities)
             
             # Debug output
-            total_entities = sum(len(v) for v in merged_entities.values())
-            print(f"      ✓ Extracted {total_entities} entities with descriptions")
+            total_entities = sum(len(v) for v in validated_entities.values())
+            print(f"      ✓ Extracted {total_entities} validated entities with descriptions")
             
             # FIXED: Get model name safely
             model_name = self.current_model_name if self.current_model_name else 'none'
             
             return ExtractionResult(
-                entities=merged_entities,
+                entities=validated_entities,
                 relationships=[],
                 success=True,
-                extraction_method="enhanced_llm_pattern",
+                extraction_method="enhanced_llm_pattern_validated",
                 llm_model_used=model_name
             )
             
@@ -151,6 +254,42 @@ class EntityExtractor:
                 success=False,
                 error_message=str(e)
             )
+    
+    # NEW: Apply whitelist validation to all entity types
+    def _apply_whitelist_validation(self, entities: Dict[str, List[str]]) -> Dict[str, List[str]]:
+        """Apply strict whitelist validation to all extracted entities."""
+        print(f"      🔍 Applying whitelist validation...")
+        
+        validated_entities = {}
+        
+        # Validate network functions (MOST IMPORTANT)
+        original_nfs = entities.get("network_functions", [])
+        validated_entities["network_functions"] = self._enforce_nf_whitelist(original_nfs)
+        
+        # Validate parameters (if whitelist exists)
+        original_params = entities.get("parameters", [])
+        if self.valid_parameters:
+            validated_entities["parameters"] = self._enforce_parameter_whitelist(original_params)
+        else:
+            validated_entities["parameters"] = original_params  # Keep original if no whitelist
+        
+        # Validate keys (if whitelist exists)  
+        original_keys = entities.get("keys", [])
+        if self.valid_keys:
+            validated_entities["keys"] = self._enforce_key_whitelist(original_keys)
+        else:
+            validated_entities["keys"] = original_keys  # Keep original if no whitelist
+        
+        # Messages and steps - no strict whitelist (too dynamic)
+        validated_entities["messages"] = entities.get("messages", [])
+        validated_entities["steps"] = entities.get("steps", [])
+        
+        # Report validation results
+        nf_reduction = len(original_nfs) - len(validated_entities["network_functions"])
+        if nf_reduction > 0:
+            print(f"      📊 Network function validation: {len(original_nfs)} -> {len(validated_entities['network_functions'])} (-{nf_reduction})")
+        
+        return validated_entities
     
     def _enhanced_llm_extraction(self, context: ProcedureContext) -> Dict[str, List[str]]:
         """Enhanced LLM extraction with better prompts."""
@@ -240,7 +379,7 @@ STEPS: 1. UE initiates registration|2. AMF processes request|3. Authentication p
         text = context.section.text
         entities = {"network_functions": [], "messages": [], "parameters": [], "keys": [], "steps": []}
         
-        # Extract network functions
+        # Extract network functions - ALREADY USES WHITELIST CORRECTLY
         for nf in KNOWN_NETWORK_FUNCTIONS:
             if re.search(r'\b' + re.escape(nf) + r'\b', text, re.IGNORECASE):
                 entities["network_functions"].append(nf)
