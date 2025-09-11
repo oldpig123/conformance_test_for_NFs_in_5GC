@@ -15,17 +15,28 @@ class RelationExtractor:
         self.is_t5_model = getattr(text_generator, 'model', None) and 't5' in str(text_generator.model.__class__).lower()
     
     def extract_relationships_for_procedure(self, context: ProcedureContext) -> List[Relationship]:
-        """Step 4d: Extract relationships for a procedure using NLP/LLM."""
+        """Extract relationships with step-based NF filtering."""
         print(f"      Extracting relationships for: {context.procedure_name}")
+        
+        # NEW: Filter NFs by step involvement
+        original_nfs = context.network_functions.copy()
+        validated_nfs = self._filter_nfs_by_step_involvement(context)
+        context.network_functions = validated_nfs
+        
+        print(f"        Step filtering: {len(original_nfs)} -> {len(validated_nfs)} NFs")
+        
         relationships = []
         
         # Extract LLM-based relationships
         llm_relationships = self._query_llm_for_relationships(context)
         relationships.extend(self._process_llm_relationships(llm_relationships, context))
         
-        # Extract strictly required relationships (Requirement 4)
+        # Extract required relationships (now with filtered NFs)
         required_relationships = self._extract_required_relationships(context)
         relationships.extend(required_relationships)
+        
+        # Restore original NFs for context
+        context.network_functions = original_nfs
         
         print(f"      ✓ Extracted {len(relationships)} relationships")
         return relationships
@@ -436,3 +447,63 @@ JSON format:
         
         # Default: assume all NFs are involved in all steps (can be refined)
         return True
+    
+    def _filter_nfs_by_step_involvement(self, context: ProcedureContext) -> List[str]:
+        """Filter NFs that have no step involvement evidence."""
+        validated_nfs = []
+        rejected_nfs = []
+        
+        for nf in context.network_functions:
+            has_step_involvement = False
+            
+            # Check if NF appears in any step description
+            for step_name in context.steps:
+                step_desc = context.step_descriptions.get(step_name, "").lower()
+                if nf.lower() in step_desc:
+                    has_step_involvement = True
+                    print(f"          Found {nf} in {step_name}: {step_desc[:50]}...")
+                    break
+            
+            # Check if NF appears in procedural context (not cross-references)
+            if not has_step_involvement:
+                has_step_involvement = self._check_procedural_context(nf, context)
+            
+            if has_step_involvement:
+                validated_nfs.append(nf)
+                print(f"        ✓ {nf}: has step involvement")
+            else:
+                rejected_nfs.append(nf)
+                print(f"        ✗ {nf}: no step involvement found")
+        
+        if rejected_nfs:
+            print(f"        📊 Filtered out {len(rejected_nfs)} NFs without step involvement: {', '.join(rejected_nfs)}")
+        
+        return validated_nfs
+    
+    def _check_procedural_context(self, nf: str, context: ProcedureContext) -> bool:
+        """Check if NF appears in active procedural context (not cross-references)."""
+        section_text = context.section.text.lower()
+        nf_lower = nf.lower()
+        
+        # Split text into sentences
+        sentences = re.split(r'[.!?;]', section_text)
+        
+        for sentence in sentences:
+            if nf_lower in sentence:
+                # Skip cross-reference sentences
+                if any(ref_phrase in sentence for ref_phrase in [
+                    'see section', 'refer to', 'as described in', 'clause', 'figure',
+                    'for more details', 'as specified', 'according to', 'see clause'
+                ]):
+                    continue
+                
+                # Check for procedural action words
+                action_words = ['perform', 'execute', 'send', 'receive', 'process', 'handle',
+                              'initiate', 'trigger', 'validate', 'authenticate', 'generate',
+                              'establish', 'select', 'forward', 'respond', 'request', 'shall']
+                
+                if any(action in sentence for action in action_words):
+                    print(f"          Found {nf} in procedural context: {sentence[:60]}...")
+                    return True
+        
+        return False
