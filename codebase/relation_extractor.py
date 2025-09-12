@@ -144,18 +144,40 @@ JSON format:
         
         print(f"    Creating required relationships for: {procedure_name}")
         
-        # Helper function to create consistent entity names
-        def get_step_name(step_index: int) -> str:
-            return f"{procedure_name.replace(' ', '_')}_step_{step_index + 1}"
+        # FIXED: Handle section numbers in step names
+        # Extract clean procedure name for pattern matching
+        section_match = re.match(r'^(\d+(?:\.\d+)*)\s+(.+)', procedure_name)
+        if section_match:
+            section_number = section_match.group(1).replace('.', '')  # "4.2.2.2.2" → "42222"
+            clean_procedure = section_match.group(2)  # "General Registration"
+        else:
+            section_number = ""
+            clean_procedure = procedure_name
         
-        # Get step names from the actual step entities that were created
-        step_names = [step for step in context.steps if step.startswith(procedure_name.replace(' ', '_'))]
+        # Create expected step pattern
+        clean_procedure_underscores = clean_procedure.replace(' ', '_')
+        
+        # Get step names - handle both formats
+        step_names = []
+        for step in context.steps:
+            # Handle format: "42222\tGeneral_Registration_step_1" or "General_Registration_step_1"
+            if '\t' in step:
+                step_section, step_name = step.split('\t', 1)
+                if step_name.startswith(clean_procedure_underscores):
+                    step_names.append(step)
+            else:
+                if step.startswith(clean_procedure_underscores):
+                    step_names.append(step)
+        
+        print(f"      Found {len(step_names)} matching steps for pattern: {clean_procedure_underscores}")
+        for step in step_names[:3]:  # Show first 3 for debugging
+            print(f"        - {step}")
         
         # 1. {Step, PART_OF, Procedure} - CRITICAL REQUIRED RELATIONSHIP
         for step_name in step_names:
             relationships.append(Relationship(
                 source_name=step_name,
-                target_name=procedure_name,  # Keep procedure name with spaces
+                target_name=procedure_name,  # Keep full procedure name with section number
                 rel_type="PART_OF",
                 properties={
                     "relationship_type": "containment",
@@ -184,8 +206,8 @@ JSON format:
         # 3. {Procedure, INVOKE, NetworkFunction} - CRITICAL REQUIRED RELATIONSHIP
         for nf in context.network_functions:
             relationships.append(Relationship(
-                source_name=procedure_name,  # Keep procedure name with spaces
-                target_name=nf,  # NF names are stored without procedure prefix
+                source_name=procedure_name,  # Keep full procedure name
+                target_name=nf,
                 rel_type="INVOKE",
                 properties={
                     "relationship_type": "invocation", 
@@ -218,25 +240,19 @@ JSON format:
                     ))
                     print(f"        ✓ INVOLVE: {nf} -> {step_name}")
         
-        # 5. {Step, CONTAINS, Parameter} - CRITICAL MISSING RELATIONSHIP
+        # 5. {Step, CONTAINS, Parameter} - CRITICAL RELATIONSHIP
         for step_name in step_names:
-            # Get step description if available
             step_desc = context.step_descriptions.get(step_name, f"Step {step_name}")
             
-            # Check each parameter against step description and step name
             for param in context.parameters:
                 param_lower = param.lower()
                 step_desc_lower = step_desc.lower()
                 step_name_lower = step_name.lower()
                 
-                # More comprehensive parameter detection
                 if (param_lower in step_desc_lower or 
                     param_lower in step_name_lower or
-                    # Check for common parameter patterns
                     any(keyword in step_desc_lower for keyword in [param_lower, 'supi', 'guti', 'imsi', 'imei', 'tai', 'plmn']) or
-                    # Check if step involves registration/authentication (likely to contain parameters)
-                    any(keyword in step_desc_lower for keyword in ['registration', 'authentication', 'identity', 'establish', 'request']) or
-                    any(keyword in step_name_lower for keyword in ['registration', 'authentication', 'identity', 'establish', 'request'])):
+                    any(keyword in step_desc_lower for keyword in ['registration', 'authentication', 'identity', 'establish', 'request'])):
                     
                     relationships.append(Relationship(
                         source_name=step_name,
@@ -250,27 +266,6 @@ JSON format:
                         }
                     ))
                     print(f"        ✓ CONTAINS: {step_name} -> {param}")
-        
-        # If no CONTAINS relationships were created, create default ones for common parameters
-        contains_created = any(r.rel_type == "CONTAINS" for r in relationships)
-        if not contains_created and step_names and context.parameters:
-            print(f"        No CONTAINS relationships detected, creating defaults...")
-            
-            # Create default CONTAINS relationships for first few steps with common parameters
-            for i, step_name in enumerate(step_names[:3]):  # First 3 steps
-                for param in context.parameters[:5]:  # First 5 parameters
-                    relationships.append(Relationship(
-                        source_name=step_name,
-                        target_name=param,
-                        rel_type="CONTAINS",
-                        properties={
-                            "relationship_type": "containment",
-                            "extraction_method": "default_parameter_assignment",
-                            "procedure": procedure_name,
-                            "confidence": 0.6
-                        }
-                    ))
-                    print(f"        ✓ CONTAINS (default): {step_name} -> {param}")
         
         # 6. {Step, SEND, Message} - REQUIRED RELATIONSHIP
         for step_name in step_names:
@@ -295,7 +290,6 @@ JSON format:
         # 7. {Message, SEND_BY, NetworkFunction} - REQUIRED RELATIONSHIP
         for msg in context.messages:
             for nf in context.network_functions:
-                # Simple heuristic: if message name contains NF name or vice versa
                 if (nf.lower() in msg.lower() or 
                     any(word in msg.lower() for word in ['request', 'response', 'notification'])):
                     relationships.append(Relationship(
@@ -313,7 +307,6 @@ JSON format:
         # 8. {Message, SEND_TO, NetworkFunction} - REQUIRED RELATIONSHIP  
         for msg in context.messages:
             for nf in context.network_functions:
-                # Simple heuristic: messages are typically sent to different NFs
                 if not (nf.lower() in msg.lower()):  # Avoid self-sending
                     relationships.append(Relationship(
                         source_name=msg,
@@ -326,8 +319,8 @@ JSON format:
                         }
                     ))
                     print(f"        ✓ SEND_TO: {msg} -> {nf}")
-                    break  # Only send to one NF per message to avoid too many relationships
-        
+                    break  # Only send to one NF per message
+    
         print(f"    Generated {len(relationships)} required relationships")
         
         # Debug: Count relationship types
@@ -336,11 +329,6 @@ JSON format:
             rel_counts[r.rel_type] = rel_counts.get(r.rel_type, 0) + 1
         
         print(f"    Relationship type counts: {rel_counts}")
-        
-        # Ensure we have CONTAINS relationships
-        if "CONTAINS" not in rel_counts:
-            print(f"    ⚠️ WARNING: No CONTAINS relationships created for {procedure_name}")
-        
         return relationships
     
     def _message_contains_parameter(self, message: str, parameter: str, context: ProcedureContext) -> bool:

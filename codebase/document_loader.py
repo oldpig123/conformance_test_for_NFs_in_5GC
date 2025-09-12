@@ -227,63 +227,150 @@ If YES, what is the procedure name?
         return None
     
     def _enhanced_fallback_identification(self, section: DocumentSection) -> Optional[str]:
-        """Enhanced fallback procedure identification."""
+        """Figure-prioritized procedure identification to reduce false negatives."""
         cleaned_title = self._clean_section_title(section.title)
         text_lower = section.text.lower()
         title_lower = cleaned_title.lower()
         
-        # Method 1: Check against known procedures
-        for known_proc in self.known_procedures:
-            if known_proc in title_lower:
-                return cleaned_title
+        # === FIGURE-FIRST APPROACH ===
         
-        # Method 2: Check for procedure indicators in title
+        # If section has figure, it gets MAJOR advantage
+        has_figure_boost = 50 if section.has_figure else 0  # INCREASED from 10 to 50!
+        
+        # 1. Basic procedure indicators
         procedure_indicators = [
             'procedure', 'authentication', 'registration', 'establishment',
-            'aka', 'handover', 'attach', 'detach', 'selection', 'update'
+            'aka', 'handover', 'attach', 'detach', 'selection', 'update',
+            'roaming', 'breakout', 'mobility', 'session', 'bearer', 'context',
+            'transfer', 'allocation', 'notification', 'exposure', 'policy',
+            'control', 'management', 'slice', 'discovery', 'trigger',
+            'emergency', 'suspend', 'resume', 'connection', 'modification',
+            'release', 'preparation', 'execution', 'phase', 'cancel'
         ]
         
-        title_has_indicator = any(indicator in title_lower for indicator in procedure_indicators)
-        
-        # Method 3: Check for step-like content in text
-        step_patterns = [
-            r'step\s+\d+',
-            r'\d+\.\s+[A-Z]',
-            r'[a-z]\)\s+[A-Z]',
-            r'first.*second.*third',
-            r'then.*next.*finally'
-        ]
-        
-        has_steps = any(re.search(pattern, text_lower) for pattern in step_patterns)
-        
-        # Method 4: Check for telecommunications entities
+        # 2. Telecom entities
         telecom_entities = [
             'amf', 'smf', 'upf', 'ausf', 'udm', 'udr', 'pcf', 'nrf',
-            'ue', 'gnb', 'ng-ran', 'n1', 'n2', 'n3', 'n4', 'n6'
+            'ue', 'gnb', 'ng-ran', 'enb', 'mme', 'sgw', 'pgw', 'hss',
+            'nef', 'nssf', 'smsf', 'seaf', 'n3iwf', 'tngf', 'w-agf',
+            'plmn', 'snpn', 'tai', 'guti', 'supi', 'imsi', 'imei',
+            'pdu', 'qos', 'qfi', 'ambr', 'dnn', 's-nssai', 'slice',
+            'bearer', 'flow', 'tunnel', 'session', 'context', 'anchor'
         ]
         
-        has_telecom_entities = sum(1 for entity in telecom_entities if entity in text_lower) >= 2
+        # 3. Step patterns
+        step_patterns = [
+            r'step\s+\d+', r'\d+\.\s+[A-Z]', r'[a-z]\)\s+[A-Z]',
+            r'first.*?second', r'then.*?next', r'phase\s+\d+',
+            r'procedure.*?follows', r'flow.*?described'
+        ]
         
-        # Decision logic
-        if (title_has_indicator and has_steps and 
-            len(cleaned_title.split()) <= 8 and 
-            len(cleaned_title) < 100):
-            return cleaned_title
+        # === SCORING (Figure-Heavy) ===
         
-        if (has_telecom_entities and has_steps and 
-            len(cleaned_title.split()) <= 6 and
-            'overview' not in title_lower and 'general' not in title_lower):
-            return cleaned_title
+        score = 0
+        evidence = []
         
-        # Method 5: Pattern-based identification for specific cases
-        if re.search(r'\b(aka|authentication|registration)\b', title_lower) and len(cleaned_title) < 50:
-            return cleaned_title
+        # Score 1: FIGURE PRESENCE (MASSIVE BOOST!)
+        score += has_figure_boost
+        if has_figure_boost > 0:
+            evidence.append("has_figure")
         
-        return None
+        # Score 2: Title indicators (0-20 points) - reduced from 30
+        title_indicator_count = sum(1 for indicator in procedure_indicators if indicator in title_lower)
+        title_score = min(title_indicator_count * 7, 20)  # Reduced multiplier
+        score += title_score
+        if title_score > 0:
+            evidence.append(f"title_indicators({title_indicator_count})")
+        
+        # Score 3: Telecom entities (0-20 points) - reduced from 25
+        entity_count = sum(1 for entity in telecom_entities if entity in text_lower)
+        entity_score = min(entity_count * 2, 20)  # Simplified calculation
+        score += entity_score
+        if entity_score > 0:
+            evidence.append(f"entities({entity_count})")
+        
+        # Score 4: Steps (0-15 points) - reduced from 20
+        step_matches = sum(1 for pattern in step_patterns if re.search(pattern, text_lower))
+        step_score = min(step_matches * 3, 15)  # Reduced multiplier
+        score += step_score
+        if step_score > 0:
+            evidence.append(f"steps({step_matches})")
+        
+        # Score 5: Basic content quality (0-10 points)
+        content_score = 0
+        if len(section.text) > 1000:
+            content_score = 10
+        elif len(section.text) > 500:
+            content_score = 5
+        score += content_score
+        if content_score > 0:
+            evidence.append(f"content({len(section.text)})")
+        
+        # === FIGURE-FRIENDLY THRESHOLDS ===
+        
+        text_length = len(section.text)
+        
+        if section.has_figure:
+            # MUCH LOWER thresholds for sections with figures
+            if text_length > 5000:
+                threshold = 60  # Even long sections with figures get lower threshold
+            elif text_length > 2000:
+                threshold = 55
+            elif text_length > 1000:
+                threshold = 50
+            else:
+                threshold = 45
+        else:
+            # Higher thresholds for sections without figures
+            threshold = 80  # Much harder to qualify without figure
+        
+        # === RELAXED QUALITY FILTERS ===
+        
+        quality_filters_passed = True
+        
+        # Filter 1: VERY RELAXED exclusion for figures
+        if section.has_figure:
+            # Almost no exclusions for sections with figures
+            hard_exclusions = ['overview', 'introduction', 'background']  # Removed 'general', 'architecture', 'summary'
+            if any(pattern in title_lower for pattern in hard_exclusions) and score < threshold + 30:  # Much more lenient
+                quality_filters_passed = False
+        else:
+            # Stricter for non-figure sections
+            exclusion_patterns = ['overview', 'general', 'architecture', 'introduction', 'background', 'summary']
+            if any(pattern in title_lower for pattern in exclusion_patterns):
+                quality_filters_passed = False
+        
+        # Filter 2: Minimal content requirement (RELAXED)
+        if text_length < 300:  # Reduced from 500
+            quality_filters_passed = False
+        
+        # Filter 3: Very lenient title length (RELAXED)
+        title_length = len(cleaned_title.split())
+        if title_length > 25 or title_length < 1:  # Increased from 20
+            quality_filters_passed = False
+        
+        # === FINAL DECISION (Figure-Friendly) ===
+        
+        # Special case: If has figure and minimal criteria, FORCE ACCEPT
+        if section.has_figure and entity_count >= 2 and text_length > 500:
+            print(f"    ✓ Figure-Priority: '{cleaned_title}' (score: {score}, entities: {entity_count}, has_figure)")
+            return section.title
+        
+        # Normal decision
+        if score >= threshold and quality_filters_passed:
+            print(f"    ✓ Identified: '{cleaned_title}' (score: {score}, threshold: {threshold}, evidence: {', '.join(evidence)})")
+            return section.title
+        else:
+            # Show rejections for debugging
+            if section.has_figure and score >= 40:  # Show figure rejections
+                print(f"    ✗ Figure-Rejected: '{cleaned_title[:50]}...' (score: {score}, threshold: {threshold}, quality: {quality_filters_passed})")
+            elif score >= threshold - 15:  # Show close calls
+                print(f"    ✗ Rejected: '{cleaned_title[:50]}...' (score: {score}, threshold: {threshold}, quality: {quality_filters_passed})")
+            return None
     
     def _clean_section_title(self, title: str) -> str:
-        """Clean section title for procedure name extraction."""
-        # Remove clause numbers
-        cleaned = re.sub(r'^\d+(\.\d+)*\s*', '', title)
-        cleaned = re.sub(r'^[A-Z]\.\d+(\.\d+)*\s*', '', cleaned)
+        """Clean section title while preserving section numbers for uniqueness."""
+        # Keep section numbers but clean up formatting
+        cleaned = re.sub(r'\s+', ' ', title)  # Normalize whitespace
+        cleaned = re.sub(r'\t', ' ', cleaned)  # Replace tabs
         return cleaned.strip()

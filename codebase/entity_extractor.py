@@ -528,36 +528,83 @@ STEPS: 1. UE initiates registration|2. AMF processes request|3. Authentication p
         return any(indicator in sentence_lower for indicator in procedural_indicators)
 
     def _generate_steps_with_descriptions(self, entities: Dict[str, List[str]], context: ProcedureContext) -> Dict[str, List[str]]:
-        """Generate procedure-specific steps with descriptions (Requirement 9)."""
-        procedure_clean = re.sub(r'[^\w\s]', '', context.procedure_name).replace(' ', '_')
+        """Generate procedure-specific steps with descriptions, handling section numbers and multiple steps."""
         
-        # Get step descriptions from extracted text or LLM
+        # Extract section number and clean procedure name separately  
+        procedure_title = context.procedure_name
+        
+        # Extract section number (like "4.3.2.2.1") from the beginning
+        section_match = re.match(r'^(\d+(?:\.\d+)*)\s+(.+)', procedure_title)
+        
+        if section_match:
+            section_number = section_match.group(1).replace('.', '')  # "4.3.2.2.1" → "43221"
+            clean_title = section_match.group(2)  # "Non-roaming and Roaming with Local Breakout"
+        else:
+            # Fallback if no section number found
+            section_number = ""
+            clean_title = procedure_title
+        
+        # Create procedure identifier for step naming
+        procedure_clean = re.sub(r'[^\w\s]', '', clean_title).replace(' ', '_')
+        
+        # Get step descriptions from extracted text
         step_descriptions = entities.get('steps', [])
         
-        # If no step descriptions found, generate defaults based on procedure type
-        if not step_descriptions:
-            step_descriptions = self._generate_default_step_descriptions(context)
+        print(f"      Found {len(step_descriptions)} step descriptions from document extraction")
         
-        # Generate procedure-specific step names with descriptions
+        # ENHANCED: Process all extracted step descriptions (not just first few)
+        if step_descriptions:
+            # Use ALL extracted step descriptions, but group them intelligently
+            processed_descriptions = []
+            
+            # Group step descriptions into logical steps (every 3-5 descriptions = 1 step)
+            descriptions_per_step = max(3, len(step_descriptions) // 8)  # Aim for 6-8 steps max
+            
+            for i in range(0, len(step_descriptions), descriptions_per_step):
+                # Combine multiple descriptions into one step
+                step_group = step_descriptions[i:i + descriptions_per_step]
+                combined_description = " | ".join(step_group)
+                processed_descriptions.append(combined_description)
+            
+            # Limit to reasonable number of steps (6-12 steps)
+            final_descriptions = processed_descriptions[:12]
+            
+            print(f"      Processed {len(step_descriptions)} descriptions into {len(final_descriptions)} logical steps")
+            
+        else:
+            # Generate default steps if no descriptions found
+            final_descriptions = self._generate_default_step_descriptions(context)
+            print(f"      Generated {len(final_descriptions)} default step descriptions")
+        
+        # Generate procedure-specific step names with section number prefix
         procedure_steps = []
         context.step_descriptions = {}
         
-        for i, description in enumerate(step_descriptions[:10], 1):  # Limit to 10 steps
-            step_name = f"{procedure_clean}_step_{i}"
+        for i, description in enumerate(final_descriptions, 1):
+            if section_number:
+                step_name = f"{section_number}\t{procedure_clean}_step_{i}"  # Use tab separator
+            else:
+                step_name = f"{procedure_clean}_step_{i}"
+                
             procedure_steps.append(step_name)
             
             # Clean and store description
             clean_description = self._clean_step_description(description)
             context.step_descriptions[step_name] = clean_description
         
-        # Ensure at least one step
-        if not procedure_steps:
-            step_name = f"{procedure_clean}_step_1"
-            procedure_steps = [step_name]
-            context.step_descriptions[step_name] = f"Execute {context.procedure_name} procedure."
+        # Ensure at least 2-3 steps for complex procedures
+        min_steps = 3 if len(step_descriptions) > 10 else 2
+        while len(procedure_steps) < min_steps:
+            i = len(procedure_steps) + 1
+            if section_number:
+                step_name = f"{section_number}\t{procedure_clean}_step_{i}"
+            else:
+                step_name = f"{procedure_clean}_step_{i}"
+            procedure_steps.append(step_name)
+            context.step_descriptions[step_name] = f"Execute step {i} of {context.procedure_name} procedure."
         
         entities['steps'] = procedure_steps
-        print(f"      ✓ Generated {len(procedure_steps)} steps with descriptions")
+        print(f"      ✓ Generated {len(procedure_steps)} steps with section numbers and descriptions")
         
         return entities
 
