@@ -420,63 +420,290 @@ STEPS: 1. UE initiates registration|2. AMF processes request|3. Authentication p
         return entities
 
     def _extract_step_descriptions_from_document(self, text: str, procedure_name: str) -> List[str]:
-        """Extract step descriptions ONLY from the actual 3GPP document text."""
-        descriptions = []
+        """Extract step descriptions from 3GPP document, finding where steps actually begin."""
         
-        print(f"      Extracting step descriptions from document for {procedure_name}...")
+        print(f"        Enhanced step extraction for: {procedure_name}")
         
-        # Method 1: Look for numbered procedure steps in the text
-        numbered_patterns = [
-            r'(\d+)\.\s+([^.!?]{20,300}[.!?])',           # "1. The UE sends..."
-            r'Step\s+(\d+)[:\.]?\s*([^.!?]{20,300}[.!?])', # "Step 1: The UE..."
-            r'(\d+)\)\s+([^.!?]{20,300}[.!?])'            # "1) The UE sends..."
+        # CRITICAL: Preprocess text to handle single-line input with embedded steps
+        preprocessed_text = self._preprocess_step_text(text)
+        
+        # Split text into lines
+        lines = preprocessed_text.split('\n')
+        print(f"        📊 Total lines after preprocessing: {len(lines)}")
+        
+        # Show first 10 lines to understand structure
+        print(f"        📋 First 10 lines after preprocessing:")
+        for i, line in enumerate(lines[:10]):
+            print(f"          Line {i+1}: '{line.strip()}'")
+        
+        # STEP 1: Find where the actual steps begin
+        step_start_index = self._find_step_start_location(lines)
+        
+        if step_start_index == -1:
+            print(f"        ❌ No step start location found - using full text")
+            step_lines = lines
+            start_line_used = 1
+        else:
+            print(f"        ✅ Found step start at line {step_start_index + 1}")
+            step_lines = lines[step_start_index:]
+            # start_line_used = step_start_index + 1
+            start_line_used = step_start_index # FIXED: Correct line number for reporting
+        
+        print(f"        📊 Processing {len(step_lines)} lines starting from line {start_line_used}")
+        
+        # CORRECTED: Simplified step patterns (remove duplicates)
+        step_patterns = [
+            r'^(\d+)\.\s+(.+)',          # "1. ", "2. ", "12. " (handles multiple spaces/tabs)
+            r'^(\d+[a-z])\.\s+(.+)',     # "7a. ", "1c. ", "2b. " (handles multiple spaces/tabs)
+            r'^(\d+)\.[\s\t]+(.+)',      # Handle tabs and multiple spaces
+            r'^(\d+[a-z])\.[\s\t]+(.+)', # Handle tabs and multiple spaces with letters
+            # "7-12b. " pattern removed to avoid confusion
+            
         ]
         
-        for pattern in numbered_patterns:
-            matches = re.finditer(pattern, text, re.IGNORECASE | re.MULTILINE)
-            for match in matches:
-                step_num = match.group(1)
-                description = match.group(2).strip()
-                
-                if self._is_valid_procedure_step_description(description, procedure_name):
-                    descriptions.append(description)
-                    print(f"        Found step {step_num}: {description[:60]}...")
+        steps = []
+        current_step_num = None
+        current_step_paragraphs = []
         
-        # Method 2: Look for lettered steps
-        lettered_pattern = r'([a-h])\)\s+([^.!?]{20,300}[.!?])'
-        matches = re.finditer(lettered_pattern, text, re.IGNORECASE | re.MULTILINE)
-        for match in matches:
-            step_letter = match.group(1)
-            description = match.group(2).strip()
+        i = 0
+        while i < len(step_lines):
+            line = step_lines[i].strip()
+            step_found = False
+            step_match = None  # FIXED: Use separate variable to avoid overwriting
             
-            if self._is_valid_procedure_step_description(description, procedure_name):
-                descriptions.append(description)
-                print(f"        Found step {step_letter}: {description[:60]}...")
+            # Check if this line starts a new step
+            for pattern in step_patterns:
+                pattern_match = re.match(pattern, line, re.IGNORECASE)  # FIXED: Use different variable name
+                if pattern_match:
+                    step_match = pattern_match  # Save the successful match
+                    step_found = True
+                    break
+            
+            if step_found and step_match:  # FIXED: Check both conditions
+                # Save previous step if exists
+                if current_step_num is not None and current_step_paragraphs:
+                    step_text = self._combine_step_paragraphs(current_step_paragraphs)
+                    if step_text:
+                        steps.append({
+                            'number': current_step_num,
+                            'text': step_text
+                        })
+                        print(f"          ✅ Saved step {current_step_num}: {len(step_text)} chars, {len([p for p in current_step_paragraphs if p.strip()])} paragraphs")
         
-        # Method 3: Look for paragraph-based descriptions (if no numbered steps)
-        if not descriptions:
-            # Split text into sentences and look for procedural descriptions
-            sentences = re.split(r'[.!?]+', text)
-            for sentence in sentences:
-                sentence = sentence.strip()
-                if (len(sentence) > 30 and 
-                    self._contains_procedural_language(sentence) and
-                    self._is_valid_procedure_step_description(sentence, procedure_name)):
-                    descriptions.append(sentence + '.')
-                    print(f"        Found procedural sentence: {sentence[:60]}...")
-                    if len(descriptions) >= 5:  # Limit procedural sentences
-                        break
+                # Start new step - FIXED: Use step_match instead of match
+                current_step_num = step_match.group(1)  # "1", "2", "7a", "1c"
+                initial_text = step_match.group(2)      # First paragraph of the step
+                current_step_paragraphs = [initial_text]
+                
+                print(f"          🆕 Found step {current_step_num}: {initial_text[:50]}...")
         
-        # Remove duplicates while preserving order
-        unique_descriptions = []
-        seen = set()
-        for desc in descriptions:
-            if desc not in seen:
-                unique_descriptions.append(desc)
-                seen.add(desc)
+            elif not step_found:
+                # This line is part of current step (if we have one active)
+                if current_step_num is not None:
+                    if line.strip():  # Non-empty line
+                        current_step_paragraphs.append(line.strip())
+                        print(f"          ➕ Added to step {current_step_num}: {line.strip()[:40]}...")
+                    else:
+                        # Empty line - preserve paragraph separation
+                        if current_step_paragraphs and current_step_paragraphs[-1]:
+                            current_step_paragraphs.append("")  # Mark paragraph break
+            
+            i += 1
         
-        print(f"      ✓ Extracted {len(unique_descriptions)} step descriptions from document")
-        return unique_descriptions[:10]  # Limit to 10 steps
+        # Don't forget the last step
+        if current_step_num is not None and current_step_paragraphs:
+            step_text = self._combine_step_paragraphs(current_step_paragraphs)
+            if step_text:
+                steps.append({
+                    'number': current_step_num,
+                    'text': step_text
+                })
+                print(f"          ✅ Final step {current_step_num}: {len(step_text)} chars, {len([p for p in current_step_paragraphs if p.strip()])} paragraphs")
+    
+        # Convert to expected format and sort by step number
+        steps.sort(key=lambda x: self._step_sort_key(x['number']))
+        
+        formatted_steps = []
+        for step in steps:
+            formatted_steps.append(f"Step {step['number']}: {step['text']}")
+        
+        print(f"        ✅ Successfully extracted {len(formatted_steps)} multi-paragraph steps")
+        
+        return formatted_steps
+    
+    def _preprocess_step_text(self, text: str) -> str:
+        """Preprocess text to handle single-line input with embedded step patterns."""
+        
+        print(f"        🔧 Preprocessing text for step extraction...")
+        print(f"        📊 Original text length: {len(text)} chars, lines: {text.count(chr(10)) + 1}")
+        
+        # CRITICAL: Insert line breaks before step patterns
+        # This handles cases where steps are concatenated in a single line
+        
+        # Pattern 1: Insert newline before "1. ", "2. ", etc. (but not at start of text)
+        text = re.sub(r'(?<!^)(\d+)\.\t+([A-Z\[\(a-z])', r'\n\1. \2', text)
+        
+        # Pattern 2: Insert newline before "7a. ", "1c. ", etc. (but not at start of text)  
+        text = re.sub(r'(?<!^)(\d+[a-z])\.\t+([A-Z\[\(a-z])', r'\n\1. \2', text)
+        
+        # Pattern 2-1: Insert newline before "7(A). "", etc. (but not at start of text)
+        text = re.sub(r'(?<!^)(\d+\([A-Za-z]\))\.\t+([A-Z\[\(a-z])', r'\n\1. \2', text)
+
+        # pattern 3: Insert newline before "7-12b. ", etc (but not at start of text)
+        text = re.sub(r'(?<!^)(\d+-\d+[a-z])\.\t+([A-Z\[\(a-z])', r'\n\1. \2', text)
+        
+        # pattern 3-1: Insert newline before "7-12. ", etc (but not at start of text)
+        text = re.sub(r'(?<!^)(\d+-\d+)\.\t+([A-Z\[\(a-z])', r'\n\1. \2', text)
+
+        # pattern 3-2: Insert newline before "7b-12b. ", etc (but not at start of text) with spaces
+        text = re.sub(r'(?<!^)(\d+[a-z]-\d+[a-z])\.\t+([A-Z\[\(a-z])', r'\n\1. \2', text)
+        
+        # pattern 3-3: Insert newline before "7b-12b. ", etc (but not at start of text) with spaces
+        text = re.sub(r'(?<!^)(\d+[a-z]-\d+[a-z])\.\t+([A-Z\[\(a-z])', r'\n\1. \2', text)
+
+        # Clean up multiple consecutive newlines
+        text = re.sub(r'\n\s*\n\s*\n+', '\n\n', text)
+        
+        # Remove excessive spaces but preserve intentional formatting
+        text = re.sub(r'[ \t]+', ' ', text)  # Multiple spaces/tabs to single space
+        
+        print(f"        📊 After preprocessing: {len(text)} chars, lines: {text.count(chr(10)) + 1}")
+        print(f"        📋 Preprocessing preview: '{text[:300]}...'")
+        
+        return text.strip()
+
+    def _find_step_start_location(self, lines: List[str]) -> int:
+        """Find the line index where actual procedure steps begin."""
+        
+        # Look for common indicators that steps are about to start
+        step_start_indicators = [
+            # r'^The following steps?\s+(are\s+)?performed:?',          # "The following steps are performed:"
+            # r'^The procedure\s+(consists\s+of\s+)?the following:?',   # "The procedure consists of the following:"
+            # r'^Steps?\s+\d+',                                         # "Step 1", "Steps 1-5"
+            # r'^Below\s+(are\s+)?the\s+detailed\s+steps:?',           # "Below are the detailed steps:"
+            # r'^The\s+detailed\s+procedure\s+is\s+as\s+follows:?',    # "The detailed procedure is as follows:"
+            # r'^Procedure\s+steps:?',                                  # "Procedure steps:"
+            r'^\d+\.\s+',     # "1. "
+            r'^\d+[a-z]\.\s+' # "1a. "
+            r'^(\d+)\.[\s\t]+(.+)',      # Handle tabs and multiple spaces
+            r'^(\d+[a-z])\.[\s\t]+(.+)', # Handle tabs and multiple spaces with letters
+            r'^(\d+-\d+[a-z])\.[\s\t]+(.+)', # "7-12b. "
+            r'^(\d+-\d+)\.[\s\t]+(.+)',    # "7-12. "
+            r'^(\d+[a-z]-\d+[a-z])\.[\s\t]+(.+)', # "7b-12b. "
+            r'^(\d+[a-z]-\d+)\.[\s\t]+(.+)',    # "7b-12. "
+            r'^(\d+\([A-Za-z]\))\.[\s\t]+(.+)'
+        ]
+        
+        # Also look for the first occurrence of step numbering
+        step_number_patterns = [
+            r'^\d+\.\s+',     # "1. "
+            r'^\d+[a-z]\.\s+' # "1a. "
+            r'^(\d+)\.[\s\t]+(.+)',      # Handle tabs and multiple spaces
+            r'^(\d+[a-z])\.[\s\t]+(.+)', # Handle tabs and multiple spaces with letters
+            r'^(\d+-\d+[a-z])\.[\s\t]+(.+)', # "7-12b. "
+            r'^(\d+-\d+)\.[\s\t]+(.+)',    # "7-12. "
+            r'^(\d+[a-z]-\d+[a-z])\.[\s\t]+(.+)', # "7b-12b. "
+            r'^(\d+[a-z]-\d+)\.[\s\t]+(.+)',    # "7b-12. "
+            r'^(\d+\([A-Za-z]\))\.[\s\t]+(.+)'  # "7(A). "
+        ]
+        
+        print(f"        🔍 Searching for step start indicators in {len(lines)} lines...")
+        
+        # First, look for explicit step start indicators
+        for i, line in enumerate(lines):
+            line_stripped = line.strip()
+            
+            # Check for step start indicators
+            for pattern in step_start_indicators:
+                if re.match(pattern, line_stripped, re.IGNORECASE):
+                    print(f"          📍 Found step start indicator at line {i+1}: '{line_stripped}'")
+                    # Return the next line after the indicator, or current line if it contains steps
+                    return i if i < len(lines) else i - 1
+
+        # If no explicit indicators, look for the first step number
+        for i, line in enumerate(lines):
+            line_stripped = line.strip()
+            
+            # Check for step numbering patterns
+            for pattern in step_number_patterns:
+                if re.match(pattern, line_stripped, re.IGNORECASE):
+                    print(f"          📍 Found first step at line {i+1}: '{line_stripped}'")
+                    return i
+        
+        # If still no steps found, look for common step content patterns
+        # This catches cases where steps start without explicit numbering
+        step_content_patterns = [
+            r'^(The\s+)?(UE|AMF|SMF|UPF|AUSF|PCF|UDM|NRF)\s+(sends?|receives?|performs?|initiates?)',
+            r'^(Upon|After|When|If)\s+.+(the\s+)?(UE|AMF|SMF)',
+            r'^First,?\s+(the\s+)?(UE|AMF|SMF)',
+            r'^Initially,?\s+(the\s+)?(UE|AMF|SMF)'
+        ]
+        
+        for i, line in enumerate(lines):
+            line_stripped = line.strip()
+            
+            # Skip very short lines and section headers
+            if len(line_stripped) < 20 or re.match(r'^\d+(\.\d+)*\s+[A-Z]', line_stripped):
+                continue
+            
+            # Check for step content patterns
+            for pattern in step_content_patterns:
+                if re.match(pattern, line_stripped, re.IGNORECASE):
+                    print(f"          📍 Found step content pattern at line {i+1}: '{line_stripped[:50]}...'")
+                    return i
+        
+        print(f"        ❌ No step start location found - will process entire text")
+        return -1  # No step start found, use entire text
+
+    def _combine_step_paragraphs(self, paragraphs: List[str]) -> str:
+        """Combine multiple paragraphs into a coherent step description."""
+        
+        if not paragraphs:
+            return ""
+        
+        # Process paragraphs while preserving structure
+        processed_paragraphs = []
+        current_paragraph = ""
+        
+        for para in paragraphs:
+            if para == "":  # Empty string marks paragraph break
+                if current_paragraph.strip():
+                    processed_paragraphs.append(current_paragraph.strip())
+                    current_paragraph = ""
+            else:
+                if current_paragraph:
+                    current_paragraph += " " + para
+                else:
+                    current_paragraph = para
+        
+        # Add the last paragraph
+        if current_paragraph.strip():
+            processed_paragraphs.append(current_paragraph.strip())
+        
+        if not processed_paragraphs:
+            return ""
+        
+        # Join paragraphs with double space to indicate paragraph breaks
+        result = "  ".join(processed_paragraphs)
+        
+        # Clean up excessive whitespace within paragraphs
+        result = re.sub(r'[ \t]+', ' ', result)  # Multiple spaces/tabs to single space
+        
+        return result.strip()
+
+    def _step_sort_key(self, step_num: str):
+        """Create sort key for step numbers including letters (1, 2, 7a, 7b, 8)."""
+        
+        # Handle patterns like "1", "2", "7a", "1c"
+        match = re.match(r'^(\d+)([a-z]?)$', step_num.lower())
+        if match:
+            num = int(match.group(1))
+            letter = match.group(2)
+            letter_ord = ord(letter) if letter else 0
+            return (num, letter_ord)
+        
+        # Fallback for unexpected patterns
+        return (999, 999)
 
     def _is_valid_procedure_step_description(self, description: str, procedure_name: str) -> bool:
         """Check if description is valid for procedure step from 3GPP document."""
@@ -904,3 +1131,116 @@ STEPS: 1. UE initiates registration|2. AMF processes request|3. Authentication p
         context.parameters = entities["parameters"]
         context.keys = entities["keys"]
         context.steps = entities["steps"]
+
+    def _is_step_continuation(self, line: str, context: Dict) -> bool:
+        """Determine if line is continuation using contextual analysis instead of explicit patterns."""
+        
+        if not line or len(line.strip()) < 5:
+            return True
+        
+        line_stripped = line.strip()
+        
+        # 1. DEFINITE step starters (these override everything else)
+        step_starter_patterns = [
+            r'^\d+[a-z]*\.\s+',           # "1. ", "7a. "
+            r'^Step\s+\d+',               # "Step 1"
+            # r'^Figure\s+\d+',             # "Figure 1"
+            # r'^NOTE[:\s]',                # "NOTE:"
+        ]
+        
+        for pattern in step_starter_patterns:
+            if re.match(pattern, line_stripped, re.IGNORECASE):
+                return False  # Definitely NOT continuation
+        
+        # 2. CONTEXTUAL analysis - is this similar to previous step content?
+        current_step_text = context.get('current_step_text', '')
+        if current_step_text:
+            similarity = self._calculate_semantic_similarity(line_stripped, current_step_text)
+            if similarity > 0.7:  # High semantic similarity suggests continuation
+                return True
+        
+        # 3. SENTENCE structure analysis
+        sentence_features = self._analyze_sentence_structure(line_stripped)
+        
+        # Features that suggest continuation:
+        continuation_score = 0
+        
+        # Starts with connection words (but learned, not hard-coded)
+        if sentence_features['starts_with_connector']:
+            continuation_score += 0.3
+        
+        # References previous concepts
+        if sentence_features['has_back_reference']:
+            continuation_score += 0.4
+        
+        # Similar technical vocabulary to current step
+        if sentence_features['vocab_similarity'] > 0.6:
+            continuation_score += 0.3
+        
+        # 4. LENGTH and COMPLEXITY heuristics
+        if len(line_stripped) < 100:  # Short sentences more likely to be continuation
+            continuation_score += 0.2
+        
+        # 5. FINAL decision based on cumulative score
+        return continuation_score > 0.5  # Threshold can be tuned
+
+    def _calculate_semantic_similarity(self, text1: str, text2: str) -> float:
+        """Calculate semantic similarity between texts using embeddings."""
+        if not self.embedding_model or not text1 or not text2:
+            return 0.0
+        
+        try:
+            # Use the embedding model for semantic comparison
+            emb1 = self.embedding_model.encode(text1[:200])  # Limit length
+            emb2 = self.embedding_model.encode(text2[:200])
+            
+            # Cosine similarity
+            import numpy as np
+            similarity = np.dot(emb1, emb2) / (np.linalg.norm(emb1) * np.linalg.norm(emb2))
+            return max(0, similarity)  # Ensure non-negative
+            
+        except:
+            return 0.0
+
+    def _analyze_sentence_structure(self, sentence: str) -> Dict[str, any]:
+        """Analyze sentence structure for continuation indicators."""
+        features = {
+            'starts_with_connector': False,
+            'has_back_reference': False,
+            'vocab_similarity': 0.0,
+            'sentence_length': len(sentence),
+            'starts_with_lowercase': sentence and sentence[0].islower()
+        }
+        
+        sentence_lower = sentence.lower()
+        
+        # LEARNED connectors (more flexible than hard-coded list)
+        connector_patterns = [
+            # Causal/temporal
+            r'^(after|before|when|once|since|until|while)',
+            # Conditional  
+            r'^(if|unless|provided|given)',
+            # Additive
+            r'^(also|additionally|furthermore|moreover)',
+            # Contrastive
+            r'^(however|nevertheless|nonetheless|although)',
+            # Reference
+            r'^(this|that|these|those|such|the\s+\w+)',
+        ]
+        
+        features['starts_with_connector'] = any(
+            re.match(pattern, sentence_lower) for pattern in connector_patterns
+        )
+        
+        # Back-references to previous content
+        back_ref_indicators = [
+            r'\b(this|that|these|those|such|the\s+above|the\s+following)\b',
+            r'\b(it|they|them|its|their)\b',
+            r'\b(the\s+\w+\s+mentioned|as\s+described|as\s+stated)\b'
+        ]
+        
+        features['has_back_reference'] = any(
+            re.search(pattern, sentence_lower) for pattern in back_ref_indicators
+        )
+        
+        return features
