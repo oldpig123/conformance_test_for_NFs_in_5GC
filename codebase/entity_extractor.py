@@ -413,6 +413,9 @@ STEPS: 1. UE initiates registration|2. AMF processes request|3. Authentication p
             if re.search(r'\b' + re.escape(key) + r'\b', text, re.IGNORECASE):
                 entities["keys"].append(key)
         
+        # Store current context for step entity creation
+        self._current_context = context
+        
         # Extract step descriptions from document text
         step_descriptions = self._extract_step_descriptions_from_document(text, context.procedure_name)
         entities["steps"] = step_descriptions
@@ -469,13 +472,13 @@ STEPS: 1. UE initiates registration|2. AMF processes request|3. Authentication p
         while i < len(step_lines):
             line = step_lines[i].strip()
             step_found = False
-            step_match = None  # FIXED: Use separate variable to avoid overwriting
+            step_match = None;  # FIXED: Use separate variable to avoid overwriting
             
             # Check if this line starts a new step
             for pattern in step_patterns:
-                pattern_match = re.match(pattern, line, re.IGNORECASE)  # FIXED: Use different variable name
+                pattern_match = re.match(pattern, line, re.IGNORECASE);  # FIXED: Use different variable name
                 if pattern_match:
-                    step_match = pattern_match  # Save the successful match
+                    step_match = pattern_match;  # Save the successful match
                     step_found = True
                     break
             
@@ -523,6 +526,13 @@ STEPS: 1. UE initiates registration|2. AMF processes request|3. Authentication p
         # Convert to expected format and sort by step number
         steps.sort(key=lambda x: self._step_sort_key(x['number']))
         
+        # NEW: Create step entities directly from extracted steps
+        if hasattr(self, '_current_context') and self._current_context:
+            step_entities = self._create_step_entities_from_extracted_steps(steps, self._current_context)
+            # Store the step entities for later use
+            self._current_context.extracted_step_entities = step_entities
+    
+        # Still return formatted steps for backward compatibility
         formatted_steps = []
         for step in steps:
             formatted_steps.append(f"Step {step['number']}: {step['text']}")
@@ -604,7 +614,7 @@ STEPS: 1. UE initiates registration|2. AMF processes request|3. Authentication p
             r'^(\d+-\d+)\.[\s\t]+(.+)',    # "7-12. "
             r'^(\d+[a-z]-\d+[a-z])\.[\s\t]+(.+)', # "7b-12b. "
             r'^(\d+[a-z]-\d+)\.[\s\t]+(.+)',    # "7b-12. "
-            r'^(\d+\([A-Za-z]\))\.[\s\t]+(.+)'  # "7(A). "
+            r'^(\d+\([A-Za-z]\))\.[\s\t]+(.+)'
         ]
         
         print(f"        🔍 Searching for step start indicators in {len(lines)} lines...")
@@ -755,7 +765,16 @@ STEPS: 1. UE initiates registration|2. AMF processes request|3. Authentication p
         return any(indicator in sentence_lower for indicator in procedural_indicators)
 
     def _generate_steps_with_descriptions(self, entities: Dict[str, List[str]], context: ProcedureContext) -> Dict[str, List[str]]:
-        """Generate procedure-specific steps with descriptions, handling section numbers and multiple steps."""
+        """Use pre-created step entities if available, otherwise fall back to old logic."""
+    
+        # Check if we already have step entities from extraction
+        if hasattr(context, 'extracted_step_entities') and context.extracted_step_entities:
+            print(f"      ✅ Using {len(context.extracted_step_entities)} pre-created step entities")
+            entities['steps'] = context.extracted_step_entities
+            return entities
+        
+        # Fallback to existing logic if no pre-created entities
+        print(f"      📝 No pre-created entities, using fallback logic")
         
         # Extract section number and clean procedure name separately  
         procedure_title = context.procedure_name
@@ -764,7 +783,7 @@ STEPS: 1. UE initiates registration|2. AMF processes request|3. Authentication p
         section_match = re.match(r'^(\d+(?:\.\d+)*)\s+(.+)', procedure_title)
         
         if section_match:
-            section_number = section_match.group(1).replace('.', '')  # "4.3.2.2.1" → "43221"
+            section_number = section_match.group(1).replace('.', '')  # "43221"
             clean_title = section_match.group(2)  # "Non-roaming and Roaming with Local Breakout"
         else:
             # Fallback if no section number found
@@ -774,83 +793,286 @@ STEPS: 1. UE initiates registration|2. AMF processes request|3. Authentication p
         # Create procedure identifier for step naming
         procedure_clean = re.sub(r'[^\w\s]', '', clean_title).replace(' ', '_')
         
-        # Get step descriptions from extracted text
+        # Get step descriptions from NEW step extraction system
         step_descriptions = entities.get('steps', [])
         
-        print(f"      Found {len(step_descriptions)} step descriptions from document extraction")
+        print(f"      Processing {len(step_descriptions)} steps from new extraction system")
         
-        # ENHANCED: Process all extracted step descriptions (not just first few)
+        # ENHANCED: Process steps with their original 3GPP numbering
         if step_descriptions:
-            # Use ALL extracted step descriptions, but group them intelligently
-            processed_descriptions = []
+            procedure_steps = []
+            context.step_descriptions = {}
             
-            # Group step descriptions into logical steps (every 3-5 descriptions = 1 step)
-            descriptions_per_step = max(3, len(step_descriptions) // 8)  # Aim for 6-8 steps max
+            for step_desc in step_descriptions:
+                # Extract step number from description (e.g., "Step 1: UE sends..." → "1")
+                step_match = re.match(r'^Step\s+([0-9a-z-]+):\s*(.+)', step_desc, re.IGNORECASE)
+                
+                if step_match:
+                    original_step_num = step_match.group(1)  # "1", "7a", "7-12b" etc.
+                    step_content = step_match.group(2)
+                    
+                    # Convert 3GPP step number to entity naming format
+                    entity_step_num = self._convert_step_number_for_entity(original_step_num)
+                    
+                    # FIXED: Create step entity name using underscores instead of tabs
+                    if section_number:
+                        step_name = f"{section_number}_{procedure_clean}_step_{entity_step_num}"
+                    else:
+                        step_name = f"{procedure_clean}_step_{entity_step_num}"
+                    
+                    procedure_steps.append(step_name)
+                    
+                    # Store full multi-paragraph description (as requested)
+                    context.step_descriptions[step_name] = step_content
+                    
+                    print(f"        ✓ Step {original_step_num} → {step_name}")
+                    print(f"          Description: {step_content[:80]}...")
+                
+                else:
+                    print(f"        ⚠️ Could not parse step: {step_desc[:50]}...")
             
-            for i in range(0, len(step_descriptions), descriptions_per_step):
-                # Combine multiple descriptions into one step
-                step_group = step_descriptions[i:i + descriptions_per_step]
-                combined_description = " | ".join(step_group)
-                processed_descriptions.append(combined_description)
-            
-            # Limit to reasonable number of steps (6-12 steps)
-            final_descriptions = processed_descriptions[:12]
-            
-            print(f"      Processed {len(step_descriptions)} descriptions into {len(final_descriptions)} logical steps")
-            
+            # If no valid steps were parsed, fall back to sequential numbering
+            if not procedure_steps:
+                procedure_steps, context.step_descriptions = self._create_fallback_steps(
+                    section_number, procedure_clean, step_descriptions
+                )
+        
         else:
             # Generate default steps if no descriptions found
-            final_descriptions = self._generate_default_step_descriptions(context)
-            print(f"      Generated {len(final_descriptions)} default step descriptions")
-        
-        # Generate procedure-specific step names with section number prefix
-        procedure_steps = []
-        context.step_descriptions = {}
-        
-        for i, description in enumerate(final_descriptions, 1):
-            if section_number:
-                step_name = f"{section_number}\t{procedure_clean}_step_{i}"  # Use tab separator
-            else:
-                step_name = f"{procedure_clean}_step_{i}"
-                
-            procedure_steps.append(step_name)
-            
-            # Clean and store description
-            clean_description = self._clean_step_description(description)
-            context.step_descriptions[step_name] = clean_description
-        
-        # Ensure at least 2-3 steps for complex procedures
-        min_steps = 3 if len(step_descriptions) > 10 else 2
-        while len(procedure_steps) < min_steps:
-            i = len(procedure_steps) + 1
-            if section_number:
-                step_name = f"{section_number}\t{procedure_clean}_step_{i}"
-            else:
-                step_name = f"{procedure_clean}_step_{i}"
-            procedure_steps.append(step_name)
-            context.step_descriptions[step_name] = f"Execute step {i} of {context.procedure_name} procedure."
+            procedure_steps, context.step_descriptions = self._create_default_steps(
+                section_number, procedure_clean, context
+            )
+            print(f"      Generated {len(procedure_steps)} default steps")
         
         entities['steps'] = procedure_steps
-        print(f"      ✓ Generated {len(procedure_steps)} steps with section numbers and descriptions")
+        print(f"      ✅ Created {len(procedure_steps)} step entities with descriptions")
         
         return entities
 
-    def _clean_step_description(self, description: str) -> str:
-        """Clean step description for better readability."""
-        # Remove numbering prefixes
-        description = re.sub(r'^\d+\.\s*', '', description)
-        description = re.sub(r'^[a-z]\)\s*', '', description, flags=re.IGNORECASE)
-        description = re.sub(r'^[Ss]tep\s+\d+[:\.]?\s*', '', description)
+    def _convert_step_number_for_entity(self, step_num: str) -> str:
+        """Convert 3GPP step number to entity naming format."""
+        # Handle various 3GPP step numbering formats
         
-        # Capitalize first letter
-        if description and description[0].islower():
-            description = description[0].upper() + description[1:]
+        # Simple numbers: "1" → "1"
+        if re.match(r'^\d+$', step_num):
+            return step_num
         
-        # Ensure proper ending
-        if description and not description.endswith(('.', '!', '?')):
-            description += '.'
+        # Letter suffixed: "7a" → "7a"  
+        if re.match(r'^\d+[a-z]$', step_num):
+            return step_num
         
-        return description.strip()
+        # Range patterns: "7-12b" → "7_12b"
+        if re.match(r'^\d+-\d+[a-z]*$', step_num):
+            return step_num.replace('-', '_')
+        
+        # Complex ranges: "7a-12b" → "7a_12b"
+        if re.match(r'^\d+[a-z]-\d+[a-z]*$', step_num):
+            return step_num.replace('-', '_')
+        
+        # Parenthetical: "7(A)" → "7A"
+        if re.match(r'^\d+\([A-Za-z]\)$', step_num):
+            return re.sub(r'\(([A-Za-z])\)', r'\1', step_num)
+        
+        # Default: replace special characters with underscore
+        return re.sub(r'[^0-9a-zA-Z]', '_', step_num)
+
+    def _create_fallback_steps(self, section_number: str, procedure_clean: str, 
+                      step_descriptions: List[str]) -> Tuple[List[str], Dict[str, str]]:
+        """Create fallback steps with sequential numbering when parsing fails."""
+        procedure_steps = []
+        descriptions_dict = {}
+        
+        for i, desc in enumerate(step_descriptions, 1):
+            # FIXED: Use underscores instead of tabs
+            if section_number:
+                step_name = f"{section_number}_{procedure_clean}_step_{i}"
+            else:
+                step_name = f"{procedure_clean}_step_{i}"
+        
+            procedure_steps.append(step_name)
+            
+            # Clean description of any step prefixes
+            clean_desc = re.sub(r'^Step\s+[0-9a-z-]+:\s*', '', desc, flags=re.IGNORECASE)
+            descriptions_dict[step_name] = clean_desc
+            
+            print(f"        ✓ Fallback Step {i} → {step_name}")
+        
+        return procedure_steps, descriptions_dict
+
+    def _create_default_steps(self, section_number: str, procedure_clean: str, 
+                     context: ProcedureContext) -> Tuple[List[str], Dict[str, str]]:
+        """Create default steps when no extraction is available."""
+        default_descriptions = self._generate_default_step_descriptions(context)
+        procedure_steps = []
+        descriptions_dict = {}
+        
+        for i, desc in enumerate(default_descriptions, 1):
+            # FIXED: Use underscores instead of tabs
+            if section_number:
+                step_name = f"{section_number}_{procedure_clean}_step_{i}"
+            else:
+                step_name = f"{procedure_clean}_step_{i}"
+        
+            procedure_steps.append(step_name)
+            descriptions_dict[step_name] = desc
+            
+            print(f"        ✓ Default Step {i} → {step_name}")
+    
+        return procedure_steps, descriptions_dict
+
+    def extract_entities_for_procedure_old(self, context: ProcedureContext) -> ExtractionResult:
+        """Original entity extraction method (for comparison)."""
+        try:
+            print(f"    Extracting entities for (old method): {context.procedure_name}")
+            
+            # Simple keyword-based extraction
+            text = context.section.text
+            entities = {"network_functions": [], "messages": [], "parameters": [], "keys": [], "steps": []}
+            
+            # Extract network functions
+            for nf in KNOWN_NETWORK_FUNCTIONS:
+                if re.search(r'\b' + re.escape(nf) + r'\b', text, re.IGNORECASE):
+                    entities["network_functions"].append(nf)
+            
+            # Extract messages
+            for msg in KNOWN_MESSAGES:
+                if re.search(r'\b' + re.escape(msg) + r'\b', text, re.IGNORECASE):
+                    entities["messages"].append(msg)
+            
+            # Extract parameters
+            for param in KNOWN_PARAMETERS:
+                if re.search(r'\b' + re.escape(param) + r'\b', text, re.IGNORECASE):
+                    entities["parameters"].append(param)
+            
+            # Extract keys
+            for key in KNOWN_KEYS:
+                if re.search(r'\b' + re.escape(key) + r'\b', text, re.IGNORECASE):
+                    entities["keys"].append(key)
+            
+            # Simple step extraction (naive)
+            step_pattern = r'(\d+)\.\s+([^\d]+)'
+            steps = re.findall(step_pattern, text)
+            for step in steps:
+                step_number, step_text = step
+                entities["steps"].append(f"{step_number}. {step_text.strip()}")
+            
+            # Clean up duplicates
+            for key in entities:
+                entities[key] = list(set(entities[key]))
+            
+            # Generate default step descriptions if no steps found
+            if not entities["steps"]:
+                entities["steps"] = self._generate_default_step_descriptions(context)
+            
+            # Update context with extracted entities
+            self._update_context_with_entities(context, entities)
+            
+            total_entities = sum(len(v) for v in entities.values())
+            print(f"      ✓ Extracted {total_entities} entities (old method)")
+            
+            return ExtractionResult(
+                entities=entities,
+                relationships=[],
+                success=True,
+                extraction_method="keyword_based_old",
+                llm_model_used="none"
+            )
+        
+        except Exception as e:
+            print(f"    ✗ Entity extraction failed (old method): {e}")
+            return ExtractionResult(
+                entities={},
+                relationships=[],
+                success=False,
+                error_message=str(e)
+            )
+
+    # NEW: Strict whitelist enforcement methods
+    def _enforce_nf_whitelist_old(self, extracted_nfs: List[str]) -> List[str]:
+        """Enforce strict network function whitelist validation (old method)."""
+        validated_nfs = []
+        rejected_count = 0
+        
+        for nf in extracted_nfs:
+            nf_upper = nf.upper().strip()
+            if nf_upper in self.valid_network_functions:
+                validated_nfs.append(nf_upper)
+                print(f"        ✓ Validated NF (old): {nf} -> {nf_upper}")
+            else:
+                print(f"        ✗ Rejected NF (old): {nf} (not in whitelist)")
+                rejected_count += 1
+        
+        if rejected_count > 0:
+            print(f"      📋 Rejected {rejected_count} invalid network functions (old method)")
+        
+        return validated_nfs
+
+    def extract_entities_for_procedure_fallback(self, context: ProcedureContext) -> ExtractionResult:
+        """Fallback entity extraction method (for comparison)."""
+        try:
+            print(f"    Extracting entities for (fallback method): {context.procedure_name}")
+            
+            # Simple keyword-based extraction
+            text = context.section.text
+            entities = {"network_functions": [], "messages": [], "parameters": [], "keys": [], "steps": []}
+            
+            # Extract network functions
+            for nf in KNOWN_NETWORK_FUNCTIONS:
+                if re.search(r'\b' + re.escape(nf) + r'\b', text, re.IGNORECASE):
+                    entities["network_functions"].append(nf)
+            
+            # Extract messages
+            for msg in KNOWN_MESSAGES:
+                if re.search(r'\b' + re.escape(msg) + r'\b', text, re.IGNORECASE):
+                    entities["messages"].append(msg)
+            
+            # Extract parameters
+            for param in KNOWN_PARAMETERS:
+                if re.search(r'\b' + re.escape(param) + r'\b', text, re.IGNORECASE):
+                    entities["parameters"].append(param)
+            
+            # Extract keys
+            for key in KNOWN_KEYS:
+                if re.search(r'\b' + re.escape(key) + r'\b', text, re.IGNORECASE):
+                    entities["keys"].append(key)
+            
+            # Simple step extraction (naive)
+            step_pattern = r'(\d+)\.\s+([^\d]+)'
+            steps = re.findall(step_pattern, text)
+            for step in steps:
+                step_number, step_text = step
+                entities["steps"].append(f"{step_number}. {step_text.strip()}")
+            
+            # Clean up duplicates
+            for key in entities:
+                entities[key] = list(set(entities[key]))
+            
+            # Generate default step descriptions if no steps found
+            if not entities["steps"]:
+                entities["steps"] = self._generate_default_step_descriptions(context)
+            
+            # Update context with extracted entities
+            self._update_context_with_entities(context, entities)
+            
+            total_entities = sum(len(v) for v in entities.values())
+            print(f"      ✓ Extracted {total_entities} entities (fallback method)")
+            
+            return ExtractionResult(
+                entities=entities,
+                relationships=[],
+                success=True,
+                extraction_method="keyword_based_fallback",
+                llm_model_used="none"
+            )
+        
+        except Exception as e:
+            print(f"    ✗ Entity extraction failed (fallback method): {e}")
+            return ExtractionResult(
+                entities={},
+                relationships=[],
+                success=False,
+                error_message=str(e)
+            )
 
     def _generate_default_step_descriptions(self, context: ProcedureContext) -> List[str]:
         """Generate default step descriptions based on procedure type."""
@@ -1244,3 +1466,49 @@ STEPS: 1. UE initiates registration|2. AMF processes request|3. Authentication p
         )
         
         return features
+
+    def _create_step_entities_from_extracted_steps(self, steps: List[Dict[str, str]], context: ProcedureContext) -> List[str]:
+        """Create step entities directly from extracted steps data."""
+
+        # Extract section number and clean procedure name
+        procedure_title = context.procedure_name
+        section_match = re.match(r'^(\d+(?:\.\d+)*)\s+(.+)', procedure_title)
+
+        if section_match:
+            section_number = section_match.group(1).replace('.', '')  # "4.3.2.2.1" → "43221"
+            clean_title = section_match.group(2)  # "Non-roaming and Roaming with Local Breakout"
+        else:
+            section_number = ""
+            clean_title = procedure_title
+
+        # Create procedure identifier for step naming
+        procedure_clean = re.sub(r'[^\w\s]', '', clean_title).replace(' ', '_')
+
+        procedure_steps = []
+        context.step_descriptions = {}
+
+        print(f"        🏗️  Creating {len(steps)} step entities from extracted steps")
+
+        for step_dict in steps:
+            original_step_num = step_dict['number']  # "1", "7a", "20b"
+            step_content = step_dict['text']         # Full content
+
+            # Convert 3GPP step number to entity naming format
+            entity_step_num = self._convert_step_number_for_entity(original_step_num)
+
+            # FIXED: Create step entity name using underscores instead of tabs
+            if section_number:
+                step_name = f"{section_number}_{procedure_clean}_step_{entity_step_num}"
+            else:
+                step_name = f"{procedure_clean}_step_{entity_step_num}"
+
+            procedure_steps.append(step_name)
+
+            # Store full multi-paragraph description
+            context.step_descriptions[step_name] = step_content
+
+            print(f"          ✓ Step {original_step_num} → {step_name}")
+
+        print(f"        ✅ Created {len(procedure_steps)} step entities with descriptions")
+
+        return procedure_steps

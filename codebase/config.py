@@ -40,16 +40,7 @@ EMBEDDING_MODEL_OPTIONS = [
     "Qwen/Qwen3-Embedding-8B"                      # High quality embeddings
 ]
 
-# Enhanced embedding configuration for long context
-EMBEDDING_CONFIG = {
-    "model_name": "Qwen/Qwen3-Embedding-8B",
-    "max_tokens": 32768,
-    "working_tokens": 32000,  # Leave buffer for safety
-    "chunk_overlap": 500,     # Overlap between chunks
-    "enable_long_context": True,
-    "batch_size": 1,          # Process one long context at a time
-    "device_map": "auto"      # Let model choose optimal device placement
-}
+
 
 # 3GPP-specific Entity Lists
 KNOWN_NETWORK_FUNCTIONS = [

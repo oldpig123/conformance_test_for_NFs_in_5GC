@@ -561,34 +561,43 @@ class KnowledgeGraphBuilder:
         # Remove entities and relationships associated with the document
         pass
     
-        """Build complete knowledge graph with proper isolation."""
-        total_stats = {
-            'procedures': 0,
-            'entities': {},
-            'relationships': 0,
-            'errors': []
-        }
+    def create_step_entity(self, step_name: str, procedure_name: str, step_descriptions: Dict[str, str] = None):
+        """Create step entity with description field."""
         
-        for procedure_context in procedures:
-            # Each procedure gets its own transaction
-            with self.db.session.begin_transaction() as tx:
-                try:
-                    stats = self.build_for_procedure(procedure_context)
-                    
-                    # Merge stats
-                    total_stats['procedures'] += 1
-                    total_stats['relationships'] += stats['relationships']
-                    
-                    for entity_type, count in stats['entities'].items():
-                        total_stats['entities'][entity_type] = total_stats['entities'].get(entity_type, 0) + count
-                    
-                    tx.commit()
-                    print(f"    ✓ Committed: {procedure_context.procedure_name}")
-                    
-                except Exception as e:
-                    tx.rollback()
-                    error_msg = f"Failed to build {procedure_context.procedure_name}: {e}"
-                    total_stats['errors'].append(error_msg)
-                    print(f"    ✗ Rolled back: {error_msg}")
+        # Get description from context if available
+        description = ""
+        if step_descriptions and step_name in step_descriptions:
+            description = step_descriptions[step_name]
+            # Normalize paragraph breaks (as requested - single line with spaces)
+            description = description.replace('  ', ' ').replace('\n', ' ').strip()
         
-        return total_stats
+        step_entity = Step(
+            name=step_name,
+            procedure_name=procedure_name,
+            description=description,  # Store multi-paragraph content here
+            step_order=self._extract_step_order(step_name)
+        )
+        
+        self.session.add(step_entity)
+        print(f"SUCCESS: Created Step entity '{step_name}' with description ({len(description)} chars)")
+        
+        return step_entity
+
+    def _extract_step_order(self, step_name: str) -> int:
+        """Extract step order from step name for proper sequencing."""
+        # Extract number from step name like "43221_Procedure_step_7a" → 7
+        match = re.search(r'step_(\d+)', step_name)
+        if match:
+            return int(match.group(1))
+        
+        # Fallback to position-based ordering
+        return 1
+    
+    """Build complete knowledge graph with proper isolation."""
+    total_stats = {
+        'procedures': 0,
+        'entities': {},
+        'relationships': 0,
+        'errors': []
+    }
+
