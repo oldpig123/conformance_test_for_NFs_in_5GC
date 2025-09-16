@@ -13,54 +13,34 @@ class FSMConverter:
         self.output_dir = Path("output")
         self.output_dir.mkdir(exist_ok=True)
     
-    def convert_procedure_to_fsm(self, procedure_name: str, steps: List[Dict], 
-                               step_descriptions: Dict[str, str], relationships: List[Dict]) -> FiniteStateMachine:
+    def convert_procedure_to_fsm(self, procedure_name: str, step_entities: List[Entity], 
+                               relationships: List[Dict]) -> FiniteStateMachine:
         """Convert a 3GPP procedure to FSM representation."""
         print(f"Converting procedure '{procedure_name}' to FSM...")
         
-        if not steps:
+        if not step_entities:
             print(f"  ⚠️ No steps found for {procedure_name}")
             return None
         
         # Create states from steps
         states = []
-        step_names = [step['name'] for step in steps]
+        step_names = [entity.name for entity in step_entities]
         
-        for i, step in enumerate(steps):
-            step_name = step['name']
-            description = step_descriptions.get(step_name, f"Execute step {step_name}")
-            
-            # Truncate description if too long
-            if len(description) > 100:
-                description = description[:100] + "..."
-            
-            # Create step entity for this FSM state (REQUIRED by data structure)
-            step_entity = Entity(
-                name=step_name,
-                entity_type="Step",
-                properties={
-                    "procedure": procedure_name,
-                    "step_number": i + 1,
-                    "extraction_method": "fsm_conversion",
-                    "is_initial": (i == 0),
-                    "is_final": (i == len(steps) - 1)
-                },
-                description=description,
-                search_keywords=[
-                    step_name.lower(),
-                    procedure_name.lower(),
-                    "step",
-                    f"step_{i+1}"
-                ]
-            )
+        for i, step_entity in enumerate(step_entities):
+            # Truncate the full description for the FSM state's own description field
+            # FIX: Handle cases where the entity description is None.
+            # The description can be None, so we provide a default empty string.
+            short_description = step_entity.description if step_entity.description is not None else ""
+            if len(short_description) > 100:
+                short_description = short_description[:100] + "..."
             
             # Create FSM state with required step_entity
             fsm_state = FSMState(
-                name=step_name,
+                name=step_entity.name,
                 step_entity=step_entity,  # REQUIRED parameter
-                is_initial=(i == 0),
-                is_final=(i == len(steps) - 1),
-                description=description
+                is_initial=(i == 0),      # Determine if it's the initial state
+                is_final=(i == len(step_entities) - 1), # Determine if it's a final state
+                description=short_description
             )
             states.append(fsm_state)
         
@@ -68,9 +48,9 @@ class FSMConverter:
         transitions = []
         
         # Add sequential transitions by default
-        for i in range(len(steps) - 1):
-            current_step = steps[i]['name']
-            next_step = steps[i + 1]['name']
+        for i in range(len(step_entities) - 1):
+            current_step = step_entities[i].name
+            next_step = step_entities[i + 1].name
             
             # Create transition using correct field names from data_structures.py
             transition = FSMTransition(
@@ -91,8 +71,8 @@ class FSMConverter:
             procedure_name=procedure_name,  # Matches data_structures.py
             states=states,
             transitions=transitions,
-            initial_state=steps[0]['name'] if steps else None,
-            final_states=[steps[-1]['name']] if steps else []
+            initial_state=step_entities[0].name if step_entities else None,
+            final_states=[step_entities[-1].name] if step_entities else []
         )
         
         print(f"✓ FSM created: {len(states)} states, {len(transitions)} transitions")

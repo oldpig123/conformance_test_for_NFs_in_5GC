@@ -72,7 +72,7 @@ class DatabaseManager:
         # Sanitize relationship type (Neo4j doesn't like certain characters)
         clean_rel_type = re.sub(r'[^A-Za-z0-9_]', '_', rel_type)
         
-        print(f"DEBUG: Creating {source_name} -[{clean_rel_type}]-> {target_name}")
+        # print(f"DEBUG: Creating {source_name} -[{clean_rel_type}]-> {target_name}")
         
         # First verify both entities exist
         source_check = self.session.run("MATCH (n {name: $name}) RETURN count(n) as count", name=source_name)
@@ -107,7 +107,7 @@ class DatabaseManager:
             # Check if relationship was actually created
             record = result.single()
             if record:
-                print(f"SUCCESS: Created {clean_rel_type} relationship")
+                # print(f"SUCCESS: Created {clean_rel_type} relationship")
                 return record
             else:
                 print(f"WARNING: No relationship created")

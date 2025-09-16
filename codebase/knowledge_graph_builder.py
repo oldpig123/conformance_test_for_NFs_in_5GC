@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import List, Dict
+from typing import List, Dict, Optional
 from collections import defaultdict
 from tqdm import tqdm
 import warnings
@@ -156,15 +156,23 @@ class KnowledgeGraphBuilder:
         # Steps (Step 2e) - CRITICAL FIX: Use procedure-specific step names from context
         for step_name in context.steps:
             # Extract step number from procedure-specific name
-            step_match = re.search(r'_step_(\d+)$', step_name)
-            step_number = int(step_match.group(1)) if step_match else 1
+            step_match = re.search(r'_step_([\w-]+)$', step_name)
+            step_number_str = step_match.group(1) if step_match else "1"
             
-            self._add_entity(step_name, "Step", {
-                "procedure": context.procedure_name,
-                "clause": context.section.clause,
-                "step_number": step_number,
-                "extraction_method": "nlp_llm_extraction"
-            })
+            # Get the description for this step from the context
+            step_description = context.step_descriptions.get(step_name, "")
+            
+            self._add_entity(
+                name=step_name,
+                entity_type="Step",
+                properties={
+                    "procedure": context.procedure_name,
+                    "clause": context.section.clause,
+                    "step_number": step_number_str,
+                    "extraction_method": "nlp_llm_extraction"
+                },
+                description=step_description  # Pass the description here
+            )
             print(f"      📝 Added Step entity: {step_name}")
     
     def _merge_and_load_to_database(self):
@@ -504,20 +512,20 @@ class KnowledgeGraphBuilder:
         print(f"\nProcedures Processed: {len(self.procedure_contexts)}")
         print(f"Documents Processed: {len(set(ctx.section.document for ctx in self.procedure_contexts))}")
         
-        # Procedure-specific step analysis
-        print(f"\nProcedure-Specific Steps Analysis:")
-        for ctx in self.procedure_contexts[:5]:  # Show first 5
-            print(f"  {ctx.procedure_name}: {len(ctx.steps)} steps")
-            for step in ctx.steps[:3]:  # Show first 3 steps
-                print(f"    - {step}")
+        # # Procedure-specific step analysis
+        # print(f"\nProcedure-Specific Steps Analysis:")
+        # for ctx in self.procedure_contexts[:5]:  # Show first 5
+        #     print(f"  {ctx.procedure_name}: {len(ctx.steps)} steps")
+        #     for step in ctx.steps[:3]:  # Show first 3 steps
+        #         print(f"    - {step}")
         
         print("="*70)
     
-    def _add_entity(self, name: str, entity_type: str, properties: Dict):
+    def _add_entity(self, name: str, entity_type: str, properties: Dict, description: Optional[str] = None):
         """Add entity (avoid duplicates)."""
         key = (name, entity_type)
         if key not in self.all_entities:
-            self.all_entities[key] = Entity(name, entity_type, properties)
+            self.all_entities[key] = Entity(name=name, entity_type=entity_type, properties=properties, description=description)
     
     def _find_entity_by_name(self, name: str, entity_type: str):
         """Find entity by name and type."""
@@ -600,4 +608,3 @@ class KnowledgeGraphBuilder:
         'relationships': 0,
         'errors': []
     }
-
