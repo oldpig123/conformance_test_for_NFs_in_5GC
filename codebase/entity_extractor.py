@@ -13,7 +13,8 @@ except ImportError:
     print("Error: transformers/sentence-transformers not installed")
     print("Run: pip install transformers sentence-transformers")
     exit(1)
-
+import logging
+logging.getLogger("transformers").setLevel(logging.ERROR)
 from config import (
     LLM_MODEL_OPTIONS, EMBEDDING_MODEL_OPTIONS, FILTERED_WORDS, 
     KNOWN_NETWORK_FUNCTIONS, KNOWN_PARAMETERS, KNOWN_KEYS, KNOWN_MESSAGES
