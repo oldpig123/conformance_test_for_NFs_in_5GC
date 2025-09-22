@@ -108,28 +108,6 @@ class EntityExtractor:
         if not self.embedding_model:
             print("  ⚠️  No Embedding model loaded - search will be limited")
 
-    # NEW: Strict whitelist enforcement methods
-    def _enforce_nf_whitelist(self, extracted_nfs: List[str]) -> List[str]:
-        """Enforce strict network function whitelist validation."""
-        validated_nfs = []
-        rejected_count = 0
-        
-        for nf in extracted_nfs:
-            # Normalize candidate (handle variations like "5G-AMF" -> "AMF")
-            normalized_nf = self._normalize_nf_candidate(nf)
-            
-            if normalized_nf and normalized_nf in self.valid_network_functions:
-                validated_nfs.append(normalized_nf)
-                print(f"        ✓ Validated NF: {nf} -> {normalized_nf}")
-            else:
-                print(f"        ✗ Rejected NF: {nf} (not in whitelist)")
-                rejected_count += 1
-        
-        if rejected_count > 0:
-            print(f"      📋 Rejected {rejected_count} invalid network functions")
-        
-        return validated_nfs
-    
     def _normalize_nf_candidate(self, candidate: str) -> Optional[str]:
         """Normalize NF candidate and check variations."""
         if not candidate:
@@ -214,7 +192,7 @@ class EntityExtractor:
             merged_entities = self._merge_extraction_results(llm_entities, pattern_entities)
             
             # NEW: Method 4: Enforce whitelist validation on all entities
-            validated_entities = self._apply_whitelist_validation(merged_entities)
+            validated_entities = self._apply_whitelist_validation(merged_entities, context)
             
             # Method 5: Ensure minimum entities
             if self._is_empty_result(validated_entities):
@@ -257,7 +235,7 @@ class EntityExtractor:
             )
     
     # NEW: Apply whitelist validation to all entity types
-    def _apply_whitelist_validation(self, entities: Dict[str, List[str]]) -> Dict[str, List[str]]:
+    def _apply_whitelist_validation(self, entities: Dict[str, List[str]], context: ProcedureContext) -> Dict[str, List[str]]:
         """Apply strict whitelist validation to all extracted entities."""
         print(f"      🔍 Applying whitelist validation...")
         
@@ -265,7 +243,7 @@ class EntityExtractor:
         
         # Validate network functions (MOST IMPORTANT)
         original_nfs = entities.get("network_functions", [])
-        validated_entities["network_functions"] = self._enforce_nf_whitelist(original_nfs)
+        validated_entities["network_functions"] = self._validate_network_functions(original_nfs, context)
         
         # Validate parameters (if whitelist exists)
         original_params = entities.get("parameters", [])
@@ -291,6 +269,42 @@ class EntityExtractor:
             print(f"      📊 Network function validation: {len(original_nfs)} -> {len(validated_entities['network_functions'])} (-{nf_reduction})")
         
         return validated_entities
+
+    def _validate_network_functions(self, extracted_nfs: List[str], context: ProcedureContext) -> List[str]:
+        """
+        Validates NFs using a robust two-step process to improve accuracy.
+        1. Check against a strict whitelist.
+        2. Check for evidence of the NF in the procedure's step descriptions.
+        """
+        # Step 1: Whitelist validation
+        whitelisted_nfs = set()
+        rejected_by_whitelist = 0
+        for nf in extracted_nfs:
+            normalized_nf = self._normalize_nf_candidate(nf)
+            if normalized_nf and normalized_nf in self.valid_network_functions:
+                whitelisted_nfs.add(normalized_nf)
+            else:
+                print(f"        ✗ Rejected NF (Whitelist): '{nf}' is not a valid network function name.")
+                rejected_by_whitelist += 1
+
+        # Step 2: Evidence-based validation
+        all_steps_text = " ".join(context.step_descriptions.values()).lower()
+        
+        if not all_steps_text:
+            print("        ⚠️ No step descriptions found for evidence-based validation. Returning whitelisted NFs.")
+            return sorted(list(whitelisted_nfs))
+
+        validated_nfs = []
+        rejected_by_evidence = 0
+        for nf_name in whitelisted_nfs:
+            if re.search(r'\b' + re.escape(nf_name.lower()) + r'\b', all_steps_text):
+                validated_nfs.append(nf_name)
+                print(f"        ✓ Validated NF (Whitelist & Evidence): {nf_name}")
+            else:
+                print(f"        ✗ Rejected NF (Evidence): '{nf_name}' is a valid NF but not found in step descriptions for this procedure.")
+                rejected_by_evidence += 1
+        
+        return sorted(validated_nfs)
     
     def _enhanced_llm_extraction(self, context: ProcedureContext) -> Dict[str, List[str]]:
         """Enhanced LLM extraction with better prompts."""
@@ -317,7 +331,7 @@ Format your response as:
 NETWORK_FUNCTIONS: AMF, SMF, AUSF
 MESSAGES: Registration Request, Authentication Response
 PARAMETERS: SUCI, 5G-GUTI
-KEYS: 5G-AKA, Kausf
+KEYS: Kseaf, Kausf
 STEPS: 1. UE initiates registration|2. AMF processes request|3. Authentication performed
 """
 

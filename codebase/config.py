@@ -59,7 +59,8 @@ KNOWN_PARAMETERS = [
 KNOWN_KEYS = [
     "5G-AKA", "EAP-AKA'", "Kausf", "Kseaf", "Kamf", "Ksmf", "Kn3iwf",
     "5G HE AV", "5G AV", "RAND", "AUTN", "XRES*", "RES*", "CK", "IK",
-    "Kc", "SRES", "Ks", "K_AMF", "K_gNB", "K_N3IWF", "K_UPF"
+    "Kc", "SRES", "Ks", "K_AMF", "K_gNB", "K_N3IWF", "K_UPF","RES*", 
+    "HXRES*", "HRES*", "KDF", "NH", "KDF", "K_eNB", "K_enb*"
 ]
 
 KNOWN_MESSAGES = [
