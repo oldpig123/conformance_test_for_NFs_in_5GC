@@ -149,34 +149,6 @@ class EntityExtractor:
         
         return None
     
-    def _enforce_parameter_whitelist(self, extracted_params: List[str]) -> List[str]:
-        """Enforce parameter whitelist validation."""
-        validated_params = []
-        
-        for param in extracted_params:
-            param_upper = param.upper().strip()
-            if param_upper in self.valid_parameters:
-                validated_params.append(param_upper)
-                print(f"        ✓ Validated Parameter: {param}")
-            else:
-                print(f"        ✗ Rejected Parameter: {param} (not in whitelist)")
-        
-        return validated_params
-    
-    def _enforce_key_whitelist(self, extracted_keys: List[str]) -> List[str]:
-        """Enforce key whitelist validation."""
-        validated_keys = []
-        
-        for key in extracted_keys:
-            key_upper = key.upper().strip()
-            if key_upper in self.valid_keys:
-                validated_keys.append(key_upper)
-                print(f"        ✓ Validated Key: {key}")
-            else:
-                print(f"        ✗ Rejected Key: {key} (not in whitelist)")
-        
-        return validated_keys
-
     def extract_entities_for_procedure(self, context: ProcedureContext) -> ExtractionResult:
         """Enhanced entity extraction with step descriptions (Requirement 9)."""
         try:
@@ -248,19 +220,21 @@ class EntityExtractor:
         # Validate parameters (if whitelist exists)
         original_params = entities.get("parameters", [])
         if self.valid_parameters:
-            validated_entities["parameters"] = self._enforce_parameter_whitelist(original_params)
+            validated_entities["parameters"] = self._validate_parameters_flexibly(original_params, context)
         else:
             validated_entities["parameters"] = original_params  # Keep original if no whitelist
         
         # Validate keys (if whitelist exists)  
         original_keys = entities.get("keys", [])
         if self.valid_keys:
-            validated_entities["keys"] = self._enforce_key_whitelist(original_keys)
+            validated_entities["keys"] = self._validate_keys_flexibly(original_keys, context)
         else:
             validated_entities["keys"] = original_keys  # Keep original if no whitelist
         
-        # Messages and steps - no strict whitelist (too dynamic)
-        validated_entities["messages"] = entities.get("messages", [])
+        # NEW: Validate messages flexibly
+        original_messages = entities.get("messages", [])
+        validated_entities["messages"] = self._validate_messages_flexibly(original_messages, context)
+        
         validated_entities["steps"] = entities.get("steps", [])
         
         # Report validation results
@@ -269,6 +243,119 @@ class EntityExtractor:
             print(f"      📊 Network function validation: {len(original_nfs)} -> {len(validated_entities['network_functions'])} (-{nf_reduction})")
         
         return validated_entities
+
+    def _validate_messages_flexibly(self, extracted_msgs: List[str], context: ProcedureContext) -> List[str]:
+        """
+        Validates messages using a two-step process:
+        1. High-confidence check against a strict whitelist.
+        2. Flexible discovery of new messages using patterns and context.
+        """
+        validated_msgs = set()
+        candidates_for_flexible_check = []
+
+        # Step 1: Whitelist validation
+        for msg in extracted_msgs:
+            msg_upper = msg.upper().strip()
+            if msg_upper in self.valid_messages:
+                validated_msgs.add(msg) # Keep original casing
+                print(f"        ✓ Validated Message (Whitelist): {msg}")
+            elif msg and len(msg) > 4 and msg_upper not in FILTERED_WORDS:
+                candidates_for_flexible_check.append(msg)
+
+        if not candidates_for_flexible_check:
+            return sorted(list(validated_msgs))
+
+        # Step 2: Flexible discovery and validation
+        all_text_lower = context.section.text.lower()
+        for msg in candidates_for_flexible_check:
+            msg_lower = msg.lower()
+            is_plausible = False
+
+            # Pattern matching for plausible new messages
+            if any(msg_lower.endswith(suffix) for suffix in ["request", "response", "indication", "confirm", "command", "accept", "reject", "notification"]) or re.match(r'^n[a-z]+_', msg_lower):
+                is_plausible = True
+
+            if is_plausible and any(kw in all_text_lower for kw in ["send", "receive", "transfer", "invoke", "message"]):
+                validated_msgs.add(msg)
+                print(f"        ✓ Validated Message (Flexible): {msg} (found in context)")
+        return sorted(list(validated_msgs))
+
+    def _validate_parameters_flexibly(self, extracted_params: List[str], context: ProcedureContext) -> List[str]:
+        """
+        Validates parameters using a two-step process:
+        1. High-confidence check against a strict whitelist.
+        2. Flexible discovery of new parameters using patterns and context.
+        """
+        validated_params = set()
+        candidates_for_flexible_check = []
+
+        # Step 1: Whitelist validation
+        for param in extracted_params:
+            param_upper = param.upper().strip()
+            if param_upper in self.valid_parameters:
+                validated_params.add(param_upper)
+                print(f"        ✓ Validated Parameter (Whitelist): {param}")
+            elif param_upper and len(param_upper) > 2 and param_upper not in FILTERED_WORDS:
+                candidates_for_flexible_check.append(param)
+
+        if not candidates_for_flexible_check:
+            return sorted(list(validated_params))
+
+        # Step 2: Flexible discovery and validation
+        all_text_lower = context.section.text.lower()
+        sentences = re.split(r'[.!?]', all_text_lower)
+
+        for param in candidates_for_flexible_check:
+            param_lower = param.lower()
+            is_plausible = False
+
+            # Pattern matching for plausible new parameters
+            if re.match(r'^[A-Z-]{3,8}$', param) or "ID" in param.upper() or "IDENTIFIER" in param.upper():
+                is_plausible = True
+
+            if is_plausible:
+                # Contextual check: must appear near relevant keywords
+                for sentence in sentences:
+                    if param_lower in sentence and any(kw in sentence for kw in ["parameter", "value", "field", "identifier", "ie"]):
+                        validated_params.add(param.upper())
+                        print(f"        ✓ Validated Parameter (Flexible): {param} (found in context)")
+                        is_plausible = False # Mark as handled
+                        break
+            
+            if is_plausible: # If it was plausible but no context was found
+                print(f"        ✗ Rejected Parameter (Flexible): {param} (plausible but no context)")
+
+        return sorted(list(validated_params))
+
+    def _validate_keys_flexibly(self, extracted_keys: List[str], context: ProcedureContext) -> List[str]:
+        """
+        Validates keys using a two-step process:
+        1. High-confidence check against a strict whitelist.
+        2. Flexible discovery of new keys using patterns and context.
+        """
+        validated_keys = set()
+        candidates_for_flexible_check = []
+
+        # Step 1: Whitelist validation
+        for key in extracted_keys:
+            key_upper = key.upper().strip()
+            if key_upper in self.valid_keys:
+                validated_keys.add(key_upper)
+                print(f"        ✓ Validated Key (Whitelist): {key}")
+            elif key_upper and len(key_upper) > 2 and key_upper not in FILTERED_WORDS:
+                candidates_for_flexible_check.append(key)
+
+        # Step 2: Flexible discovery and validation
+        all_text_lower = context.section.text.lower()
+        for key in candidates_for_flexible_check:
+            key_lower = key.lower()
+            # Pattern matching for plausible new keys
+            if key.startswith('K_') or key.startswith('K') and key[1:].isupper() or key.endswith('*'):
+                # Contextual check
+                if any(kw in all_text_lower for kw in ["key", "security", "authentication", "ciphering", "derives"]):
+                    validated_keys.add(key.upper())
+                    print(f"        ✓ Validated Key (Flexible): {key} (found in context)")
+        return sorted(list(validated_keys))
 
     def _validate_network_functions(self, extracted_nfs: List[str], context: ProcedureContext) -> List[str]:
         """
