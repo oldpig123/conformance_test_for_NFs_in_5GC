@@ -87,7 +87,7 @@ class EntityExtractor:
                 break
                 
             except Exception as e:
-                print(f"  ✗ Failed: {str(e)[:50]}...")
+                print(f"  ✗ Failed: {str(e)}...")
                 continue
         
         # Load Embedding Model for Search (Requirement 8)
@@ -100,7 +100,7 @@ class EntityExtractor:
                 print(f"  ✓ Embedding model loaded: {model_name}")
                 break
             except Exception as e:
-                print(f"  ✗ Failed: {str(e)[:50]}...")
+                print(f"  ✗ Failed: {str(e)}...")
                 continue
         
         if not self.entity_llm:
@@ -1004,7 +1004,13 @@ STEPS: 1. UE initiates registration|2. AMF processes request|3. Authentication p
     def _create_default_steps(self, section_number: str, procedure_clean: str, 
                      context: ProcedureContext) -> Tuple[List[str], Dict[str, str]]:
         """Create default steps when no extraction is available."""
-        default_descriptions = self._generate_default_step_descriptions(context)
+        # NEW: Use LLM-based fallback instead of hardcoded lists
+        default_descriptions = self._generate_llm_fallback_steps(context)
+        
+        # If LLM fallback also fails, return empty
+        if not default_descriptions:
+            return [], {}
+
         procedure_steps = []
         descriptions_dict = {}
         
@@ -1022,72 +1028,71 @@ STEPS: 1. UE initiates registration|2. AMF processes request|3. Authentication p
     
         return procedure_steps, descriptions_dict
 
-    def extract_entities_for_procedure_old(self, context: ProcedureContext) -> ExtractionResult:
-        """Original entity extraction method (for comparison)."""
+    def _generate_llm_fallback_steps(self, context: ProcedureContext) -> List[str]:
+        """
+        Uses the LLM to generate plausible, high-level steps when explicit
+        step extraction fails.
+        """
+        if not self.entity_llm:
+            return []
+
+        print(f"        Fallback: Using LLM to generate steps for '{context.procedure_name}'")
+
+        prompt = f"""
+You are a 3GPP telecommunications expert. The following text describes the procedure '{context.procedure_name}', but the numbered steps are missing or unclear. Based on the procedure name and the context, generate a plausible, high-level, generic sequence of 3 to 5 steps for this procedure.
+
+Procedure Name: {context.procedure_name}
+Context: {context.section.text[:1500]}...
+
+Return ONLY a list of step descriptions, each on a new line, starting with a number. For example:
+1. The UE initiates the process by sending an initial message.
+2. The core network validates the UE's request.
+3. The network responds to the UE to complete the procedure.
+"""
         try:
-            print(f"    Extracting entities for (old method): {context.procedure_name}")
+            if self.is_t5_model:
+                result = self.entity_llm(prompt, max_length=250, num_return_sequences=1)
+                response_text = result[0]['generated_text']
+            else:
+                result = self.entity_llm(prompt, max_length=len(prompt) + 250, num_return_sequences=1)
+                response_text = result[0]['generated_text'][len(prompt):]
+
+            # Process the response to get a clean list of steps
+            steps = []
+            # First, try splitting by newline
+            lines = response_text.split('\n')
+            for line in lines:
+                line = line.strip()
+                if re.match(r'^\d+\.\s+', line):
+                    clean_line = re.sub(r'^\d+\.\s+', '', line)
+                    steps.append(clean_line)
+
+            # If that produced only one or zero steps, try a more robust split
+            if len(steps) <= 1 and len(response_text) > 0:
+                # Find all occurrences of "1. ", "2. ", etc.
+                potential_steps = re.split(r'(?=\d+\.\s+)', response_text)
+                new_steps = []
+                for step_text in potential_steps:
+                    step_text = step_text.strip()
+                    if step_text:
+                        # Remove the leading number and period
+                        clean_line = re.sub(r'^\d+\.\s+', '', step_text).strip()
+                        if clean_line:
+                            new_steps.append(clean_line)
+                
+                # Only overwrite if the new method found more steps
+                if len(new_steps) > len(steps):
+                    steps = new_steps
             
-            # Simple keyword-based extraction
-            text = context.section.text
-            entities = {"network_functions": [], "messages": [], "parameters": [], "keys": [], "steps": []}
-            
-            # Extract network functions
-            for nf in KNOWN_NETWORK_FUNCTIONS:
-                if re.search(r'\b' + re.escape(nf) + r'\b', text, re.IGNORECASE):
-                    entities["network_functions"].append(nf)
-            
-            # Extract messages
-            for msg in KNOWN_MESSAGES:
-                if re.search(r'\b' + re.escape(msg) + r'\b', text, re.IGNORECASE):
-                    entities["messages"].append(msg)
-            
-            # Extract parameters
-            for param in KNOWN_PARAMETERS:
-                if re.search(r'\b' + re.escape(param) + r'\b', text, re.IGNORECASE):
-                    entities["parameters"].append(param)
-            
-            # Extract keys
-            for key in KNOWN_KEYS:
-                if re.search(r'\b' + re.escape(key) + r'\b', text, re.IGNORECASE):
-                    entities["keys"].append(key)
-            
-            # Simple step extraction (naive)
-            step_pattern = r'(\d+)\.\s+([^\d]+)'
-            steps = re.findall(step_pattern, text)
-            for step in steps:
-                step_number, step_text = step
-                entities["steps"].append(f"{step_number}. {step_text.strip()}")
-            
-            # Clean up duplicates
-            for key in entities:
-                entities[key] = list(set(entities[key]))
-            
-            # Generate default step descriptions if no steps found
-            if not entities["steps"]:
-                entities["steps"] = self._generate_default_step_descriptions(context)
-            
-            # Update context with extracted entities
-            self._update_context_with_entities(context, entities)
-            
-            total_entities = sum(len(v) for v in entities.values())
-            print(f"      ✓ Extracted {total_entities} entities (old method)")
-            
-            return ExtractionResult(
-                entities=entities,
-                relationships=[],
-                success=True,
-                extraction_method="keyword_based_old",
-                llm_model_used="none"
-            )
-        
+            if steps:
+                print(f"        ✓ LLM Fallback generated {len(steps)} steps.")
+                return steps
+            else:
+                return []
+
         except Exception as e:
-            print(f"    ✗ Entity extraction failed (old method): {e}")
-            return ExtractionResult(
-                entities={},
-                relationships=[],
-                success=False,
-                error_message=str(e)
-            )
+            print(f"        ✗ LLM fallback step generation failed: {e}")
+            return []
 
     # NEW: Strict whitelist enforcement methods
     def _enforce_nf_whitelist_old(self, extracted_nfs: List[str]) -> List[str]:
@@ -1108,112 +1113,6 @@ STEPS: 1. UE initiates registration|2. AMF processes request|3. Authentication p
             print(f"      📋 Rejected {rejected_count} invalid network functions (old method)")
         
         return validated_nfs
-
-    def extract_entities_for_procedure_fallback(self, context: ProcedureContext) -> ExtractionResult:
-        """Fallback entity extraction method (for comparison)."""
-        try:
-            print(f"    Extracting entities for (fallback method): {context.procedure_name}")
-            
-            # Simple keyword-based extraction
-            text = context.section.text
-            entities = {"network_functions": [], "messages": [], "parameters": [], "keys": [], "steps": []}
-            
-            # Extract network functions
-            for nf in KNOWN_NETWORK_FUNCTIONS:
-                if re.search(r'\b' + re.escape(nf) + r'\b', text, re.IGNORECASE):
-                    entities["network_functions"].append(nf)
-            
-            # Extract messages
-            for msg in KNOWN_MESSAGES:
-                if re.search(r'\b' + re.escape(msg) + r'\b', text, re.IGNORECASE):
-                    entities["messages"].append(msg)
-            
-            # Extract parameters
-            for param in KNOWN_PARAMETERS:
-                if re.search(r'\b' + re.escape(param) + r'\b', text, re.IGNORECASE):
-                    entities["parameters"].append(param)
-            
-            # Extract keys
-            for key in KNOWN_KEYS:
-                if re.search(r'\b' + re.escape(key) + r'\b', text, re.IGNORECASE):
-                    entities["keys"].append(key)
-            
-            # Simple step extraction (naive)
-            step_pattern = r'(\d+)\.\s+([^\d]+)'
-            steps = re.findall(step_pattern, text)
-            for step in steps:
-                step_number, step_text = step
-                entities["steps"].append(f"{step_number}. {step_text.strip()}")
-            
-            # Clean up duplicates
-            for key in entities:
-                entities[key] = list(set(entities[key]))
-            
-            # Generate default step descriptions if no steps found
-            if not entities["steps"]:
-                entities["steps"] = self._generate_default_step_descriptions(context)
-            
-            # Update context with extracted entities
-            self._update_context_with_entities(context, entities)
-            
-            total_entities = sum(len(v) for v in entities.values())
-            print(f"      ✓ Extracted {total_entities} entities (fallback method)")
-            
-            return ExtractionResult(
-                entities=entities,
-                relationships=[],
-                success=True,
-                extraction_method="keyword_based_fallback",
-                llm_model_used="none"
-            )
-        
-        except Exception as e:
-            print(f"    ✗ Entity extraction failed (fallback method): {e}")
-            return ExtractionResult(
-                entities={},
-                relationships=[],
-                success=False,
-                error_message=str(e)
-            )
-
-    def _generate_default_step_descriptions(self, context: ProcedureContext) -> List[str]:
-        """Generate default step descriptions based on procedure type."""
-        procedure_lower = context.procedure_name.lower()
-        
-        if 'authentication' in procedure_lower or 'aka' in procedure_lower:
-            return [
-                "UE initiates authentication procedure by sending authentication request",
-                "AMF forwards authentication request to AUSF for validation",
-                "AUSF generates authentication challenge and sends to UE via AMF",
-                "UE computes authentication response and sends back to network",
-                "AUSF validates authentication response and confirms UE identity",
-                "Authentication procedure completes successfully"
-            ]
-        elif 'registration' in procedure_lower:
-            return [
-                "UE sends registration request to AMF with identity information",
-                "AMF validates UE credentials and subscription data",
-                "AMF performs authentication and security procedures",
-                "AMF establishes UE context and assigns temporary identifiers",
-                "AMF sends registration accept to UE with allocated resources",
-                "Registration procedure completes and UE enters connected state"
-            ]
-        elif 'session' in procedure_lower:
-            return [
-                "UE requests PDU session establishment with specific requirements",
-                "AMF forwards session request to SMF for processing",
-                "SMF selects appropriate UPF and establishes data path",
-                "SMF configures QoS flows and traffic handling rules",
-                "Session establishment completes with allocated resources",
-                "Data path becomes active for user traffic"
-            ]
-        else:
-            return [
-                f"Procedure {context.procedure_name} begins with initial setup",
-                f"Network functions coordinate to process {context.procedure_name}",
-                f"Required validations and checks are performed",
-                f"Procedure {context.procedure_name} completes successfully"
-            ]
 
     def _generate_search_description(self, context: ProcedureContext) -> str:
         """Generate searchable description for procedure (Requirement 8)."""

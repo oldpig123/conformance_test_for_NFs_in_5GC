@@ -13,8 +13,12 @@ DOC_PATTERN = "*_new.docx"
 
 # Enhanced Modern LLM Options (Requirement 7) - REVISED for 3GPP/Telecom
 LLM_MODEL_OPTIONS = [
+    
     # General purpose models suitable for technical documents
-
+    "meta-llama/Llama-3.1-8B-Instruct",
+    "microsoft/Phi-3.5-mini-instruct",
+    "mistralai/Mistral-7B-Instruct-v0.3",
+    "google/gemma-3-12b-it",
     "google/flan-t5-large",               # Best for structured extraction
     "google/flan-t5-base",                # Lighter alternative
     "microsoft/DialoGPT-medium",          # For conversational/relationship extraction

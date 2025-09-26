@@ -43,7 +43,7 @@ codebase/
 
 - **Python**: 3.12
 - **Database**: A running Neo4j database instance.
-- **GPU**: An NVIDIA GPU with CUDA 11.8+ support is required. The environment is configured with high-performance libraries like `vllm`, `unsloth`, and `xformers` that depend on a compatible GPU.
+- **GPU**: An NVIDIA GPU with CUDA 11.8+ support is recommended for better performance.
 
 ## Setup and Installation
 

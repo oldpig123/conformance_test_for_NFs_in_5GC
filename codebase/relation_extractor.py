@@ -222,21 +222,14 @@ JSON format:
         for step_name in step_names:
             # Get step description if available
             step_desc = context.step_descriptions.get(step_name, f"Step {step_name}")
+            step_desc_lower = step_desc.lower()
             
-            # Check each parameter against step description and step name
+            # Check each parameter against step description
             for param in context.parameters:
                 param_lower = param.lower()
-                step_desc_lower = step_desc.lower()
-                step_name_lower = step_name.lower()
                 
-                # More comprehensive parameter detection
-                if (param_lower in step_desc_lower or 
-                    param_lower in step_name_lower or
-                    # Check for common parameter patterns
-                    any(keyword in step_desc_lower for keyword in [param_lower, 'supi', 'guti', 'imsi', 'imei', 'tai', 'plmn']) or
-                    # Check if step involves registration/authentication (likely to contain parameters)
-                    any(keyword in step_desc_lower for keyword in ['registration', 'authentication', 'identity', 'establish', 'request']) or
-                    any(keyword in step_name_lower for keyword in ['registration', 'authentication', 'identity', 'establish', 'request'])):
+                # Stricter parameter detection: check only if the parameter is in the step description
+                if param_lower in step_desc_lower:
                     
                     relationships.append(Relationship(
                         source_name=step_name,
@@ -246,10 +239,34 @@ JSON format:
                             "relationship_type": "containment",
                             "extraction_method": "parameter_detection",
                             "procedure": procedure_name,
-                            "confidence": 0.8
+                            "confidence": 0.9 # Increased confidence due to stricter rule
                         }
                     ))
                     print(f"        ✓ CONTAINS: {step_name} -> {param}")
+
+        # 5b. {Step, CONTAINS, Key} - NEWLY ADDED
+        for step_name in step_names:
+            step_desc = context.step_descriptions.get(step_name, f"Step {step_name}")
+            step_desc_lower = step_desc.lower()
+
+            # Check each key against the step description
+            for key in context.keys:
+                key_lower = key.lower()
+                
+                # Strict detection: check only if the key is in the step description
+                if key_lower in step_desc_lower:
+                    relationships.append(Relationship(
+                        source_name=step_name,
+                        target_name=key,
+                        rel_type="CONTAINS",
+                        properties={
+                            "relationship_type": "containment",
+                            "extraction_method": "key_detection",
+                            "procedure": procedure_name,
+                            "confidence": 0.9
+                        }
+                    ))
+                    print(f"        ✓ CONTAINS: {step_name} -> {key}")
         
         # If no CONTAINS relationships were created, create default ones for common parameters
         contains_created = any(r.rel_type == "CONTAINS" for r in relationships)
