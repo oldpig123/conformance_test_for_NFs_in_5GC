@@ -17,8 +17,18 @@ class DatabaseManager:
     
     def __init__(self, uri: str, username: str, password: str):
         self.driver = GraphDatabase.driver(uri, auth=(username, password))
-        self.session = self.driver.session()  # ← ADD THIS LINE
+        self.session = self.driver.session()
+        self.verify_connection()
     
+    def verify_connection(self):
+        """Verify connection to the database."""
+        try:
+            self.driver.verify_connectivity()
+            print("  ✓ Database connection verified.")
+        except Exception as e:
+            print(f"  ✗ Database connection failed: {e}")
+            raise
+
     def close(self):
         if hasattr(self, 'session'):
             self.session.close()

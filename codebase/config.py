@@ -15,9 +15,9 @@ DOC_PATTERN = "*_new.docx"
 LLM_MODEL_OPTIONS = [
     
     # General purpose models suitable for technical documents
-    "meta-llama/Llama-3.1-8B-Instruct",
-    "microsoft/Phi-3.5-mini-instruct",
-    "mistralai/Mistral-7B-Instruct-v0.3",
+    # "meta-llama/Llama-3.1-8B-Instruct",
+    # "microsoft/Phi-3.5-mini-instruct",
+    # "mistralai/Mistral-7B-Instruct-v0.3",
     "google/gemma-3-12b-it",
     "google/flan-t5-large",               # Best for structured extraction
     "google/flan-t5-base",                # Lighter alternative
@@ -57,7 +57,7 @@ KNOWN_PARAMETERS = [
     "SUCI", "SUPI", "5G-GUTI", "IMSI", "IMEI", "PEI", "TMSI", "GUTI",
     "S-NSSAI", "DNN", "PDU Session ID", "QFI", "5QI", "ARP", "AMBR",
     "Session-AMBR", "UE-AMBR", "Slice ID", "SST", "SD", "PLMN ID",
-    "TAI", "CGI", "ECGI", "NCGI", "LAI", "RAI", "SAI", "RAND", "AUTN"
+    "TAI", "CGI", "ECGI", "NCGI", "LAI", "RAI", "SAI"
 ]
 
 KNOWN_KEYS = [

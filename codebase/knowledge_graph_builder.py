@@ -31,11 +31,7 @@ class KnowledgeGraphBuilder:
         self.all_relationships: List[Relationship] = []
         self.procedure_contexts: List[ProcedureContext] = []
         
-        # Verify database connection
-        if not hasattr(self.database_manager, 'session'):
-            raise RuntimeError("DatabaseManager session not initialized!")
-        
-        print("✓ Knowledge Graph Builder initialized with valid database session")
+        print("✓ Knowledge Graph Builder initialized.")
     
     def build_knowledge_graph(self, file_paths: List[Path]):
         """Main pipeline execution with memory management."""

@@ -27,6 +27,8 @@ dependencies:
   - peft # Parameter-Efficient Fine-Tuning
   - bitsandbytes # For 8-bit/4-bit quantization
   - sentence-transformers
+  - protobuf
+  - sentencepiece
 
   # Data and Graph
   - neo4j
