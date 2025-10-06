@@ -149,7 +149,7 @@ class EntityExtractor:
         
         return None
     
-    def extract_entities_for_procedure(self, context: ProcedureContext) -> ExtractionResult:
+    def extract_entities_for_procedure(self, context: ProcedureContext, parent_title: Optional[str] = None) -> ExtractionResult:
         """Enhanced entity extraction with step descriptions (Requirement 9)."""
         try:
             print(f"    Extracting entities for: {context.procedure_name}")
@@ -174,7 +174,7 @@ class EntityExtractor:
             validated_entities = self._generate_steps_with_descriptions(validated_entities, context)
             
             # Generate search description for procedure (Requirement 8)
-            context.search_description = self._generate_search_description(context)
+            context.search_description = self._generate_search_description(context, parent_title=parent_title)
             context.search_tags = self._generate_search_tags(context)
             
             # Update context
@@ -1114,28 +1114,48 @@ Return ONLY a list of step descriptions, each on a new line, starting with a num
         
         return validated_nfs
 
-    def _generate_search_description(self, context: ProcedureContext) -> str:
-        """Generate searchable description for procedure (Requirement 8)."""
-        components = []
+    def _generate_search_description(self, context: ProcedureContext, parent_title: Optional[str] = None) -> str:
+        """Generate a rich, searchable description for a procedure using an LLM summary, enriched with parent context."""
+        print(f"        Generating rich description for: {context.procedure_name}")
         
-        # Add procedure name
-        components.append(context.procedure_name)
-        
-        # Add procedure type description
-        procedure_lower = context.procedure_name.lower()
-        if 'authentication' in procedure_lower or 'aka' in procedure_lower:
-            components.append("authentication process between UE and 5G core network")
-        elif 'registration' in procedure_lower:
-            components.append("registration procedure for UE attachment to 5G network")
-        elif 'session' in procedure_lower:
-            components.append("PDU session establishment and management")
-        
-        # Add network functions involved
-        if context.network_functions:
-            nf_list = ", ".join(context.network_functions[:3])
-            components.append(f"involving {nf_list}")
-        
-        return " ".join(components)
+        # Use the LLM to summarize the beginning of the procedure text
+        try:
+            # Take the first ~500 words as context for the summary
+            summary_context = " ".join(context.section.text.split()[:500])
+            
+            # NEW: Prepend parent title to the prompt context if available
+            full_context = ""
+            if parent_title:
+                full_context += f"This procedure is part of the '{parent_title}' section. "
+            full_context += f"The procedure is named '{context.procedure_name}'. "
+            full_context += f"TEXT: \"{summary_context}...\""
+
+            prompt = f'''
+Summarize the following 3GPP procedure text into a single, dense paragraph. Focus on the main purpose, the key actors (like UE, AMF, SMF), and the overall outcome.
+
+CONTEXT: {full_context}
+
+SUMMARY:
+'''
+            if self.is_t5_model:
+                result = self.entity_llm(prompt, max_length=150, min_length=40, num_return_sequences=1)
+                summary = result[0]['generated_text']
+            else:
+                # This logic might need adjustment for non-T5 models
+                result = self.entity_llm(prompt, max_length=len(prompt) + 150, num_return_sequences=1)
+                summary = result[0]['generated_text'][len(prompt):]
+
+            print(f"        ✓ Generated summary: {summary[:100]}...")
+            return summary.strip()
+
+        except Exception as e:
+            print(f"        ⚠️ LLM summary generation failed: {e}. Falling back to basic description.")
+            # Fallback to the old method if LLM summarization fails
+            components = [context.procedure_name]
+            if context.network_functions:
+                nf_list = ", ".join(context.network_functions[:3])
+                components.append(f"involving {nf_list}")
+            return " ".join(components)
 
     def _generate_search_tags(self, context: ProcedureContext) -> List[str]:
         """Generate search tags for better discoverability."""

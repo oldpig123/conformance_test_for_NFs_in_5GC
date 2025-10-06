@@ -18,7 +18,7 @@ LLM_MODEL_OPTIONS = [
     # "meta-llama/Llama-3.1-8B-Instruct",
     # "microsoft/Phi-3.5-mini-instruct",
     # "mistralai/Mistral-7B-Instruct-v0.3",
-    "google/gemma-3-12b-it",
+    # "google/gemma-3-12b-it",
     "google/flan-t5-large",               # Best for structured extraction
     "google/flan-t5-base",                # Lighter alternative
     "microsoft/DialoGPT-medium",          # For conversational/relationship extraction
@@ -37,6 +37,7 @@ NER_MODEL_OPTIONS = [
 # Embedding Models for Searchability (Requirement 8) - REVISED
 EMBEDDING_MODEL_OPTIONS = [
     
+    "Qwen/Qwen3-Embedding-0.6B",
     "Qwen/Qwen3-Embedding-4B",                      # High quality, smaller
     "sentence-transformers/all-MiniLM-L6-v2",           # Fastest, good quality
     "sentence-transformers/all-mpnet-base-v2",          # Best quality
@@ -64,7 +65,7 @@ KNOWN_KEYS = [
     "5G-AKA", "EAP-AKA'", "Kausf", "Kseaf", "Kamf", "Ksmf", "Kn3iwf",
     "5G HE AV", "5G AV", "RAND", "AUTN", "XRES*", "RES*", "CK", "IK",
     "Kc", "SRES", "Ks", "K_AMF", "K_gNB", "K_N3IWF", "K_UPF","RES*", 
-    "HXRES*", "HRES*", "KDF", "NH", "KDF", "K_eNB", "K_enb*"
+    "HXRES*", "HRES*", "KDF", "NH", "KDF", "K_eNB", "K_enb*", "5G SE AV"
 ]
 
 KNOWN_MESSAGES = [

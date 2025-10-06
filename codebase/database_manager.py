@@ -160,6 +160,61 @@ class DatabaseManager:
                 LIMIT {limit}
             """)
             return [record.data() for record in result]
+
+    def get_all_entities(self) -> List[Entity]:
+        """Fetches all nodes from the database and reconstructs them as Entity objects."""
+        print("Fetching all entities from the database for search indexing...")
+        with self.driver.session() as session:
+            result = session.run("MATCH (n) RETURN n")
+            entities = []
+            for record in tqdm(result, desc="Reconstructing entities"):
+                node_properties = dict(record["n"])
+                
+                # Pop the top-level fields from the properties dictionary
+                name = node_properties.pop('name', '')
+                entity_type = node_properties.pop('entity_type', 'Unknown')
+                description = node_properties.pop('description', None)
+                parent_title = node_properties.pop('parent_title', None)
+                search_keywords = node_properties.pop('search_keywords', [])
+                embedding = node_properties.pop('embedding', None)
+
+                # The rest of the items in node_properties are the original 'properties'
+                entity = Entity(
+                    name=name,
+                    entity_type=entity_type,
+                    properties=node_properties, # The remainder is the properties
+                    description=description,
+                    parent_title=parent_title,
+                    search_keywords=search_keywords,
+                    embedding=embedding
+                )
+                if not entity.search_keywords:
+                    entity.__post_init__()
+
+                entities.append(entity)
+                
+        print(f"✓ Reconstructed {len(entities)} entities from the database.")
+        return entities
+
+    def get_all_relationships(self) -> List[Relationship]:
+        """Fetches all relationships from the database and reconstructs them as Relationship objects."""
+        print("Fetching all relationships from the database...")
+        with self.driver.session() as session:
+            result = session.run("MATCH (a)-[r]->(b) RETURN a.name AS source, b.name AS target, type(r) as rel_type, r as properties")
+            relationships = []
+            for record in tqdm(result, desc="Reconstructing relationships"):
+                
+                rel_properties = dict(record["properties"])
+
+                rel = Relationship(
+                    source_name=record["source"],
+                    target_name=record["target"],
+                    rel_type=record["rel_type"],
+                    properties=rel_properties
+                )
+                relationships.append(rel)
+        print(f"✓ Reconstructed {len(relationships)} relationships from the database.")
+        return relationships
     
     def close(self):
         """Close connection (Step 6)."""

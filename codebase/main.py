@@ -45,17 +45,20 @@ def main():
     for doc_file in doc_files:
         print(f"  - {doc_file.name}")
     
+    builder = None
     try:
         # Initialize Knowledge Graph Builder
         print(f"\nInitializing Knowledge Graph Builder...")
         builder = KnowledgeGraphBuilder(NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD)
         
-        # Build knowledge graph
+        # Build knowledge graph incrementally
         print(f"\n=== BUILDING KNOWLEDGE GRAPH ===")
         builder.build_knowledge_graph(doc_files)
         
         # Demo: Search and FSM Conversion
         print(f"\n=== SEARCH AND FSM CONVERSION DEMO ===")
+        # Re-initialize builder to get a fresh DB connection for the demo
+        builder = KnowledgeGraphBuilder(NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD)
         demo_search_and_fsm(builder)
         
     except KeyboardInterrupt:
@@ -64,22 +67,27 @@ def main():
         print(f"\n❌ Fatal error: {e}")
         import traceback
         traceback.print_exc()
+    finally:
+        if builder:
+            builder.database_manager.close()
     
     print("\n" + "="*70)
     print("  PIPELINE EXECUTION COMPLETED")
     print("="*70)
 
 def demo_search_and_fsm(builder: KnowledgeGraphBuilder):
-    """Demo search functionality and FSM conversion."""
+    """Demo search functionality and FSM conversion using data from the database."""
     
     # Initialize search engine and FSM converter
     print("Initializing search engine and FSM converter...")
     search_engine = ProcedureSearchEngine(builder.entity_extractor.embedding_model)
     fsm_converter = FSMConverter()
     
-    # Get all entities from builder
-    all_entities = list(builder.all_entities.values())
-    print(f"Found {len(all_entities)} total entities")
+    # Get all entities and relationships from the database
+    print("Loading all entities and relationships from database...")
+    all_entities = builder.database_manager.get_all_entities()
+    all_relationships = builder.database_manager.get_all_relationships()
+    print(f"Found {len(all_entities)} total entities and {len(all_relationships)} relationships in the database.")
     
     # Index all entities for search
     search_engine.build_search_index(all_entities)
@@ -116,62 +124,42 @@ def demo_search_and_fsm(builder: KnowledgeGraphBuilder):
                     if i == 1:
                         print(f"   🔄 Converting '{procedure_name}' to FSM...")
                         try:
-                            # --- REVISED LOGIC TO GET CORRECT ENTITIES AND RELATIONSHIPS ---
-                            
-                            # 1. Get the full Step entities for the procedure by filtering all_entities
-                            # This logic is moved from the non-existent `get_steps_for_procedure` method
-                            section_match = re.match(r'^(\d+(?:\.\d+)*)\s+(.+)', procedure_name)
-                            if section_match:
-                                section_number = section_match.group(1).replace('.', '')
-                                clean_title = re.sub(r'[^\w\s]', '', section_match.group(2)).replace(' ', '_')
-                                step_prefix = f"{section_number}_{clean_title}_step_"
-                            else:
-                                step_prefix = f"{procedure_name.replace(' ', '_')}_step_"
+                            # Get the full Step entities for the procedure by filtering all_entities
+                            procedure_steps = [e for e in all_entities if e.entity_type == 'Step' and e.properties.get('procedure') == procedure_name]
+                            step_entities = natsorted(procedure_steps, key=lambda s: s.properties.get('step_number', '0'))
 
-                            procedure_steps = [
-                                entity for entity in all_entities
-                                if entity.entity_type == "Step" and entity.name.startswith(step_prefix)
-                            ]
-                            # Use natural sorting for step names like '9a', '10'
-                            step_entities = natsorted(procedure_steps, key=lambda s: s.name.split('_step_')[-1])
-
-                            # 2. Get all relationships involving the procedure and its steps
+                            # Get all relationships involving the procedure and its steps
                             all_relevant_entity_names = {s.name for s in step_entities}
                             all_relevant_entity_names.add(procedure_name)
                             
                             relationships = [
                                 {'source_name': r.source_name, 'target_name': r.target_name, 'rel_type': r.rel_type}
-                                for r in builder.all_relationships
+                                for r in all_relationships
                                 if r.source_name in all_relevant_entity_names or r.target_name in all_relevant_entity_names
                             ]
 
-                            # 3. Convert to FSM using the correct arguments
+                            # Convert to FSM
                             fsm = fsm_converter.convert_procedure_to_fsm(
                                 procedure_name, step_entities, relationships
                             )
                             
                             if fsm:
-                                # Validate FSM
                                 is_valid, errors = fsm_converter.validate_fsm(fsm)
                                 print(f"   ✓ Validation: {'PASSED' if is_valid else 'FAILED'}")
                                 if errors:
-                                    for error in errors[:3]:  # Show first 3 errors
+                                    for error in errors[:3]:
                                         print(f"     - {error}")
                                 
-                                # Export FSM with fixed filename handling
                                 safe_name = fsm_converter._sanitize_filename(procedure_name)
                                 json_file = f"{safe_name}_fsm.json"
                                 dot_file = f"{safe_name}_fsm.dot"
                                 
-                                # Export to JSON
                                 if fsm_converter.export_fsm_to_json(fsm, json_file):
                                     print(f"   📁 FSM exported to: output/{json_file}")
                                 
-                                # Export to DOT
                                 if fsm_converter.export_fsm_to_dot(fsm, dot_file):
                                     print(f"   📁 DOT file for visualization: output/{dot_file}")
                                 
-                                # Show FSM details
                                 show_fsm_details(fsm)
                                 
                             else:

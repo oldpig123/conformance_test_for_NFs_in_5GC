@@ -16,87 +16,35 @@ class ProcedureSearchEngine:
     def __init__(self, embedding_model=None):
         self.embedding_model = embedding_model
         self.entities_index: Dict[str, Entity] = {}
-        self.tfidf_vectorizer = TfidfVectorizer(stop_words='english', max_features=1000)
-        self.tfidf_matrix = None
-        self.entity_descriptions = []
         self.entity_names = []
-        self.entity_embeddings = {}
-        self.procedure_contexts = {}  # Store full context embeddings
-        self.chunk_index = {}  # For chunk-level search
+
+        # Field-specific vectorizers and matrices
+        self.title_vectorizer = TfidfVectorizer(stop_words='english', max_features=1000)
+        self.parent_title_vectorizer = TfidfVectorizer(stop_words='english', max_features=1000)
+        self.description_vectorizer = TfidfVectorizer(stop_words='english', max_features=1000)
+        self.title_matrix = None
+        self.parent_title_matrix = None
+        self.description_matrix = None
+
+        # Weights for combining scores
+        self.W_TITLE = 2.5
+        self.W_PARENT = 1.5
+        self.W_DESC = 1.0
+        self.W_SEMANTIC = 0.8
         
-        print("ProcedureSearchEngine initialized")
-    
-    def build_search_index(self, entities: List[Entity]):
-        """Build search index from entities (alias for index_entities)."""
-        return self.index_entities(entities)
-    
-    def index_entities(self, entities: List[Entity]):
-        """Build search index from entities with proper embedding handling."""
-        print(f"Indexing {len(entities)} entities for search...")
-        
-        if not entities:
-            print("Warning: No entities provided for indexing")
-            return
-        
-        # Store entities
-        for entity in entities:
-            self.entities_index[entity.name] = entity
-        
-        # Prepare text for TF-IDF and embeddings
-        self.entity_descriptions = []
-        self.entity_names = []
-        
-        for entity in entities:
-            # Combine name, description, and search keywords for indexing
-            text_components = [entity.name]
-            
-            if hasattr(entity, 'description') and entity.description:
-                text_components.append(entity.description)
-            
-            if hasattr(entity, 'search_keywords') and entity.search_keywords:
-                text_components.extend(entity.search_keywords)
-            
-            # Add procedure name if available
-            if hasattr(entity, 'properties') and 'procedure' in entity.properties:
-                text_components.append(entity.properties['procedure'])
-            
-            combined_text = " ".join(text_components)
-            
-            # CRITICAL: Ensure text is within embedding limits
-            if len(combined_text) > 1000:  # Conservative limit
-                combined_text = combined_text[:1000] + "..."
-            
-            self.entity_descriptions.append(combined_text)
-            self.entity_names.append(entity.name)
-        
-        # Build TF-IDF matrix
-        if self.entity_descriptions:
-            try:
-                self.tfidf_matrix = self.tfidf_vectorizer.fit_transform(self.entity_descriptions)
-                print(f"✓ Search index built with {len(self.entity_descriptions)} documents")
-            except Exception as e:
-                print(f"Warning: TF-IDF indexing failed: {e}")
-                self.tfidf_matrix = None
+        print("ProcedureSearchEngine initialized with field-based ranking")
     
     def search(self, query: SearchQuery) -> List[SearchResult]:
-        """Search for procedures using natural language query."""
-        results = []
+        """Search for procedures using a hybrid, field-weighted scoring model."""
         
-        # Method 1: Exact keyword matching
-        exact_results = self._exact_keyword_search(query)
-        results.extend(exact_results)
+        # 1. Get keyword scores from our new weighted field search
+        keyword_scores = self._keyword_search(query)
         
-        # Method 2: TF-IDF similarity search
-        tfidf_results = self._tfidf_search(query)
-        results.extend(tfidf_results)
+        # 2. Get semantic scores
+        semantic_scores = self._semantic_search(query)
         
-        # Method 3: Semantic search with embeddings (if available)
-        if self.embedding_model:
-            semantic_results = self._semantic_search(query)
-            results.extend(semantic_results)
-        
-        # Deduplicate and rank results
-        results = self._deduplicate_and_rank(results)
+        # 3. Combine, rank, and produce final results
+        results = self._deduplicate_and_rank(keyword_scores, semantic_scores)
         
         # Filter by entity types if specified
         if query.entity_types:
@@ -110,130 +58,109 @@ class ProcedureSearchEngine:
         
         return results
     
-    def _exact_keyword_search(self, query: SearchQuery) -> List[SearchResult]:
-        """Exact keyword matching search."""
-        results = []
-        query_words = set(query.query_text.lower().split())
+    def build_search_index(self, entities: List[Entity]):
+        """Builds separate search indexes for different fields with weights."""
+        print(f"Indexing {len(entities)} entities for field-based search...")
+        if not entities:
+            print("Warning: No entities provided for indexing")
+            return
+
+        # Prepare texts for each field
+        self.entities_index = {entity.name: entity for entity in entities}
+        self.entity_names = [entity.name for entity in entities]
         
-        for entity_name, entity in self.entities_index.items():
-            matched_keywords = []
-            score = 0.0
-            
-            # Check name matching
-            entity_words = set(entity.name.lower().split())
-            name_matches = query_words.intersection(entity_words)
-            if name_matches:
-                matched_keywords.extend(list(name_matches))
-                score += 0.8 * len(name_matches) / len(query_words)
-            
-            # Check search keywords if they exist
-            if hasattr(entity, 'search_keywords') and entity.search_keywords:
-                entity_keywords = set([kw.lower() for kw in entity.search_keywords])
-                keyword_matches = query_words.intersection(entity_keywords)
-                if keyword_matches:
-                    matched_keywords.extend(list(keyword_matches))  # FIXED: Was keywordMatches
-                    score += 0.6 * len(keyword_matches) / len(query_words)
-            
-            # Check description matching if it exists
-            if hasattr(entity, 'description') and entity.description:
-                desc_words = set(entity.description.lower().split())
-                desc_matches = query_words.intersection(desc_words)
-                if desc_matches:
-                    matched_keywords.extend(list(desc_matches))
-                    score += 0.4 * len(desc_matches) / len(query_words)
-            
-            if score > 0:
-                results.append(SearchResult(
-                    entity=entity,
-                    similarity_score=min(score, 1.0),
-                    match_type="exact",
-                    matched_keywords=list(set(matched_keywords))
-                ))
-        
-        return results
-    
-    def _tfidf_search(self, query: SearchQuery) -> List[SearchResult]:
-        """TF-IDF based similarity search."""
-        if self.tfidf_matrix is None:
-            return []
-        
-        results = []
-        
+        titles = [entity.name for entity in entities]
+        parent_titles = [entity.parent_title if entity.parent_title else '' for entity in entities]
+        descriptions = [entity.description if entity.description else '' for entity in entities]
+
+        # Build TF-IDF matrix for each field
         try:
-            # Transform query
-            query_vector = self.tfidf_vectorizer.transform([query.query_text])
-            
-            # Calculate similarities
-            similarities = cosine_similarity(query_vector, self.tfidf_matrix).flatten()
-            
-            # Create results
-            for i, similarity in enumerate(similarities):
-                if similarity > 0.1:  # Minimum threshold
-                    entity_name = self.entity_names[i]
-                    entity = self.entities_index[entity_name]
-                    
-                    results.append(SearchResult(
-                        entity=entity,
-                        similarity_score=float(similarity),
-                        match_type="tfidf",
-                        matched_keywords=[]
-                    ))
-        
+            if any(titles):
+                self.title_matrix = self.title_vectorizer.fit_transform(titles)
+            if any(parent_titles):
+                self.parent_title_matrix = self.parent_title_vectorizer.fit_transform(parent_titles)
+            if any(descriptions):
+                self.description_matrix = self.description_vectorizer.fit_transform(descriptions)
+            print(f"✓ Field-based search index built with {len(entities)} documents")
         except Exception as e:
-            print(f"TF-IDF search error: {e}")
-        
-        return results
-    
-    def _semantic_search(self, query: SearchQuery) -> List[SearchResult]:
-        """Semantic search using embeddings."""
-        if not self.embedding_model:
-            return []
-        
-        results = []
-        
-        try:
-            # Generate query embedding
-            query_embedding = self.embedding_model.encode(query.query_text)
+            print(f"Warning: TF-IDF indexing failed: {e}")
             
-            # Compare with entity embeddings
-            for entity_name, entity in self.entities_index.items():
-                if hasattr(entity, 'embedding') and entity.embedding:
-                    # Calculate cosine similarity
-                    entity_emb = np.array(entity.embedding)
-                    similarity = np.dot(query_embedding, entity_emb) / (
-                        np.linalg.norm(query_embedding) * np.linalg.norm(entity_emb)
-                    )
-                    
-                    if similarity > 0.3:  # Minimum threshold for semantic similarity
-                        results.append(SearchResult(
-                            entity=entity,
-                            similarity_score=float(similarity),
-                            match_type="semantic",
-                            matched_keywords=[]
-                        ))
+    def _keyword_search(self, query: SearchQuery) -> Dict[str, float]:
+        """Performs TF-IDF search across weighted fields and returns a dict of scores."""
+        scores = {name: 0.0 for name in self.entity_names}
+        if not hasattr(self, 'title_matrix'):
+            return scores
+
+        sim_title = np.zeros(len(self.entity_names))
+        sim_parent = np.zeros(len(self.entity_names))
+        sim_desc = np.zeros(len(self.entity_names))
+
+        if hasattr(self, 'title_matrix') and self.title_matrix is not None:
+            query_vec_title = self.title_vectorizer.transform([query.query_text])
+            sim_title = cosine_similarity(query_vec_title, self.title_matrix).flatten()
+
+        if hasattr(self, 'parent_title_matrix') and self.parent_title_matrix is not None:
+            query_vec_parent = self.parent_title_vectorizer.transform([query.query_text])
+            sim_parent = cosine_similarity(query_vec_parent, self.parent_title_matrix).flatten()
+
+        if hasattr(self, 'description_matrix') and self.description_matrix is not None:
+            query_vec_desc = self.description_vectorizer.transform([query.query_text])
+            sim_desc = cosine_similarity(query_vec_desc, self.description_matrix).flatten()
+
+        # Calculate weighted score for each entity
+        for i, entity_name in enumerate(self.entity_names):
+            weighted_score = (
+                sim_title[i] * self.W_TITLE +
+                sim_parent[i] * self.W_PARENT +
+                sim_desc[i] * self.W_DESC
+            )
+            scores[entity_name] = weighted_score
         
+        return scores
+
+    def _semantic_search(self, query: SearchQuery) -> Dict[str, float]:
+        """Performs semantic search and returns a dict of scores."""
+        scores = {name: 0.0 for name in self.entity_names}
+        if not self.embedding_model:
+            return scores
+
+        try:
+            query_embedding = self.embedding_model.encode(query.query_text)
+            for entity_name, entity in self.entities_index.items():
+                if entity.embedding:
+                    entity_emb = np.array(entity.embedding)
+                    similarity = np.dot(query_embedding, entity_emb) / (np.linalg.norm(query_embedding) * np.linalg.norm(entity_emb))
+                    scores[entity_name] = float(similarity)
         except Exception as e:
             print(f"Semantic search error: {e}")
         
+        return scores
+
+    def _deduplicate_and_rank(self, keyword_scores: Dict, semantic_scores: Dict) -> List[SearchResult]:
+        """Combines keyword and semantic scores and ranks the results."""
+        final_scores = {}
+        for entity_name in self.entity_names:
+            keyword_score = keyword_scores.get(entity_name, 0.0)
+            semantic_score = semantic_scores.get(entity_name, 0.0)
+
+            # Combine scores
+            final_score = keyword_score + (semantic_score * self.W_SEMANTIC)
+
+            if final_score > 0.1: # Apply a threshold
+                final_scores[entity_name] = final_score
+
+        # Create SearchResult objects
+        results = []
+        for name, score in final_scores.items():
+            results.append(SearchResult(
+                entity=self.entities_index[name],
+                similarity_score=score,
+                match_type="hybrid"
+            ))
+        
+        # Sort by final score
+        results.sort(key=lambda x: x.similarity_score, reverse=True)
         return results
-    
-    def _deduplicate_and_rank(self, results: List[SearchResult]) -> List[SearchResult]:
-        """Remove duplicates and rank results by score."""
-        # Group by entity name, keep highest score
-        entity_scores = {}
-        entity_results = {}
-        
-        for result in results:
-            entity_name = result.entity.name
-            if entity_name not in entity_scores or result.similarity_score > entity_scores[entity_name]:
-                entity_scores[entity_name] = result.similarity_score
-                entity_results[entity_name] = result
-        
-        # Sort by score (descending)
-        sorted_results = list(entity_results.values())
-        sorted_results.sort(key=lambda x: x.similarity_score, reverse=True)
-        
-        return sorted_results
     
     def search_procedures_by_description(self, description: str) -> List[SearchResult]:
         """Specialized search for procedures by description."""

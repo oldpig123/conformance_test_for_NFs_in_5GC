@@ -37,29 +37,33 @@ class Entity:
     
     # NEW: Search-related fields (Requirement 8)
     description: Optional[str] = None
+    parent_title: Optional[str] = None
     search_keywords: List[str] = field(default_factory=list)
     embedding: Optional[List[float]] = None
     
     def __post_init__(self):
         """Generate search keywords from name and description."""
-        if not self.search_keywords:
-            keywords = set()
-            
-            # Add name tokens
-            keywords.update(self.name.lower().split())
-            
-            # Add description tokens if available
-            if self.description:
-                keywords.update(self.description.lower().split())
-            
-            # Add entity type
-            keywords.add(self.entity_type.lower())
-            
-            # Add procedure name if available
-            if 'procedure' in self.properties:
-                keywords.update(self.properties['procedure'].lower().split())
-            
-            self.search_keywords = list(keywords)
+        keywords = set()
+        
+        # Add name tokens
+        keywords.update(self.name.lower().split())
+        
+        # Add description tokens if available
+        if self.description:
+            keywords.update(self.description.lower().split())
+
+        # Add parent title tokens if available
+        if self.parent_title:
+            keywords.update(self.parent_title.lower().split())
+        
+        # Add entity type
+        keywords.add(self.entity_type.lower())
+        
+        # Add procedure name if available
+        if 'procedure' in self.properties:
+            keywords.update(self.properties['procedure'].lower().split())
+        
+        self.search_keywords = list(keywords)
     
     def to_dict(self) -> Dict[str, any]:
         """Convert to dictionary for database storage."""
