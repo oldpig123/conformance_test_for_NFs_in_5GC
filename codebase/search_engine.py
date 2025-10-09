@@ -18,29 +18,26 @@ class ProcedureSearchEngine:
         self.entities_index: Dict[str, Entity] = {}
         self.entity_names = []
 
-        # Field-specific vectorizers and matrices
-        self.title_vectorizer = TfidfVectorizer(stop_words='english', max_features=1000)
-        self.parent_title_vectorizer = TfidfVectorizer(stop_words='english', max_features=1000)
-        self.description_vectorizer = TfidfVectorizer(stop_words='english', max_features=1000)
+        # Field-specific vectorizers and matrices for keyword search (titles only)
+        self.title_vectorizer = TfidfVectorizer(stop_words='english', max_features=1000, ngram_range=(1, 2))
+        self.parent_title_vectorizer = TfidfVectorizer(stop_words='english', max_features=1000, ngram_range=(1, 2))
         self.title_matrix = None
         self.parent_title_matrix = None
-        self.description_matrix = None
 
         # Weights for combining scores
-        self.W_TITLE = 2.5
-        self.W_PARENT = 1.5
-        self.W_DESC = 1.0
-        self.W_SEMANTIC = 0.8
+        self.W_TITLE = 2.2
+        self.W_PARENT = 1.8
+        self.W_SEMANTIC = 3.5
         
         print("ProcedureSearchEngine initialized with field-based ranking")
     
     def search(self, query: SearchQuery) -> List[SearchResult]:
         """Search for procedures using a hybrid, field-weighted scoring model."""
         
-        # 1. Get keyword scores from our new weighted field search
+        # 1. Get keyword scores from title and parent_title fields
         keyword_scores = self._keyword_search(query)
         
-        # 2. Get semantic scores
+        # 2. Get semantic scores from the LLM-generated summary (in entity.description)
         semantic_scores = self._semantic_search(query)
         
         # 3. Combine, rank, and produce final results
@@ -59,7 +56,7 @@ class ProcedureSearchEngine:
         return results
     
     def build_search_index(self, entities: List[Entity]):
-        """Builds separate search indexes for different fields with weights."""
+        """Builds separate search indexes for title and parent_title fields."""
         print(f"Indexing {len(entities)} entities for field-based search...")
         if not entities:
             print("Warning: No entities provided for indexing")
@@ -71,7 +68,6 @@ class ProcedureSearchEngine:
         
         titles = [entity.name for entity in entities]
         parent_titles = [entity.parent_title if entity.parent_title else '' for entity in entities]
-        descriptions = [entity.description if entity.description else '' for entity in entities]
 
         # Build TF-IDF matrix for each field
         try:
@@ -79,21 +75,18 @@ class ProcedureSearchEngine:
                 self.title_matrix = self.title_vectorizer.fit_transform(titles)
             if any(parent_titles):
                 self.parent_title_matrix = self.parent_title_vectorizer.fit_transform(parent_titles)
-            if any(descriptions):
-                self.description_matrix = self.description_vectorizer.fit_transform(descriptions)
             print(f"✓ Field-based search index built with {len(entities)} documents")
         except Exception as e:
             print(f"Warning: TF-IDF indexing failed: {e}")
             
     def _keyword_search(self, query: SearchQuery) -> Dict[str, float]:
-        """Performs TF-IDF search across weighted fields and returns a dict of scores."""
+        """Performs TF-IDF search across title and parent_title fields and returns a dict of scores."""
         scores = {name: 0.0 for name in self.entity_names}
         if not hasattr(self, 'title_matrix'):
             return scores
 
         sim_title = np.zeros(len(self.entity_names))
         sim_parent = np.zeros(len(self.entity_names))
-        sim_desc = np.zeros(len(self.entity_names))
 
         if hasattr(self, 'title_matrix') and self.title_matrix is not None:
             query_vec_title = self.title_vectorizer.transform([query.query_text])
@@ -103,16 +96,11 @@ class ProcedureSearchEngine:
             query_vec_parent = self.parent_title_vectorizer.transform([query.query_text])
             sim_parent = cosine_similarity(query_vec_parent, self.parent_title_matrix).flatten()
 
-        if hasattr(self, 'description_matrix') and self.description_matrix is not None:
-            query_vec_desc = self.description_vectorizer.transform([query.query_text])
-            sim_desc = cosine_similarity(query_vec_desc, self.description_matrix).flatten()
-
         # Calculate weighted score for each entity
         for i, entity_name in enumerate(self.entity_names):
             weighted_score = (
                 sim_title[i] * self.W_TITLE +
-                sim_parent[i] * self.W_PARENT +
-                sim_desc[i] * self.W_DESC
+                sim_parent[i] * self.W_PARENT
             )
             scores[entity_name] = weighted_score
         

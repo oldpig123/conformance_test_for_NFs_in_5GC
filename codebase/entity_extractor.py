@@ -1115,47 +1115,28 @@ Return ONLY a list of step descriptions, each on a new line, starting with a num
         return validated_nfs
 
     def _generate_search_description(self, context: ProcedureContext, parent_title: Optional[str] = None) -> str:
-        """Generate a rich, searchable description for a procedure using an LLM summary, enriched with parent context."""
-        print(f"        Generating rich description for: {context.procedure_name}")
+        """
+        Use the concatenated text of all step descriptions as the search description.
+        This provides the full context of the procedure for embedding.
+        """
+        print(f"        Generating search description from full step text for: {context.procedure_name}")
         
-        # Use the LLM to summarize the beginning of the procedure text
-        try:
-            # Take the first ~500 words as context for the summary
-            summary_context = " ".join(context.section.text.split()[:500])
+        if not context.step_descriptions:
+            print(f"        ⚠️ No step descriptions found for {context.procedure_name}. Falling back to section text.")
+            # Fallback to a sizable chunk of the main text if steps are missing
+            return context.section.text[:4000] 
+
+        # Concatenate all step descriptions
+        full_step_text = " ".join(context.step_descriptions.values())
+        
+        # Prepend parent title and procedure name for more context
+        if parent_title:
+            final_description = f"Parent Section: {parent_title}. Procedure: {context.procedure_name}. Steps: {full_step_text}"
+        else:
+            final_description = f"Procedure: {context.procedure_name}. Steps: {full_step_text}"
             
-            # NEW: Prepend parent title to the prompt context if available
-            full_context = ""
-            if parent_title:
-                full_context += f"This procedure is part of the '{parent_title}' section. "
-            full_context += f"The procedure is named '{context.procedure_name}'. "
-            full_context += f"TEXT: \"{summary_context}...\""
-
-            prompt = f'''
-Summarize the following 3GPP procedure text into a single, dense paragraph. Focus on the main purpose, the key actors (like UE, AMF, SMF), and the overall outcome.
-
-CONTEXT: {full_context}
-
-SUMMARY:
-'''
-            if self.is_t5_model:
-                result = self.entity_llm(prompt, max_length=150, min_length=40, num_return_sequences=1)
-                summary = result[0]['generated_text']
-            else:
-                # This logic might need adjustment for non-T5 models
-                result = self.entity_llm(prompt, max_length=len(prompt) + 150, num_return_sequences=1)
-                summary = result[0]['generated_text'][len(prompt):]
-
-            print(f"        ✓ Generated summary: {summary[:100]}...")
-            return summary.strip()
-
-        except Exception as e:
-            print(f"        ⚠️ LLM summary generation failed: {e}. Falling back to basic description.")
-            # Fallback to the old method if LLM summarization fails
-            components = [context.procedure_name]
-            if context.network_functions:
-                nf_list = ", ".join(context.network_functions[:3])
-                components.append(f"involving {nf_list}")
-            return " ".join(components)
+        print(f"        ✓ Generated full-text description of {len(final_description)} chars.")
+        return final_description
 
     def _generate_search_tags(self, context: ProcedureContext) -> List[str]:
         """Generate search tags for better discoverability."""
@@ -1186,46 +1167,45 @@ SUMMARY:
         """Count tokens in text."""
         return len(self.tokenizer.encode(text))
 
-    def _chunk_text_smart(self, text: str, max_tokens: int = 30000) -> List[str]:
-        """Intelligently chunk text while preserving procedure boundaries."""
-        # Split by procedure sections first
-        procedure_sections = re.split(r'\n(?=\d+\.\d+\.\d+\s+[A-Z])', text)
-        
-        chunks = []
-        current_chunk = ""
-        current_tokens = 0
-        
-        for section in procedure_sections:
-            section_tokens = self._count_tokens(section)
-            
-            if section_tokens > max_tokens:
-                # Section too large, split by paragraphs
-                paragraphs = section.split('\n\n')
-                for para in paragraphs:
-                    para_tokens = self._count_tokens(para)
-                    
-                    if current_tokens + para_tokens > max_tokens:
-                        if current_chunk:
-                            chunks.append(current_chunk.strip())
-                        current_chunk = para
-                        current_tokens = para_tokens
-                    else:
-                        current_chunk += "\n\n" + para
-                        current_tokens += para_tokens
-            else:
-                if current_tokens + section_tokens > max_tokens:
-                    if current_chunk:
-                        chunks.append(current_chunk.strip())
-                    current_chunk = section
-                    current_tokens = section_tokens
-                else:
-                    current_chunk += "\n" + section
-                    current_tokens += section_tokens
-        
-        if current_chunk:
-            chunks.append(current_chunk.strip())
-        
-        return chunks
+    def _chunk_text_smart(self, text: str, max_tokens: int = 8000) -> List[str]:
+        """
+        Recursively splits a long text into chunks smaller than max_tokens.
+        This is a robust method that does not depend on document structure.
+        """
+        # First, check if the text is already within the token limit
+        if self._count_tokens(text) <= max_tokens:
+            return [text]
+
+        # If not, split the text and recurse
+        # Find a split point, preferably at a sentence boundary or newline
+        half_len = len(text) // 2
+        split_pos = -1
+
+        # Try to find a sentence end near the middle
+        sentence_ends = [m.start() for m in re.finditer(r'[.!?]\s', text[half_len-500:half_len+500])]
+        if sentence_ends:
+            # Find the sentence end closest to the middle
+            split_pos = half_len - 500 + min(sentence_ends, key=lambda p: abs(p - 500)) + 1
+        else:
+            # If no sentence end, try a newline
+            try:
+                split_pos = text.rindex('\n', 0, half_len) + 1
+            except ValueError:
+                # If no newline, try a space
+                try:
+                    split_pos = text.rindex(' ', 0, half_len) + 1
+                except ValueError:
+                    # Force split if no other option
+                    split_pos = half_len
+
+        left_half = text[:split_pos]
+        right_half = text[split_pos:]
+
+        # Recursively chunk both halves and combine the results
+        left_chunks = self._chunk_text_smart(left_half, max_tokens)
+        right_chunks = self._chunk_text_smart(right_half, max_tokens)
+
+        return left_chunks + right_chunks
 
     def generate_long_context_embeddings(self, text: str, procedure_name: str = None) -> Dict[str, any]:
         """Generate embeddings using full 32K context with metadata."""

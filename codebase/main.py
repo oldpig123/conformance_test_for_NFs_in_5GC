@@ -97,7 +97,7 @@ def demo_search_and_fsm(builder: KnowledgeGraphBuilder):
         "authentication process between UE and 5G core network",
         "registration procedure for UE attachment",
         "5G AKA authentication protocol",
-        "PDU session establishment",
+        "UE requested PDU session establishment",
         "service request procedure"
     ]
     

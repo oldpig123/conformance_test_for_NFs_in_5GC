@@ -160,23 +160,103 @@ class KnowledgeGraphBuilder:
             properties['parent_title'] = parent_title
             entity_collection[key] = Entity(name=name, entity_type=entity_type, properties=properties, description=description, parent_title=parent_title)
 
+    def _chunk_text_smart(self, text: str, max_tokens: int = 4096) -> List[str]:
+        """
+        Recursively splits a long text into chunks smaller than max_tokens.
+        This is a robust method that does not depend on document structure.
+        """
+        # Use the tokenizer from the entity extractor to count tokens
+        tokenizer = self.entity_extractor.tokenizer
+        
+        # First, check if the text is already within the token limit
+        if len(tokenizer.encode(text)) <= max_tokens:
+            return [text]
+
+        # If not, split the text and recurse
+        # Find a split point, preferably at a sentence boundary or newline
+        half_len = len(text) // 2
+        split_pos = -1
+
+        # Try to find a sentence end near the middle
+        sentence_ends = [m.start() for m in re.finditer(r'[.!?]\s', text[half_len-500:half_len+500])]
+        if sentence_ends:
+            # Find the sentence end closest to the middle
+            split_pos = half_len - 500 + min(sentence_ends, key=lambda p: abs(p - 500)) + 1
+        else:
+            # If no sentence end, try a newline
+            try:
+                split_pos = text.rindex('\n', 0, half_len) + 1
+            except ValueError:
+                # If no newline, try a space
+                try:
+                    split_pos = text.rindex(' ', 0, half_len) + 1
+                except ValueError:
+                    # Force split if no other option
+                    split_pos = half_len
+
+        left_half = text[:split_pos]
+        right_half = text[split_pos:]
+
+        # Recursively chunk both halves and combine the results
+        left_chunks = self._chunk_text_smart(left_half, max_tokens)
+        right_chunks = self._chunk_text_smart(right_half, max_tokens)
+
+        return left_chunks + right_chunks
+
     def _generate_embeddings_for_batch(self, entities_list: List[Entity]):
-        """Generates embeddings for a given list (batch) of entities."""
+        """
+        Generates embeddings for a given list (batch) of entities.
+        For very long texts, it chunks the text, generates embeddings for each chunk,
+        and averages them to get a final representation.
+        """
         print(f"\n=== Generating Embeddings for batch of {len(entities_list)} entities ===")
         if not self.entity_extractor.embedding_model or not entities_list:
             return
 
-        entity_texts = [f"Entity: {e.name}. Type: {e.entity_type}. Keywords: {' '.join(e.search_keywords)}. Description: {e.description or ''}" for e in entities_list]
+        import numpy as np
         
-        try:
-            embeddings = self.entity_extractor.embedding_model.encode(
-                entity_texts, batch_size=8, show_progress_bar=True, convert_to_tensor=False
-            )
-            for entity, embedding in zip(entities_list, embeddings):
-                entity.embedding = embedding.tolist() # This updates the object in the list
-            print(f"  ✓ Successfully generated embeddings for {len(entities_list)} entities.")
-        except Exception as e:
-            print(f"  ❌ Error during embedding generation: {e}")
+        # A character limit to decide when to chunk. This is a heuristic.
+        CHUNK_THRESHOLD_CHARS = 16384 # Reduced threshold for safety
+
+        for entity in tqdm(entities_list, desc="Generating embeddings"):
+            try:
+                # Skip embedding if description is missing
+                if not entity.description:
+                    # print(f"  INFO: Skipping embedding for entity '{entity.name}' as it has no description.")
+                    entity.embedding = None
+                    continue
+
+                full_text = f"Entity: {entity.name}. Type: {entity.entity_type}. Keywords: {' '.join(entity.search_keywords)}. Description: {entity.description}"
+
+                if len(full_text) > CHUNK_THRESHOLD_CHARS:
+                    print(f"  INFO: Text for entity '{entity.name}' is long ({len(full_text)} chars). Chunking for embedding.")
+                    
+                    # Use the new robust chunking method
+                    chunks = self._chunk_text_smart(full_text, max_tokens=4096)
+                    
+                    if not chunks:
+                        entity.embedding = None
+                        continue
+
+                    # Encode each chunk
+                    chunk_embeddings = self.entity_extractor.embedding_model.encode(
+                        chunks, batch_size=32, show_progress_bar=False, convert_to_numpy=True
+                    )
+                    
+                    # Average the embeddings of the chunks
+                    avg_embedding = np.mean(chunk_embeddings, axis=0)
+                    entity.embedding = avg_embedding.tolist()
+
+                else:
+                    # If text is short enough, encode it directly
+                    embedding = self.entity_extractor.embedding_model.encode(full_text, convert_to_numpy=True)
+                    entity.embedding = embedding.tolist()
+
+            except Exception as e:
+                print(f"  ❌ Error generating embedding for entity '{entity.name}': {e}")
+                entity.embedding = None
+        
+        print(f"  ✓ Successfully processed embeddings for {len(entities_list)} entities.")
 
     def _load_batch_to_database(self, entities_list: List[Entity], relationships_list: List[Relationship]):
         """Loads a batch of entities and relationships into the database."""

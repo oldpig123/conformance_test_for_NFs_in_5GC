@@ -17,6 +17,10 @@ The resulting knowledge graph is stored in a Neo4j database and can be used for 
     - `Step` (with detailed descriptions from the source document).
 - **Graph Database Storage**: Persists the constructed knowledge graph in a Neo4j database for robust querying and analysis.
 - **Natural Language Search**: An integrated search engine allows users to find specific procedures using plain English queries (e.g., "authentication process").
+- **Hybrid Search Architecture**: Employs a sophisticated hybrid search model that cleanly separates keyword and semantic scoring.
+    - **Keyword Search**: A high-precision TF-IDF search scores matches against procedure `titles` and `parent_titles`.
+    - **Semantic Search**: A high-recall semantic search scores user intent against embeddings. These embeddings are generated from the **full, concatenated text of all of a procedure's step-by-step descriptions**. This provides a complete and rich semantic context. To handle very long procedures without causing memory errors, the text is automatically split into manageable chunks, an embedding is generated for each, and the results are averaged into a single, robust vector.
+    - **Ranking**: The final ranking is a weighted combination of these scores, with a strong emphasis on the semantic score to ensure conceptual relevance is prioritized.
 - **FSM Generation**: Automatically converts extracted procedures from the knowledge graph into Finite State Machines (FSMs), which are exported in both `.json` and `.dot` (for Graphviz visualization) formats.
 - **GPU Accelerated**: Designed to utilize GPU for NLP/LLM model inference, significantly speeding up the processing pipeline.
 - **Modular Architecture**: The codebase is logically structured into modules for easy maintenance and extension.
@@ -96,6 +100,5 @@ The project follows a systematic pipeline to transform raw documents into a stru
 2.  **Procedure Identification**: An LLM analyzes the candidate sections to identify which ones describe a specific, step-by-step procedure (e.g., "5G AKA").
 3.  **Entity Extraction**: For each identified procedure, another LLM-based process extracts all relevant entities, including network functions, messages, parameters, keys, and the sequential steps of the procedure itself.
 4.  **Relation Extraction**: The system then establishes relationships between these entities (e.g., which step is `FOLLOWED_BY` another, which `NetworkFunction` is `INVOLVE`d in a `Step`).
-5.  **Graph Construction**: The extracted entities and relationships are assembled into a unified graph structure.
-6.  **Database Loading**: The graph is loaded into the Neo4j database, creating nodes and relationships.
-7.  **Search & FSM Conversion**: After the graph is built, the `main.py` script demonstrates its utility by running search queries and converting the top search result for each query into a Finite State Machine.
+5.  **Incremental Database Loading**: The pipeline processes one document at a time. After each document is fully analyzed, its extracted entities and relationships are immediately loaded into the Neo4j database. This incremental approach ensures that memory usage remains low and stable, allowing the system to scale to a large number of documents.
+6.  **Search Indexing & FSM Conversion**: After the entire build process is complete, the `main.py` script fetches the complete knowledge graph from the database to build a globally-aware search index. It then demonstrates the search and FSM conversion features using this complete dataset.
