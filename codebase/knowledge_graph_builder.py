@@ -220,37 +220,23 @@ class KnowledgeGraphBuilder:
 
         for entity in tqdm(entities_list, desc="Generating embeddings"):
             try:
-                # Skip embedding if description is missing
                 if not entity.description:
-                    # print(f"  INFO: Skipping embedding for entity '{entity.name}' as it has no description.")
                     entity.embedding = None
-                    continue
-
-                full_text = f"Entity: {entity.name}. Type: {entity.entity_type}. Keywords: {' '.join(entity.search_keywords)}. Description: {entity.description}"
-
-                if len(full_text) > CHUNK_THRESHOLD_CHARS:
-                    print(f"  INFO: Text for entity '{entity.name}' is long ({len(full_text)} chars). Chunking for embedding.")
-                    
-                    # Use the new robust chunking method
-                    chunks = self._chunk_text_smart(full_text, max_tokens=4096)
-                    
-                    if not chunks:
-                        entity.embedding = None
-                        continue
-
-                    # Encode each chunk
-                    chunk_embeddings = self.entity_extractor.embedding_model.encode(
-                        chunks, batch_size=32, show_progress_bar=False, convert_to_numpy=True
-                    )
-                    
-                    # Average the embeddings of the chunks
-                    avg_embedding = np.mean(chunk_embeddings, axis=0)
-                    entity.embedding = avg_embedding.tolist()
-
                 else:
-                    # If text is short enough, encode it directly
-                    embedding = self.entity_extractor.embedding_model.encode(full_text, convert_to_numpy=True)
-                    entity.embedding = embedding.tolist()
+                    full_text = f"Entity: {entity.name}. Type: {entity.entity_type}. Keywords: {' '.join(entity.search_keywords)}. Description: {entity.description}"
+                    if len(full_text) > CHUNK_THRESHOLD_CHARS:
+                        chunks = self._chunk_text_smart(full_text, max_tokens=4096)
+                        if chunks:
+                            chunk_embeddings = self.entity_extractor.embedding_model.encode(chunks, batch_size=32, show_progress_bar=False, convert_to_numpy=True)
+                            entity.embedding = np.mean(chunk_embeddings, axis=0).tolist()
+                    else:
+                        entity.embedding = self.entity_extractor.embedding_model.encode(full_text, convert_to_numpy=True).tolist()
+
+                # NEW: Generate and store embeddings for title and parent_title
+                if entity.name:
+                    entity.title_embedding = self.entity_extractor.embedding_model.encode(f"Title: {entity.name}", convert_to_numpy=True).tolist()
+                if entity.parent_title:
+                    entity.parent_title_embedding = self.entity_extractor.embedding_model.encode(f"Parent Section: {entity.parent_title}", convert_to_numpy=True).tolist()
 
             except Exception as e:
                 print(f"  ❌ Error generating embedding for entity '{entity.name}': {e}")

@@ -18,30 +18,21 @@ class ProcedureSearchEngine:
         self.entities_index: Dict[str, Entity] = {}
         self.entity_names = []
 
-        # Field-specific vectorizers and matrices for keyword search (titles only)
-        self.title_vectorizer = TfidfVectorizer(stop_words='english', max_features=1000, ngram_range=(1, 2))
-        self.parent_title_vectorizer = TfidfVectorizer(stop_words='english', max_features=1000, ngram_range=(1, 2))
-        self.title_matrix = None
-        self.parent_title_matrix = None
-
-        # Weights for combining scores
-        self.W_TITLE = 2.2
-        self.W_PARENT = 1.8
-        self.W_SEMANTIC = 3.5
+        # NEW: Weights for combining multiple semantic scores
+        self.W_SEMANTIC_TITLE = 2.0
+        self.W_SEMANTIC_PARENT = 2.0
+        self.W_SEMANTIC_DESC = 1.0
         
-        print("ProcedureSearchEngine initialized with field-based ranking")
+        print("ProcedureSearchEngine initialized with Full Semantic Search model")
     
     def search(self, query: SearchQuery) -> List[SearchResult]:
-        """Search for procedures using a hybrid, field-weighted scoring model."""
+        """Search for procedures using a multi-field semantic scoring model."""
         
-        # 1. Get keyword scores from title and parent_title fields
-        keyword_scores = self._keyword_search(query)
-        
-        # 2. Get semantic scores from the LLM-generated summary (in entity.description)
+        # 1. Get semantic scores from title, parent_title, and description fields
         semantic_scores = self._semantic_search(query)
         
-        # 3. Combine, rank, and produce final results
-        results = self._deduplicate_and_rank(keyword_scores, semantic_scores)
+        # 2. Combine, rank, and produce final results
+        results = self._deduplicate_and_rank(semantic_scores)
         
         # Filter by entity types if specified
         if query.entity_types:
@@ -56,86 +47,72 @@ class ProcedureSearchEngine:
         return results
     
     def build_search_index(self, entities: List[Entity]):
-        """Builds separate search indexes for title and parent_title fields."""
-        print(f"Indexing {len(entities)} entities for field-based search...")
+        """Builds the search index by loading entities with their embeddings."""
+        print(f"Indexing {len(entities)} entities for semantic search...")
         if not entities:
             print("Warning: No entities provided for indexing")
             return
 
-        # Prepare texts for each field
         self.entities_index = {entity.name: entity for entity in entities}
         self.entity_names = [entity.name for entity in entities]
-        
-        titles = [entity.name for entity in entities]
-        parent_titles = [entity.parent_title if entity.parent_title else '' for entity in entities]
-
-        # Build TF-IDF matrix for each field
-        try:
-            if any(titles):
-                self.title_matrix = self.title_vectorizer.fit_transform(titles)
-            if any(parent_titles):
-                self.parent_title_matrix = self.parent_title_vectorizer.fit_transform(parent_titles)
-            print(f"✓ Field-based search index built with {len(entities)} documents")
-        except Exception as e:
-            print(f"Warning: TF-IDF indexing failed: {e}")
+        print(f"✓ Semantic search index built with {len(entities)} documents")
             
-    def _keyword_search(self, query: SearchQuery) -> Dict[str, float]:
-        """Performs TF-IDF search across title and parent_title fields and returns a dict of scores."""
-        scores = {name: 0.0 for name in self.entity_names}
-        if not hasattr(self, 'title_matrix'):
-            return scores
-
-        sim_title = np.zeros(len(self.entity_names))
-        sim_parent = np.zeros(len(self.entity_names))
-
-        if hasattr(self, 'title_matrix') and self.title_matrix is not None:
-            query_vec_title = self.title_vectorizer.transform([query.query_text])
-            sim_title = cosine_similarity(query_vec_title, self.title_matrix).flatten()
-
-        if hasattr(self, 'parent_title_matrix') and self.parent_title_matrix is not None:
-            query_vec_parent = self.parent_title_vectorizer.transform([query.query_text])
-            sim_parent = cosine_similarity(query_vec_parent, self.parent_title_matrix).flatten()
-
-        # Calculate weighted score for each entity
-        for i, entity_name in enumerate(self.entity_names):
-            weighted_score = (
-                sim_title[i] * self.W_TITLE +
-                sim_parent[i] * self.W_PARENT
-            )
-            scores[entity_name] = weighted_score
-        
-        return scores
-
-    def _semantic_search(self, query: SearchQuery) -> Dict[str, float]:
-        """Performs semantic search and returns a dict of scores."""
-        scores = {name: 0.0 for name in self.entity_names}
+    def _semantic_search(self, query: SearchQuery) -> Dict[str, Dict[str, float]]:
+        """Performs semantic search across multiple fields and returns a dict of scores."""
+        scores = {name: {'title': 0.0, 'parent': 0.0, 'desc': 0.0} for name in self.entity_names}
         if not self.embedding_model:
             return scores
 
         try:
-            query_embedding = self.embedding_model.encode(query.query_text)
+            query_embedding = self.embedding_model.encode(query.query_text, convert_to_numpy=True)
+            
             for entity_name, entity in self.entities_index.items():
+                # Title embedding
+                if entity.title_embedding:
+                    scores[entity_name]['title'] = self._calculate_cosine_similarity(query_embedding, entity.title_embedding)
+                
+                # Parent title embedding
+                if entity.parent_title_embedding:
+                    scores[entity_name]['parent'] = self._calculate_cosine_similarity(query_embedding, entity.parent_title_embedding)
+
+                # Description embedding
                 if entity.embedding:
-                    entity_emb = np.array(entity.embedding)
-                    similarity = np.dot(query_embedding, entity_emb) / (np.linalg.norm(query_embedding) * np.linalg.norm(entity_emb))
-                    scores[entity_name] = float(similarity)
+                    scores[entity_name]['desc'] = self._calculate_cosine_similarity(query_embedding, entity.embedding)
+
         except Exception as e:
             print(f"Semantic search error: {e}")
         
         return scores
 
-    def _deduplicate_and_rank(self, keyword_scores: Dict, semantic_scores: Dict) -> List[SearchResult]:
-        """Combines keyword and semantic scores and ranks the results."""
+    def _deduplicate_and_rank(self, semantic_scores: Dict[str, Dict[str, float]]) -> List[SearchResult]:
+        """Combines semantic scores from different fields and ranks the results."""
         final_scores = {}
         for entity_name in self.entity_names:
-            keyword_score = keyword_scores.get(entity_name, 0.0)
-            semantic_score = semantic_scores.get(entity_name, 0.0)
+            scores = semantic_scores.get(entity_name, {})
+            title_score = scores.get('title', 0.0)
+            parent_score = scores.get('parent', 0.0)
+            desc_score = scores.get('desc', 0.0)
 
-            # Combine scores
-            final_score = keyword_score + (semantic_score * self.W_SEMANTIC)
+            # Combine scores with new weights
+            final_score = (title_score * self.W_SEMANTIC_TITLE) + \
+                          (parent_score * self.W_SEMANTIC_PARENT) + \
+                          (desc_score * self.W_SEMANTIC_DESC)
 
             if final_score > 0.1: # Apply a threshold
                 final_scores[entity_name] = final_score
+
+        # Create SearchResult objects
+        results = []
+        for name, score in final_scores.items():
+            results.append(SearchResult(
+                entity=self.entities_index[name],
+                similarity_score=score,
+                match_type="semantic_hybrid"
+            ))
+        
+        # Sort by final score
+        results.sort(key=lambda x: x.similarity_score, reverse=True)
+        return results
 
         # Create SearchResult objects
         results = []

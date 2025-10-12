@@ -40,6 +40,8 @@ class Entity:
     parent_title: Optional[str] = None
     search_keywords: List[str] = field(default_factory=list)
     embedding: Optional[List[float]] = None
+    title_embedding: Optional[List[float]] = None
+    parent_title_embedding: Optional[List[float]] = None
     
     def __post_init__(self):
         """Generate search keywords from name and description."""
