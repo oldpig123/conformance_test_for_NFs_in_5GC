@@ -170,13 +170,15 @@ class DatabaseManager:
             for record in tqdm(result, desc="Reconstructing entities"):
                 node_properties = dict(record["n"])
                 
-                # Pop the top-level fields from the properties dictionary
+                # Pop the top-level fields that are now stored as properties
                 name = node_properties.pop('name', '')
                 entity_type = node_properties.pop('entity_type', 'Unknown')
                 description = node_properties.pop('description', None)
                 parent_title = node_properties.pop('parent_title', None)
                 search_keywords = node_properties.pop('search_keywords', [])
                 embedding = node_properties.pop('embedding', None)
+                title_embedding = node_properties.pop('title_embedding', None)
+                parent_title_embedding = node_properties.pop('parent_title_embedding', None)
 
                 # The rest of the items in node_properties are the original 'properties'
                 entity = Entity(
@@ -186,7 +188,9 @@ class DatabaseManager:
                     description=description,
                     parent_title=parent_title,
                     search_keywords=search_keywords,
-                    embedding=embedding
+                    embedding=embedding,
+                    title_embedding=title_embedding,
+                    parent_title_embedding=parent_title_embedding
                 )
                 if not entity.search_keywords:
                     entity.__post_init__()

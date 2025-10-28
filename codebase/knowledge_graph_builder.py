@@ -87,17 +87,23 @@ class KnowledgeGraphBuilder:
         # Create a quick lookup for sections by clause for parent lookup
         sections_by_clause = {s.clause: s for s in all_sections}
 
-        for section in procedure_sections:
+        # for section in procedure_sections:
+        for section in tqdm(procedure_sections, desc="Procudure processing"):
             print(f"  Procedure: {section.procedure_name}")
 
             # Find parent title using the clause hierarchy
             parent_title = None
             if '.' in section.clause:
-                parent_clause = '.'.join(section.clause.split('.')[:-1])
-                parent_section = sections_by_clause.get(parent_clause)
-                if parent_section:
-                    parent_title = parent_section.title
-                    print(f"    Found parent section for '{section.clause}': '{parent_clause}' ({parent_title})")
+                clause_parts = section.clause.split('.')
+                if clause_parts[-1] == '0':
+                    clause_parts = clause_parts[:-1]
+                
+                if len(clause_parts) > 1:
+                    parent_clause = '.'.join(clause_parts[:-1])
+                    parent_section = sections_by_clause.get(parent_clause)
+                    if parent_section:
+                        parent_title = parent_section.title
+                        print(f"    Found parent section for '{section.clause}': '{parent_clause}' ({parent_title})")
 
             # Pass the temporary collections and the found parent_title
             self._process_procedure_section(section, doc_entities, doc_relationships, parent_title)
@@ -110,7 +116,7 @@ class KnowledgeGraphBuilder:
         
         # Add procedure entity to the document's entity collection, now with parent_title
         self._add_entity(context.procedure_name, "Procedure", {
-            "clause": section.clause, "document": section.document, "has_figure": section.has_figure
+            "clause": section.clause, "document": section.document, "has_figure": section.has_figure, "text": section.text
         }, None, doc_entities, parent_title=parent_title)
         
         entity_result = self.entity_extractor.extract_entities_for_procedure(context, parent_title=parent_title)
@@ -245,18 +251,26 @@ class KnowledgeGraphBuilder:
         print(f"  ✓ Successfully processed embeddings for {len(entities_list)} entities.")
 
     def _load_batch_to_database(self, entities_list: List[Entity], relationships_list: List[Relationship]):
-        """Loads a batch of entities and relationships into the database."""
+        """Loads a batch of entities and relationships into the database, ensuring all fields are saved."""
         print(f"\n=== Loading batch of {len(entities_list)} entities and {len(relationships_list)} relationships to DB ===")
         if not entities_list:
             return
 
         # Create entities
         for entity in tqdm(entities_list, desc="Creating entities"):
-            # The embedding is now a property of the Entity object
-            props_with_embedding = entity.properties.copy()
-            if entity.embedding:
-                props_with_embedding['embedding'] = entity.embedding
-            self.database_manager.create_entity(entity.name, entity.entity_type, props_with_embedding)
+            # Combine all relevant fields into a single properties dictionary for storage
+            props_to_save = entity.properties.copy()
+            
+            # Add all top-level Entity fields to the properties dictionary
+            props_to_save['description'] = entity.description
+            props_to_save['parent_title'] = entity.parent_title
+            props_to_save['embedding'] = entity.embedding
+            props_to_save['title_embedding'] = entity.title_embedding
+            props_to_save['parent_title_embedding'] = entity.parent_title_embedding
+            
+
+
+            self.database_manager.create_entity(entity.name, entity.entity_type, props_to_save)
         
         # Create relationships
         if relationships_list:

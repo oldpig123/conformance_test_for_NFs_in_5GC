@@ -8,7 +8,7 @@ warnings.filterwarnings("ignore")
 
 # FIXED: Add missing imports
 from data_structures import Entity, SearchQuery, SearchResult, ProcedureContext
-from config import SEARCH_CONFIG
+from config import SEARCH_CONFIG, SEARCH_WEIGHTS
 
 class ProcedureSearchEngine:
     """Search engine for finding procedures by natural language queries (Requirement 8)."""
@@ -19,10 +19,10 @@ class ProcedureSearchEngine:
         self.entity_names = []
 
         # NEW: Weights for combining multiple semantic scores
-        self.W_SEMANTIC_TITLE = 2.0
-        self.W_SEMANTIC_PARENT = 2.0
-        self.W_SEMANTIC_DESC = 1.0
-        
+        self.W_SEMANTIC_TITLE = SEARCH_WEIGHTS.get("W_SEMANTIC_TITLE", 5.0)
+        self.W_SEMANTIC_PARENT = SEARCH_WEIGHTS.get("W_SEMANTIC_PARENT", 5.0)
+        self.W_SEMANTIC_DESC = SEARCH_WEIGHTS.get("W_SEMANTIC_DESC", 2.5)
+
         print("ProcedureSearchEngine initialized with Full Semantic Search model")
     
     def search(self, query: SearchQuery) -> List[SearchResult]:
@@ -68,11 +68,11 @@ class ProcedureSearchEngine:
             
             for entity_name, entity in self.entities_index.items():
                 # Title embedding
-                if entity.title_embedding:
+                if hasattr(entity, 'title_embedding') and entity.title_embedding:
                     scores[entity_name]['title'] = self._calculate_cosine_similarity(query_embedding, entity.title_embedding)
                 
                 # Parent title embedding
-                if entity.parent_title_embedding:
+                if hasattr(entity, 'parent_title_embedding') and entity.parent_title_embedding:
                     scores[entity_name]['parent'] = self._calculate_cosine_similarity(query_embedding, entity.parent_title_embedding)
 
                 # Description embedding
@@ -108,19 +108,6 @@ class ProcedureSearchEngine:
                 entity=self.entities_index[name],
                 similarity_score=score,
                 match_type="semantic_hybrid"
-            ))
-        
-        # Sort by final score
-        results.sort(key=lambda x: x.similarity_score, reverse=True)
-        return results
-
-        # Create SearchResult objects
-        results = []
-        for name, score in final_scores.items():
-            results.append(SearchResult(
-                entity=self.entities_index[name],
-                similarity_score=score,
-                match_type="hybrid"
             ))
         
         # Sort by final score

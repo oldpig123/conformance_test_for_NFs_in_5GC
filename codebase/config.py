@@ -36,13 +36,13 @@ NER_MODEL_OPTIONS = [
 
 # Embedding Models for Searchability (Requirement 8) - REVISED
 EMBEDDING_MODEL_OPTIONS = [
-    
+    "Qwen/Qwen3-Embedding-8B",                      # High quality embeddings
     # "Qwen/Qwen3-Embedding-0.6B",
     "Qwen/Qwen3-Embedding-4B",                      # High quality, smaller
     "sentence-transformers/all-MiniLM-L6-v2",           # Fastest, good quality
     "sentence-transformers/all-mpnet-base-v2",          # Best quality
     "distilbert-base-uncased",                           # Fallback
-    "Qwen/Qwen3-Embedding-8B"                      # High quality embeddings
+    
 ]
 
 
@@ -113,6 +113,12 @@ SEARCH_CONFIG = {
     "max_results": 10,
     "similarity_threshold": 0.7,
     "embedding_dimension": 384
+}
+
+SEARCH_WEIGHTS = {
+    "W_SEMANTIC_TITLE": 1.7,
+    "W_SEMANTIC_PARENT": 1.7,
+    "W_SEMANTIC_DESC": 16
 }
 
 # Output Configuration

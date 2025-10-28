@@ -58,7 +58,7 @@ def main():
         # Demo: Search and FSM Conversion
         print(f"\n=== SEARCH AND FSM CONVERSION DEMO ===")
         # Re-initialize builder to get a fresh DB connection for the demo
-        builder = KnowledgeGraphBuilder(NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD)
+        # builder = KnowledgeGraphBuilder(NEO4J_URI, NEO4J_USER, NEO4J_PASSWORD)
         demo_search_and_fsm(builder)
         
     except KeyboardInterrupt:
@@ -87,6 +87,24 @@ def demo_search_and_fsm(builder: KnowledgeGraphBuilder):
     print("Loading all entities and relationships from database...")
     all_entities = builder.database_manager.get_all_entities()
     all_relationships = builder.database_manager.get_all_relationships()
+    
+    # --- START DEBUG SNIPPET ---
+    # print("\n" + "="*20 + " DEBUG DATA " + "="*20)
+    # procedures_to_debug = [
+    #     "4.2.3.2\tUE Triggered Service Request",
+    #     "4.2.2.2.2\tGeneral Registration",
+    #     "6.1.3.2.0\t5G AKA"
+    # ]
+    # for entity in all_entities:
+    #     if entity.name in procedures_to_debug:
+    #         print(f"--- DEBUG FOR: {entity.name} ---")
+    #         print(f"  PARENT_TITLE: {entity.parent_title}")
+    #         print(f"  DESCRIPTION: {entity.description}")
+    #         # print(f"  PROPERTIES: {entity.properties}")
+    #         print("-"*(len(entity.name) + 18))
+    # print("="*52 + "\n")
+    # --- END DEBUG SNIPPET ---
+
     print(f"Found {len(all_entities)} total entities and {len(all_relationships)} relationships in the database.")
     
     # Index all entities for search
@@ -98,6 +116,7 @@ def demo_search_and_fsm(builder: KnowledgeGraphBuilder):
         "registration procedure for UE attachment",
         "5G AKA authentication protocol",
         "UE requested PDU session establishment",
+        "UE requested PDU session establishment in Home Routed roaming",
         "service request procedure"
     ]
     
