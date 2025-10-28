@@ -39,6 +39,11 @@ dependencies:
   - tqdm
   - natsort
 
+  # Figure Processing
+  - pillow
+  - pytesseract
+  - opencv
+
   # Utilities
   - requests
   - pyyaml
@@ -46,3 +51,5 @@ dependencies:
 
   - pip:
       - tiktoken # For token counting, used in entity_extractor.py
+      - docx2python # For advanced image extraction
+      - pymupdf # For PDF processing
