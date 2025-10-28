@@ -1,0 +1,55 @@
+name: conformance_test
+channels:
+  - nvidia
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  # Core
+  - python=3.12
+  - pip=25.0=py312h06a4308_0
+ 
+  # CUDA and PyTorch (Explicit Stack)
+  # By specifying the channel and the full stack, we avoid ambiguity for the solver.
+  - pytorch::pytorch
+  - pytorch::torchvision
+  - pytorch::torchaudio
+  - pytorch::pytorch-cuda=11.8
+  - cudatoolkit=11.8
+
+  # NLP and ML
+  - transformers
+  - spacy
+  - cupy # For spaCy GPU support (spacy.require_gpu())
+  - scikit-learn
+  - datasets
+  - accelerate
+  - peft # Parameter-Efficient Fine-Tuning
+  - bitsandbytes # For 8-bit/4-bit quantization
+  - sentence-transformers
+  - protobuf
+  - sentencepiece
+
+  # Data and Graph
+  - neo4j
+  - python-docx
+  - pyshark
+  - pandas
+  - numpy
+  - tqdm
+  - natsort
+
+  # Figure Processing
+  - pillow
+  - pytesseract
+  - opencv
+
+  # Utilities
+  - requests
+  - pyyaml
+  - jupyter
+
+  - pip:
+      - tiktoken # For token counting, used in entity_extractor.py
+      - docx2python # For advanced image extraction
+      - pymupdf # For PDF processing
