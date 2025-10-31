@@ -114,8 +114,31 @@ The project follows a systematic pipeline to transform raw documents into a stru
 5.  **Incremental Database Loading**: The pipeline processes one document at a time. After each document is fully analyzed, its extracted entities and relationships are immediately loaded into the Neo4j database. This incremental approach ensures that memory usage remains low and stable, allowing the system to scale to a large number of documents.
 6.  **Search Indexing & FSM Conversion**: After the entire build process is complete, the `main.py` script fetches the complete knowledge graph from the database to build a globally-aware search index. It then demonstrates the search and FSM conversion features using this complete dataset.
 
+## Diagram Classification
+
+The system includes **Computer Vision-based sequence diagram classification** that automatically identifies sequence diagrams from 3GPP specification figures:
+
+### Classification Algorithm
+*   **Vector Format Support (EMF/WMF)**: Converts to PNG using LibreOffice headless mode
+*   **Raster Format Support (PNG/JPG)**: Direct Computer Vision analysis
+*   **Detection Method**: Hough Line Transform to identify diagram structure:
+    *   Vertical lines → Lifelines/Actors
+    *   Horizontal lines → Messages/Interactions
+*   **Classification Heuristics**: 
+    *   Minimum 2 vertical lines (lifelines)
+    *   Minimum 3 horizontal lines (messages)
+    *   More horizontal than vertical lines (typical sequence diagram pattern)
+*   **Accuracy**: ~60% on test dataset (12/20 correctly classified)
+
+### Technical Details
+*   **OpenCV**: Edge detection (Canny) and line detection (HoughLinesP)
+*   **LibreOffice**: Binary EMF/WMF → PNG conversion
+*   **Processing Time**: 2-3 seconds per diagram including conversion
+*   **Integration**: Classified diagrams are automatically associated with their parent procedures
+
 ## Future Enhancements
 
-*   **Implement Diagram Parsers**: Complete the implementation of the `DiagramParser` module by adding robust logic for:
-    *   Parsing vector diagrams (EMF/WMF) via XML analysis.
-    *   Parsing raster diagrams (PNG/JPG) using a CV and OCR pipeline.
+*   **Entity Extraction from Diagrams**: Extract Network Functions and Messages from classified sequence diagrams
+*   **OCR Integration**: Add Tesseract OCR to extract text labels from diagram elements
+*   **Sequence Ordering**: Determine temporal order of messages from vertical positions
+*   **Enhanced Classification**: Fine-tune thresholds and add machine learning classifier

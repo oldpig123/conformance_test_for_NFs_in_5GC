@@ -122,10 +122,36 @@ This module contains no executable code but is critical as it defines the core d
     *   `identify_procedure_sections_with_llm(self, sections)`
         *   **Description**: Uses LLM analysis combined with enhanced fallback heuristics to identify which sections containing figures describe specific procedures.
 
-### `diagram_parser.py` (New)
+### `diagram_parser.py`
 
-*   **Purpose**: Handles the analysis and parsing of diagram files. It classifies diagrams (e.g., as sequence diagrams) and extracts entities and relationships from them.
+*   **Purpose**: Handles the analysis, classification, and parsing of diagram files extracted from 3GPP documents. Uses Computer Vision to identify sequence diagrams and extract structural information.
 *   **Main Class**: `DiagramParser`
+*   **Key Implementation Details**:
+    *   Supports both vector (EMF/WMF) and raster (PNG/JPG) image formats
+    *   Uses LibreOffice in headless mode to convert binary EMF/WMF to PNG for analysis
+    *   Applies OpenCV Canny edge detection and Hough Line Transform for structural analysis
+    *   Classifies diagrams based on detected vertical lines (lifelines) and horizontal lines (messages)
+*   **Method Reference**:
+    *   `parse_diagram(self, figure_metadata)`:
+        *   **Description**: Main entry point. Routes to appropriate parser based on file type.
+        *   **Returns**: Dictionary with extracted data if sequence diagram, None otherwise.
+    *   `_parse_vector_diagram(self, figure_metadata)`:
+        *   **Description**: Handles EMF/WMF files. Attempts XML parsing first, then falls back to raster conversion.
+    *   `_parse_raster_diagram(self, figure_metadata)`:
+        *   **Description**: Handles PNG/JPG files using Computer Vision analysis.
+    *   `_is_sequence_diagram_vector(self, figure_metadata)`:
+        *   **Description**: Classifies vector diagrams by checking for XML structure or converting to raster.
+        *   **Returns**: Tuple of (is_sequence: bool, xml_root: Optional[etree._Element])
+    *   `_is_sequence_diagram_raster(self, figure_metadata)`:
+        *   **Description**: Classifies raster diagrams using Hough Line Transform.
+        *   **Algorithm**: Detects vertical lines (≥80°, length ≥20% height) and horizontal lines (≤10° or ≥170°, length ≥10% width)
+        *   **Heuristic**: Requires ≥2 vertical lines, ≥3 horizontal lines, and horizontal > vertical
+        *   **Returns**: bool indicating if diagram is a sequence diagram
+    *   `_convert_wmf_to_png(self, wmf_path)`:
+        *   **Description**: Converts binary EMF/WMF to PNG using LibreOffice subprocess call.
+        *   **Command**: `libreoffice --headless --convert-to png --outdir <temp> <input>`
+        *   **Timeout**: 15 seconds
+        *   **Returns**: Path to converted PNG file or None if conversion fails
 
 ### `entity_extractor.py`
 

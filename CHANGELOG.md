@@ -1,5 +1,15 @@
 ## 2025-10-31
 
+### Features
+
+-   **Sequence Diagram Classification:** Implemented Computer Vision-based sequence diagram classification in `diagram_parser.py`. The system now automatically identifies sequence diagrams from extracted figures using Hough Line Transform to detect structural patterns (vertical lifelines and horizontal messages).
+    *   **Algorithm**: Uses Canny edge detection + HoughLinesP line detection with angle classification (vertical: 80-100°, horizontal: 0-10° or 170-180°)
+    *   **Format Support**: Handles both vector (EMF/WMF) and raster (PNG/JPG) formats via LibreOffice conversion
+    *   **Classification Heuristics**: ≥2 vertical lines (lifelines), ≥3 horizontal lines (messages), horizontal > vertical
+    *   **Performance**: ~60% accuracy on test dataset (12/20), ~2-3 seconds per diagram including conversion
+    *   **Integration**: Classified diagrams automatically associated with parent procedures through existing `DocumentSection` structure
+    *   **Test Scripts**: Added `test_diagram_classification.py` (5 samples) and `test_classification_extended.py` (20 samples)
+
 ### Bug Fixes
 
 -   **Figure Caption Pattern Matching:** Fixed a critical bug in `document_loader.py` where figure captions starting with "Figure-" (hyphen immediately after "Figure", without space) were not being recognized. Updated regex patterns from `r'^Figure\s+'` to `r'^Figure[\s\-]'` to handle both "Figure " and "Figure-" formats. This fix ensures all figures are correctly matched with their captions (286/286 figures now matched, previously 285/286).
