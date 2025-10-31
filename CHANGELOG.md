@@ -10,6 +10,30 @@
     *   **Integration**: Classified diagrams automatically associated with parent procedures through existing `DocumentSection` structure
     *   **Test Scripts**: Added `test_diagram_classification.py` (5 samples) and `test_classification_extended.py` (20 samples)
 
+### Known Issues / Limitations
+
+-   **⚠️ CRITICAL: OLE Object Extraction Not Implemented:** Current implementation extracts WMF display preview images (`media/imageX.wmf`) instead of actual diagram source files from OLE objects (`embeddings/oleObjectX.bin`). 
+    *   **Impact**: CV classification operates on preview images, not source diagrams (Visio files, embedded Word docs, PowerPoint slides)
+    *   **Discovery**: 3GPP DOCX files contain:
+        - `<o:OLEObject ProgID="Visio.Drawing.15" r:id="rId10"/>` → Points to `embeddings/oleObject5.bin` (actual Visio file)
+        - `<v:imagedata r:id="rId11"/>` → Points to `media/image5.wmf` (rendered preview)
+    *   **OLE Types Found**:
+        - `Visio.Drawing.15` → Microsoft Visio 2013+ (.vsd/.vsdx) - Primary source of sequence diagrams
+        - `Word.Picture.8` / `Word.Document` → Embedded Word documents (.doc) - May contain nested diagrams
+        - `PowerPoint` → Embedded PowerPoint slides (.pptx) - May contain sequence diagrams
+    *   **Risk**: Multiple figures may share the same preview image but have different source OLE objects, leading to incorrect classification
+    *   **Priority**: HIGH - Should be implemented before Phase 2 (Entity Extraction)
+    *   **Proposed Solution**:
+        1. Modify `document_loader.py` to detect and extract `<o:OLEObject>` tags with `r:id` and `ProgID`
+        2. Resolve `r:id` to `embeddings/oleObjectX.bin` (or `.docx`/`.pptx`) paths
+        3. Extract OLE objects based on `ProgID`:
+            - Visio → Convert to SVG/PNG using LibreOffice
+            - Word.Document → Recursively extract figures
+            - PowerPoint → Extract slides as images
+        4. Update `FigureMetadata` to track both OLE source and preview image
+        5. Use OLE source for classification, fall back to preview if extraction fails
+    *   **Workaround**: Current preview-based classification still achieves 60% accuracy, sufficient for initial testing
+
 ### Bug Fixes
 
 -   **Figure Caption Pattern Matching:** Fixed a critical bug in `document_loader.py` where figure captions starting with "Figure-" (hyphen immediately after "Figure", without space) were not being recognized. Updated regex patterns from `r'^Figure\s+'` to `r'^Figure[\s\-]'` to handle both "Figure " and "Figure-" formats. This fix ensures all figures are correctly matched with their captions (286/286 figures now matched, previously 285/286).
