@@ -13,6 +13,7 @@ from document_loader import DocumentLoader
 from entity_extractor import EntityExtractor
 from relation_extractor import RelationExtractor
 from database_manager import DatabaseManager
+from diagram_parser import DiagramParser
 
 class KnowledgeGraphBuilder:
     """Main knowledge graph construction pipeline with incremental processing."""
@@ -23,6 +24,7 @@ class KnowledgeGraphBuilder:
         self.document_loader = DocumentLoader(self.entity_extractor.text_generator)
         self.relation_extractor = RelationExtractor(self.entity_extractor.text_generator)
         self.database_manager = DatabaseManager(neo4j_uri, neo4j_user, neo4j_password)
+        self.diagram_parser = DiagramParser()
         self.procedure_contexts: List[ProcedureContext] = [] # Still useful for context
         print("✓ Knowledge Graph Builder initialized.")
 
@@ -76,6 +78,8 @@ class KnowledgeGraphBuilder:
     def _process_single_document(self, all_sections: List, document_name: str) -> Tuple[List[Entity], List[Relationship]]:
         """Processes a single document and returns its entities and relationships."""
         document_sections = [s for s in all_sections if s.document == document_name]
+        
+        # First, identify procedures from text, which is still a valid source
         procedure_sections = self.document_loader.identify_procedure_sections_with_llm(document_sections)
         
         if not procedure_sections:
@@ -87,8 +91,7 @@ class KnowledgeGraphBuilder:
         # Create a quick lookup for sections by clause for parent lookup
         sections_by_clause = {s.clause: s for s in all_sections}
 
-        # for section in procedure_sections:
-        for section in tqdm(procedure_sections, desc="Procudure processing"):
+        for section in tqdm(procedure_sections, desc="Procedure processing"):
             print(f"  Procedure: {section.procedure_name}")
 
             # Find parent title using the clause hierarchy
@@ -119,26 +122,49 @@ class KnowledgeGraphBuilder:
             "clause": section.clause, "document": section.document, "has_figure": section.has_figure, "text": section.text
         }, None, doc_entities, parent_title=parent_title)
         
-        entity_result = self.entity_extractor.extract_entities_for_procedure(context, parent_title=parent_title)
-        
-        if entity_result.success:
-            # Update the procedure entity with its summary
-            procedure_key = (context.procedure_name, "Procedure")
-            if procedure_key in doc_entities and context.search_description:
-                proc_entity = doc_entities[procedure_key]
-                proc_entity.description = context.search_description
-                proc_entity.__post_init__() # Regenerate keywords
+        # Attempt to extract from diagram first
+        diagram_extracted_data = None
+        if section.has_figure:
+            for figure_meta in section.figures:
+                diagram_extracted_data = self.diagram_parser.parse_diagram(figure_meta)
+                if diagram_extracted_data:
+                    print(f"    ✓ Successfully parsed sequence diagram: {figure_meta.file_path}")
+                    # Use diagram data to populate context
+                    context.network_functions = diagram_extracted_data.get("network_functions", [])
+                    context.messages = diagram_extracted_data.get("messages", [])
+                    # We will still use text extraction for steps and descriptions
+                    break # Use the first successfully parsed diagram
 
-            # Add extracted entities to the document's collection
-            self._add_entities_from_context(context, doc_entities)
-            
-            # Extract and add relationships to the document's collection
-            relationships = self.relation_extractor.extract_relationships_for_procedure(context)
-            doc_relationships.extend(relationships)
-            
-            self.procedure_contexts.append(context) # Keep for final stats
-        else:
-            print(f"    ✗ Entity extraction failed: {entity_result.error_message}")
+        # Fallback to text-based extraction if diagram parsing fails or no diagram
+        if not diagram_extracted_data:
+            print("    No sequence diagram found or parsed, falling back to text-based extraction.")
+            entity_result = self.entity_extractor.extract_entities_for_procedure(context, parent_title=parent_title)
+            if not entity_result.success:
+                print(f"    ✗ Entity extraction failed: {entity_result.error_message}")
+                return
+
+        # Enrich with text extraction (even if diagram was parsed)
+        # This is crucial for getting step descriptions, parameters, and keys
+        enrichment_result = self.entity_extractor.extract_entities_for_procedure(context, parent_title=parent_title)
+        if not enrichment_result.success:
+            print(f"    ✗ Enrichment entity extraction failed: {enrichment_result.error_message}")
+            return
+
+        # Update the procedure entity with its summary
+        procedure_key = (context.procedure_name, "Procedure")
+        if procedure_key in doc_entities and context.search_description:
+            proc_entity = doc_entities[procedure_key]
+            proc_entity.description = context.search_description
+            proc_entity.__post_init__() # Regenerate keywords
+
+        # Add extracted entities to the document's collection
+        self._add_entities_from_context(context, doc_entities)
+        
+        # Extract and add relationships to the document's collection
+        relationships = self.relation_extractor.extract_relationships_for_procedure(context)
+        doc_relationships.extend(relationships)
+        
+        self.procedure_contexts.append(context) # Keep for final stats
 
     def _add_entities_from_context(self, context: ProcedureContext, doc_entities: Dict):
         """Adds entities from a procedure context to the document's entity collection."""

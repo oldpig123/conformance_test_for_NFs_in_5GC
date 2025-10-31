@@ -7,6 +7,7 @@ The resulting knowledge graph is stored in a Neo4j database and can be used for 
 ## Key Features
 
 - **Automated Knowledge Graph Construction**: Parses 3GPP `.docx` files to build a graph of telecom entities and their relationships.
+- **Diagram-Centric Pipeline**: A new pipeline that prioritizes extracting information from sequence diagrams for a more accurate and robust knowledge graph.
 - **LLM-Powered Extraction**: Leverages Large Language Models for complex tasks like procedure identification, entity extraction, and relationship discovery.
 - **Rich Entity Model**: Extracts a variety of 3GPP-specific entities, including:
     - `Procedure`
@@ -27,7 +28,7 @@ The project features a powerful search engine designed to quickly retrieve relev
     *   An embedding for the procedure's `title`.
     *   An embedding for the `parent_title` of its containing section.
     *   An embedding for the full `description` (concatenated steps).
-*   **Optimized Weighted Scoring**: A finely tuned weighting scheme (defined in `codebase/config.py` as `W_SEMANTIC_TITLE: 1.7`, `W_SEMANTIC_PARENT: 1.7`, `W_SEMANTIC_DESC: 16`) combines these semantic signals to achieve optimal relevance and ranking for golden queries.
+*   **Optimized Weighted Scoring**: A finely tuned weighting scheme (defined in `codebase_figure/config.py` as `W_SEMANTIC_TITLE: 1.7`, `W_SEMANTIC_PARENT: 1.7`, `W_SEMANTIC_DESC: 16`) combines these semantic signals to achieve optimal relevance and ranking for golden queries.
 *   **LLM-Enhanced Descriptions**: Leverages LLMs to generate rich, concise summaries of procedures, enhancing semantic search accuracy.
 - **FSM Generation**: Automatically converts extracted procedures from the knowledge graph into Finite State Machines (FSMs), which are exported in both `.json` and `.dot` (for Graphviz visualization) formats.
 - **GPU Accelerated**: Designed to utilize GPU for NLP/LLM model inference. Now supports multi-GPU configurations by distributing the main LLM and the embedding model across separate devices to parallelize workloads and increase processing speed.
@@ -35,15 +36,16 @@ The project features a powerful search engine designed to quickly retrieve relev
 
 ## Project Structure
 
-The core logic is contained within the `codebase/` directory:
+The core logic is contained within the `codebase/` and `codebase_figure/` directories:
 
 ```
-codebase/
+codebase_figure/
 ├── main.py                   # Main entry point to run the full pipeline.
 ├── knowledge_graph_builder.py# Orchestrates the entire KG construction process.
 ├── config.py                 # Central configuration for DB, paths, and models.
 ├── data_structures.py        # Defines all data classes (Entity, FSM, etc.).
 ├── document_loader.py        # Handles loading and parsing of .docx files.
+├── diagram_parser.py         # Parses and classifies diagrams from figures.
 ├── entity_extractor.py       # Extracts entities (Procedures, NFs, Messages, etc.).
 ├── relation_extractor.py     # Extracts relationships between entities.
 ├── database_manager.py       # Manages all interactions with the Neo4j database.
@@ -77,7 +79,7 @@ codebase/
     Put your 3GPP specification `.docx` files into the `3GPP/` directory (or the directory specified by `DOCS_PATH` in the config).
 
 4.  **Configure the application:**
-    Open `codebase/config.py` and edit the following sections:
+    Open `codebase_figure/config.py` and edit the following sections:
     - **Neo4j Database:** Update `NEO4J_URI`, `NEO4J_USER`, and `NEO4J_PASSWORD` to match your database credentials.
     - **Documents Path:** Ensure `DOCS_PATH` points to the directory containing your `.docx` files.
 
@@ -86,17 +88,18 @@ codebase/
 Execute the main script from the project root directory:
 
 ```bash
-python codebase/main.py
+python codebase_figure/main.py
 ```
 
 The script will perform the following steps:
 1.  Initialize all components and check for GPU.
-2.  Load and parse the 3GPP documents.
+2.  Load and parse the 3GPP documents, extracting figure metadata.
 3.  Identify procedure sections using LLM analysis.
-4.  Extract entities and relationships for each procedure.
-5.  Clear the existing Neo4j database.
-6.  Load the newly constructed knowledge graph into Neo4j.
-7.  Run a demo that showcases the search and FSM conversion features.
+4.  For each procedure, attempt to parse sequence diagrams to extract core entities.
+5.  Enrich the graph with details from the text using the Entity and Relation Extractors.
+6.  Clear the existing Neo4j database.
+7.  Load the newly constructed knowledge graph into Neo4j.
+8.  Run a demo that showcases the search and FSM conversion features.
 
 The generated FSM files (`.json` and `.dot`) will be saved in the `output/` directory.
 
@@ -104,13 +107,15 @@ The generated FSM files (`.json` and `.dot`) will be saved in the `output/` dire
 
 The project follows a systematic pipeline to transform raw documents into a structured knowledge graph and FSMs:
 
-1.  **Document Loading**: `.docx` files are parsed to extract text and identify sections that contain figures, which are potential candidates for procedures.
-2.  **Procedure Identification**: An LLM analyzes the candidate sections to identify which ones describe a specific, step-by-step procedure (e.g., "5G AKA").
-3.  **Entity Extraction**: For each identified procedure, another LLM-based process extracts all relevant entities, including network functions, messages, parameters, keys, and the sequential steps of the procedure itself.
-4.  **Relation Extraction**: The system then establishes relationships between these entities (e.g., which step is `FOLLOWED_BY` another, which `NetworkFunction` is `INVOLVE`d in a `Step`).
+1.  **Document Loading**: `.docx` files are parsed to extract text and metadata for any embedded figures.
+2.  **Procedure Identification**: An LLM analyzes sections containing figures to identify which ones describe a specific, step-by-step procedure, ensuring accurate figure-to-caption association.
+3.  **Diagram-First Extraction**: For identified procedures, a `DiagramParser` attempts to analyze the figure content. If it's a sequence diagram, it extracts the core structure (Network Functions, Messages, sequence).
+4.  **Text-Based Enrichment**: The `EntityExtractor` then processes the surrounding text to enrich the graph with details not found in the diagram (step descriptions, parameters, keys) and serves as a fallback if diagram parsing fails.
 5.  **Incremental Database Loading**: The pipeline processes one document at a time. After each document is fully analyzed, its extracted entities and relationships are immediately loaded into the Neo4j database. This incremental approach ensures that memory usage remains low and stable, allowing the system to scale to a large number of documents.
 6.  **Search Indexing & FSM Conversion**: After the entire build process is complete, the `main.py` script fetches the complete knowledge graph from the database to build a globally-aware search index. It then demonstrates the search and FSM conversion features using this complete dataset.
 
 ## Future Enhancements
 
-*   **Diagram-Based Knowledge Graph Construction**: Integrate sequence diagram parsing (as outlined in `figure_base.md`) to automatically extract network functions, messages, and their sequences directly from graphical representations, further enriching the knowledge graph.
+*   **Implement Diagram Parsers**: Complete the implementation of the `DiagramParser` module by adding robust logic for:
+    *   Parsing vector diagrams (EMF/WMF) via XML analysis.
+    *   Parsing raster diagrams (PNG/JPG) using a CV and OCR pipeline.

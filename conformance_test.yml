@@ -29,6 +29,7 @@ dependencies:
   - sentence-transformers
   - protobuf
   - sentencepiece
+  - lxml
 
   # Data and Graph
   - neo4j

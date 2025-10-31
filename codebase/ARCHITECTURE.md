@@ -119,7 +119,7 @@ This module contains no executable code but is critical as it defines the core d
             *   `llm_pipeline`: A `transformers` pipeline object.
         *   **Returns**: `None`.
     *   `_extract_sections_with_figures(self, file_paths)`
-        *   **Description**: The main parsing method. It iterates through a document's paragraphs, reconstructing section text while preserving newlines between paragraphs. It now also extracts embedded images, identifies figure captions, and classifies diagrams as sequence diagrams using text-based heuristics.
+        *   **Description**: The main parsing method. It iterates through a document's paragraphs, reconstructing section text while preserving newlines between paragraphs. It extracts embedded images, accurately associates them with figure captions, and stores detailed `FigureMetadata` including `r_id` and `target_ref` for debugging and later processing. It classifies diagrams as sequence diagrams using text-based heuristics.
         *   **Parameters**: `file_path` (`Path`): A `pathlib.Path` object pointing to a single document.
         *   **Returns**: (`List[DocumentSection]`): A list of `DocumentSection` objects from the parsed document.
     *   `_is_figure_caption_for_section(self, text, section_clause)`

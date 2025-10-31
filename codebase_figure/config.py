@@ -3,7 +3,7 @@ import torch
 from pathlib import Path
 
 # Database Configuration
-NEO4J_URI = "bolt://localhost:7688"
+NEO4J_URI = "bolt://localhost:7689"
 NEO4J_USER = "neo4j"
 NEO4J_PASSWORD = "12345678"
 

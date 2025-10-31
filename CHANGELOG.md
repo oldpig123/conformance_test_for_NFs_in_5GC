@@ -1,3 +1,28 @@
+## 2025-10-31
+
+### Bug Fixes
+
+-   **Figure Caption Pattern Matching:** Fixed a critical bug in `document_loader.py` where figure captions starting with "Figure-" (hyphen immediately after "Figure", without space) were not being recognized. Updated regex patterns from `r'^Figure\s+'` to `r'^Figure[\s\-]'` to handle both "Figure " and "Figure-" formats. This fix ensures all figures are correctly matched with their captions (286/286 figures now matched, previously 285/286).
+
+-   **Duplicate Class Definitions:** Removed duplicate `Entity` and `Relationship` class definitions in `data_structures.py`. The file previously contained both NamedTuple and dataclass versions of these classes, causing the second definition to override the first. Kept only the enhanced dataclass versions.
+
+-   **Figure Extraction Logic Refinement:** Corrected the figure identification logic in `document_loader.py` to accurately associate figures with their captions. This involved modifying `data_structures.py` to store `r_id` and `target_ref` in `FigureMetadata`, and refining the `_extract_sections_with_figures` method to only mark a section as `has_figure=True` if an image is successfully linked to a caption.
+
+### Refactoring
+
+-   **FigureMetadata Enhancement:** Added `r_id` and `target_ref` fields to the `FigureMetadata` dataclass in `data_structures.py` to store more detailed information about extracted figures, enabling proper tracking of the VML image extraction process.
+
+## 2025-10-30
+
+### Refactoring
+
+-   **Diagram Parsing Pipeline Refactoring:**
+    -   Refactored the data pipeline to support a new, multi-modal approach for knowledge graph construction, as outlined in `figure_base.md`.
+    -   **`data_structures.py`**: Removed `is_sequence_diagram` and `figure_is_sequence_diagram` flags to decouple classification from document loading.
+    -   **`document_loader.py`**: Removed all figure classification logic. Its role is now purely to extract figure metadata (e.g., file path, type).
+    -   **`diagram_parser.py`**: Created a new placeholder module to house future diagram parsing and classification logic (CV, OCR, XML parsing).
+    -   **`knowledge_graph_builder.py`**: Integrated the `DiagramParser`, creating a new pipeline flow where diagrams are parsed first. The system falls back to text-based extraction and uses text to enrich diagram-extracted data, preserving search capabilities.
+
 ## 2025-10-28
 
 ### Features

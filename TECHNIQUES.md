@@ -32,7 +32,7 @@ The search process relies entirely on semantic embeddings:
     These embeddings are generated using a state-of-the-art Sentence Transformer model (`Qwen/Qwen3-Embedding-8B`).
 
 2.  **Optimized Weighted Scoring**: The final relevance score for each procedure is a weighted sum of the cosine similarities between the user's query embedding and the three procedure embeddings.
-    *   The weights (`W_SEMANTIC_TITLE: 1.7`, `W_SEMANTIC_PARENT: 1.7`, `W_SEMANTIC_DESC: 16`) are defined in `codebase/config.py` and are finely tuned to achieve optimal relevance and ranking for golden queries.
+    *   The weights (`W_SEMANTIC_TITLE: 1.7`, `W_SEMANTIC_PARENT: 1.7`, `W_SEMANTIC_DESC: 16`) are defined in `codebase_figure/config.py` and are finely tuned to achieve optimal relevance and ranking for golden queries.
     *   A similarity threshold is applied to filter out less relevant results.
 
 ### Optimization:
@@ -40,7 +40,7 @@ The search process relies entirely on semantic embeddings:
 *   **Multi-GPU Support**: The embedding model is loaded onto a separate GPU (if available) to parallelize processing and reduce latency.
 *   **Adaptive Embedding**: For very long procedure descriptions, the system intelligently chunks the text into smaller, overlapping segments, generates embeddings for each, and then averages them. This ensures that the full semantic context is captured without exceeding the embedding model's token limit or causing `CUDA out of memory` errors.
 
-## 5. Database and Scalability
+## 6. Database and Scalability
 *   **Technique**: Graph Database (Neo4j) (`database_manager.py`)
 *   **Rationale**: The 3GPP data is highly interconnected. Procedures, network functions, messages, and steps are all nodes in a complex graph. A relational database would struggle to represent and query these many-to-many relationships efficiently.
 *   **Benefit**: A graph database is the natural choice for this domain, allowing for efficient querying of complex relationships (e.g., "find all steps involving the AMF in the 5G AKA procedure").
@@ -49,13 +49,26 @@ The search process relies entirely on semantic embeddings:
 *   **Rationale**: The application previously only failed with a database error when it first attempted a query, which could be late in the process.
 *   **Benefit**: By explicitly verifying the database connection upon initialization, the application fails immediately if the database is unavailable, saving time and providing clearer error feedback.
 
-## Diagram Identification Strategy (Phase 1 - Text-based Heuristics)
+## 4. Figure Extraction from DOCX Files
 
-To enable multi-modal knowledge graph construction, the pipeline now includes a strategy to identify sequence diagrams within `.docx` documents. This initial phase leverages text-based heuristics without requiring complex image analysis or OCR.
+*   **Technique**: VML and DrawingML Image Extraction (`document_loader.py`)
+*   **Rationale**: 3GPP documents use both legacy VML (`<v:imagedata>`) and modern DrawingML (`<w:blip>`) formats for embedded images. A robust extraction method must handle both formats and correctly associate images with their captions, which can have varying formats ("Figure 4.2-1" vs "Figure-4.2-1").
+*   **Implementation**:
+    1.  For each paragraph, use namespace-agnostic XPath to find both modern (`<w:blip r:embed="rId">`) and legacy (`<v:imagedata r:id="rId">`) image references.
+    2.  Extract the relationship ID (e.g., `rId3`) from the XML attributes.
+    3.  Resolve the relationship ID through `doc.part.rels` to get the actual image path from `word/_rels/document.xml.rels` (e.g., `media/image1.wmf`).
+    4.  Extract and save the image blob to a file.
+    5.  Store metadata (`r_id`, `target_ref`, `file_type`, `file_path`) in a `FigureMetadata` object.
+    6.  When a figure caption is detected (using flexible regex `r'^Figure[\s\-]'`), match it with the most recent uncaptioned figure in the current section.
+*   **Benefit**: This approach correctly extracts all embedded images regardless of format and handles various caption styles used in 3GPP documents, ensuring 100% figure-to-caption matching accuracy.
+
+## 5. Diagram-Centric Pipeline
+
+To enable multi-modal knowledge graph construction, the pipeline has been refactored to be diagram-centric.
 
 ### Strategy:
 
-1.  **Section Title Analysis (High Priority):** The title of the section containing a figure is analyzed for keywords strongly associated with procedures (e.g., "procedure", "flow", "sequence", "establishment", "management", "mobility", "registration", "authentication", "session"). The presence of such keywords is a strong indicator that the associated figure is a sequence diagram.
-2.  **Caption Structure Analysis:** The figure's caption is checked for a strict numbering format (e.g., "Figure X.Y-Z: [Title]"). This formal, clause-based numbering scheme is highly indicative of a detailed procedure diagram, distinguishing it from more general or illustrative figures.
-
-If a figure meets either of these criteria, it is classified as a sequence diagram and linked to its corresponding `DocumentSection`. This refined identification ensures that only relevant diagrams are used for further procedure identification.
+1.  **Figure Extraction**: The `DocumentLoader` first extracts all figures from the document, ensuring accurate figure-to-caption association, without attempting to classify them.
+2.  **Procedure Identification**: The `KnowledgeGraphBuilder` identifies potential procedure sections, primarily by looking for sections that contain figures.
+3.  **Diagram Parsing**: A dedicated `DiagramParser` is then used to analyze the content of the figure. It determines if the figure is a sequence diagram and, if so, extracts the core structural information (network functions, messages).
+4.  **Textual Enrichment**: The `EntityExtractor` processes the text associated with the diagram to provide detailed descriptions, parameters, and keys, enriching the structurally-sound skeleton provided by the diagram parser.

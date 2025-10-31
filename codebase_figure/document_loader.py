@@ -15,6 +15,7 @@ except ImportError:
     exit(1)
 
 from data_structures import DocumentSection, FigureMetadata
+from config import OUTPUT_CONFIG
 
 class DocumentLoader:
     """Handles loading and parsing of 3GPP documents."""
@@ -22,6 +23,8 @@ class DocumentLoader:
     def __init__(self, llm_pipeline=None):
         self.llm_pipeline = llm_pipeline
         self.is_t5_model = getattr(llm_pipeline, 'model', None) and 't5' in str(llm_pipeline.model.__class__).lower()
+        self.figures_output_path = OUTPUT_CONFIG["fsm_output"] / "figures"
+        self.figures_output_path.mkdir(parents=True, exist_ok=True)
 
         # Known 3GPP procedures for validation
         self.known_procedures = [
@@ -49,62 +52,62 @@ class DocumentLoader:
         print(f"Total: {len(all_sections)} sections from {len(file_paths)} documents")
         return all_sections
 
-    def _extract_vml_images(self, file_path: Path):
-        """Extract images from VML format using low-level XML parsing."""
-        try:
-            with zipfile.ZipFile(file_path, 'r') as docx_zip:
-                # Find and parse the relationships file
-                rels_path = 'word/_rels/document.xml.rels'
-                if rels_path in docx_zip.namelist():
-                    with docx_zip.open(rels_path) as rels_file:
-                        rels_tree = ET.parse(rels_file)
-                        rels_root = rels_tree.getroot()
-                        
-                        # Create a mapping from rId to target path
-                        rels_map = {
-                            rel.attrib['Id']: rel.attrib['Target']
-                            for rel in rels_root
-                            if 'Target' in rel.attrib
-                        }
-
-                # Find and parse the main document file
-                doc_path = 'word/document.xml'
-                if doc_path in docx_zip.namelist():
-                    with docx_zip.open(doc_path) as doc_file:
-                        doc_tree = ET.parse(doc_file)
-                        doc_root = doc_tree.getroot()
-
-                        # Find all VML image data
-                        for imagedata in doc_root.findall(".//v:imagedata", namespaces={'v': 'urn:schemas-microsoft-com:vml'}):
-                            rId = imagedata.attrib.get('{http://schemas.openxmlformats.org/officeDocument/2006/relationships}embed')
-                            if rId in rels_map:
-                                image_path = rels_map[rId]
-                                print(f"Found VML image: {image_path}")
-        except Exception as e:
-            print(f"Error extracting VML images: {e}")
+    def _extract_and_save_images(self, doc: docx.Document, file_stem: str) -> List[FigureMetadata]:
+        figures = []
+        image_index = 0
+        for rel in doc.part.rels.values():
+            if "image" in rel.target_ref:
+                image_blob = rel.target_part.blob
+                image_ext = rel.target_part.content_type.split('/')[-1]
+                image_filename = f"{file_stem}_figure_{image_index}.{image_ext}"
+                image_path = self.figures_output_path / image_filename
+                with open(image_path, "wb") as f:
+                    f.write(image_blob)
+                
+                figures.append(FigureMetadata(
+                    caption="",
+                    file_path=image_path,
+                    file_type=image_ext,
+                    original_index=image_index
+                ))
+                image_index += 1
+        return figures
 
     def _extract_sections_with_figures(self, file_path: Path) -> List[DocumentSection]:
         """Extract sections and detect figures based on clause number matching."""
-        self._extract_vml_images(file_path)
         doc = docx.Document(file_path)
         sections = []
         current_section = None
+        
+        doc_figure_path = self.figures_output_path / file_path.stem
+        doc_figure_path.mkdir(parents=True, exist_ok=True)
+
+        extension_map = {
+            'x-wmf': 'wmf',
+            'x-emf': 'emf',
+            'png': 'png',
+            'jpeg': 'jpg',
+        }
+
+        image_index = 0
 
         with open(f"document_loader_debug_{file_path.stem}.log", "w", encoding="utf-8") as debug_f:
-            for para in doc.paragraphs:
+            for i, para in enumerate(doc.paragraphs):
                 text = para.text.strip()
-
-                # Log paragraph details
                 is_header = self._is_section_header(para, text)
-                debug_f.write(f"[Is Header: {is_header}] [Style: {para.style.name}] [Text: {text}]\n")
+                debug_f.write(f"[Para {i}] [Is Header: {is_header}] [Style: {para.style.name}] [Text: {text}]\n")
 
-                if not text:
+                # Use namespace-agnostic XPath to find both modern and legacy image references
+                xpath_modern = ".//*[local-name()='blip']/@*[local-name()='embed']"
+                xpath_legacy = ".//*[local-name()='imagedata']/@*[local-name()='id']"
+                rids = para._p.xpath(xpath_modern) + para._p.xpath(xpath_legacy)
+
+                if not text and not rids:
                     continue
 
-                if self._is_section_header(para, text):
+                if is_header:
                     if current_section:
                         sections.append(current_section)
-
                     current_section = DocumentSection(
                         title=text,
                         text="",
@@ -114,86 +117,62 @@ class DocumentLoader:
                         figures=[]
                     )
                 elif current_section:
-                    if self._is_figure_caption_for_section(text, current_section.clause):
-                        current_section.has_figure = True
-                        # This is a simplified representation. In a real scenario, you would
-                        # extract the figure and create a FigureMetadata object.
-                        current_section.figures.append(text) 
+                    # Step 1: Find and save any image data in the paragraph.
+                    if rids:
+                        for rid in rids:
+                            try:
+                                if rid in doc.part.rels:
+                                    rel = doc.part.rels[rid]
+                                    if "image" in rel.target_ref:
+                                        image_blob = rel.target_part.blob
+                                        content_type = rel.target_part.content_type.split('/')[-1]
+                                        image_ext = extension_map.get(content_type, content_type)
 
-                        # Classify the figure and update the section
-                        is_seq_diagram = self._classify_figure_as_sequence_diagram(current_section.title, text)
-                        if is_seq_diagram:
-                            current_section.figure_is_sequence_diagram = True
+                                        image_filename = f"figure_{image_index}.{image_ext}"
+                                        image_path = doc_figure_path / image_filename
+                                        with open(image_path, "wb") as f:
+                                            f.write(image_blob)
+                                        
+                                        figure_meta = FigureMetadata(
+                                            caption="",
+                                            file_path=image_path,
+                                            file_type=image_ext,
+                                            original_index=image_index,
+                                            r_id=rid,
+                                            target_ref=rel.target_ref
+                                        )
+                                        current_section.figures.append(figure_meta)
+                                        image_index += 1
+                                        debug_f.write(f"[Para {i}]: Found and saved potential image {image_filename}\n")
+                            except Exception as e:
+                                debug_f.write(f"[Para {i}]: Error processing image with rId {rid}: {e}\n")
 
-                    current_section.text += "\n" + text
+                    # Step 2: Check if the paragraph text is a figure caption.
+                    if re.search(r'^Figure[\s\-]', text, re.IGNORECASE):
+                        # Find the last figure without a caption and assign it.
+                        for fig in reversed(current_section.figures):
+                            if not fig.caption:
+                                fig.caption = text
+                                # Only now do we confirm that the section has a valid figure.
+                                current_section.has_figure = True
+                                debug_f.write(f"[Para {i}]: Assigned caption '{text}' to figure {fig.original_index} and marked section as having a figure.\n")
+                                break
+                    elif text: # Only append non-caption text
+                        current_section.text += "\n" + text
 
         if current_section:
             sections.append(current_section)
 
         return sections
 
-    def _classify_figure_as_sequence_diagram(self, section_title: str, figure_caption: str) -> bool:
-        """
-        Classify a figure as a sequence diagram using a scoring model based on textual heuristics.
-        """
-        score = 0
-        evidence = []
-
-        # 1. Positive Keywords
-        procedure_keywords = [
-            'procedure', 'flow', 'sequence', 'establishment', 'registration',
-            'authentication', 'handover', 'update', 'deregistration', 'service request'
-        ]
-        
-        # Check section title for positive keywords
-        for keyword in procedure_keywords:
-            if keyword in section_title.lower():
-                score += 2
-                evidence.append(f"title_keyword: {keyword}")
-
-        # Check figure caption for positive keywords
-        for keyword in procedure_keywords:
-            if keyword in figure_caption.lower():
-                score += 2
-                evidence.append(f"caption_keyword: {keyword}")
-
-        # 2. Negative Keywords
-        negative_keywords = ['architecture', 'model', 'example', 'overview', 'format', 'structure']
-        
-        # Check section title for negative keywords
-        for keyword in negative_keywords:
-            if keyword in section_title.lower():
-                score -= 3
-                evidence.append(f"negative_title_keyword: {keyword}")
-
-        # Check figure caption for negative keywords
-        for keyword in negative_keywords:
-            if keyword in figure_caption.lower():
-                score -= 3
-                evidence.append(f"negative_caption_keyword: {keyword}")
-
-        # 3. Caption Structure Analysis
-        # Check for "Figure X.Y-Z:" format
-        if re.search(r'Figure\s+\d+(\.\d+)*-\d+:', figure_caption):
-            score += 3
-            evidence.append("structured_caption")
-
-        # 4. Check for "call flow" or "message flow"
-        if "call flow" in figure_caption.lower() or "message flow" in figure_caption.lower():
-            score += 5
-            evidence.append("flow_in_caption")
-
-        print(f"DEBUG: Classifying figure. Score: {score}, Evidence: {evidence}")
-
-        return score >= 3
-
     def _is_figure_caption_for_section(self, text: str, section_clause: str) -> bool:
         """
         Checks if the text is a figure caption and if the figure number
         corresponds to the section number it is in. This version is more flexible
         to handle cases like section '6.1.3.2.0' and figure '6.1.3.2-1'.
+        Also handles both "Figure " and "Figure-" formats.
         """
-        match = re.search(r'Figure\s+([\d\.-]+a?):?', text, re.IGNORECASE)
+        match = re.search(r'Figure[\s\-]+([\d\.-]+a?):?', text, re.IGNORECASE)
         if not match:
             return False
 
@@ -229,25 +208,13 @@ class DocumentLoader:
         print(f"\n=== STEP 4B: Enhanced Procedure Identification ===")
         procedure_sections = []
 
-        # Prioritize sections with sequence diagrams
-        sections_with_seq_diagram = [s for s in sections if s.figure_is_sequence_diagram]
-        other_sections_with_figures = [s for s in sections if s.has_figure and not s.figure_is_sequence_diagram]
+        sections_with_figures = [s for s in sections if s.has_figure]
+        print(f"Found {len(sections_with_figures)} sections with figures to analyze.")
 
-        print(f"Found {len(sections_with_seq_diagram)} sections with sequence diagrams (high-confidence)")
-        print(f"Found {len(other_sections_with_figures)} other sections with figures (medium-confidence)")
-
-        # Process high-confidence sections first
-        for section in sections_with_seq_diagram:
-            section.is_procedure = True
-            section.procedure_name = self._clean_section_title(section.title)
-            procedure_sections.append(section)
-            print(f"  ✓ Auto-classified (Seq Diagram): '{section.procedure_name}'")
-
-        # Process medium-confidence sections with LLM and fallback
         llm_identified = 0
         fallback_identified = 0
 
-        for section in tqdm(other_sections_with_figures, desc="Procedure identification (medium-confidence)"):
+        for section in tqdm(sections_with_figures, desc="Procedure identification"):
             # Method 1: Try LLM identification
             procedure_name = self._query_llm_for_procedure_identification(section)
 
@@ -266,7 +233,6 @@ class DocumentLoader:
                 print(f"  ✓ Identified (Fallback/LLM): '{procedure_name}' (from {section.title[:50]}...)")
 
         print(f"Identification results:")
-        print(f"  Auto-classified (Sequence Diagram): {len(sections_with_seq_diagram)}")
         print(f"  LLM identified: {llm_identified}")
         print(f"  Fallback identified: {fallback_identified}")
         print(f"  Total procedures: {len(procedure_sections)}")
@@ -345,11 +311,8 @@ If YES, what is the procedure name?
 
         # === FIGURE-FIRST APPROACH ===
 
-        # If section has a sequence diagram, it gets a massive advantage
-        seq_diagram_boost = 100 if section.figure_is_sequence_diagram else 0
-
-        # If section has a figure (but not classified as sequence), it gets a smaller advantage
-        has_figure_boost = 50 if section.has_figure and not section.figure_is_sequence_diagram else 0
+        # If section has a figure, it gets a massive advantage
+        has_figure_boost = 50 if section.has_figure else 0
 
         # 1. Basic procedure indicators
         procedure_indicators = [
@@ -385,9 +348,6 @@ If YES, what is the procedure name?
         evidence = []
 
         # Score 1: FIGURE PRESENCE (MASSIVE BOOST!)
-        score += seq_diagram_boost
-        if seq_diagram_boost > 0:
-            evidence.append("sequence_diagram_boost")
         score += has_figure_boost
         if has_figure_boost > 0:
             evidence.append("has_figure_boost")
@@ -427,9 +387,7 @@ If YES, what is the procedure name?
 
         text_length = len(section.text)
 
-        if section.figure_is_sequence_diagram:
-            threshold = 80 # High threshold, but the boost should overcome it
-        elif section.has_figure:
+        if section.has_figure:
             # MUCH LOWER thresholds for sections with figures
             if text_length > 5000:
                 threshold = 60  # Even long sections with figures get lower threshold
@@ -469,11 +427,6 @@ If YES, what is the procedure name?
             quality_filters_passed = False
 
         # === FINAL DECISION (Figure-Friendly) ===
-
-        # Special case: If it has a sequence diagram, it's almost certainly a procedure
-        if section.figure_is_sequence_diagram and score >= threshold:
-            print(f"    ✓ Sequence Diagram Priority: '{cleaned_title}' (score: {score}, threshold: {threshold})")
-            return section.title
 
         # Special case: If has figure and minimal criteria, FORCE ACCEPT
         if section.has_figure and entity_count >= 2 and text_length > 500:

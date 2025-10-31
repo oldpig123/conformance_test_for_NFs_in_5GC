@@ -1,21 +1,8 @@
-from typing import Dict, List, NamedTuple, Optional
+from typing import Dict, List, Optional
 from dataclasses import dataclass, field
 import hashlib
 import json
 from pathlib import Path
-
-class Entity(NamedTuple):
-    """Entity representation in knowledge graph."""
-    name: str
-    entity_type: str
-    properties: Dict = {}
-
-class Relationship(NamedTuple):
-    """Relationship representation in knowledge graph."""
-    source_name: str
-    target_name: str
-    rel_type: str
-    properties: Dict = {}
 
 @dataclass
 class FigureMetadata:
@@ -24,7 +11,8 @@ class FigureMetadata:
     file_path: Path
     file_type: str  # e.g., 'png', 'emf', 'wmf', 'drawingml'
     original_index: int  # Its order in the document
-    is_sequence_diagram: bool = False
+    r_id: str # The relationship ID from the docx XML
+    target_ref: str # The target reference path from the docx XML
 
 @dataclass
 class DocumentSection:
@@ -37,7 +25,6 @@ class DocumentSection:
     figures: List['FigureMetadata'] = field(default_factory=list)
     is_procedure: bool = False
     procedure_name: Optional[str] = None
-    figure_is_sequence_diagram: bool = False
 
 @dataclass
 class Entity:
