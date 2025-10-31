@@ -13,6 +13,11 @@ class FigureMetadata:
     original_index: int  # Its order in the document
     r_id: str # The relationship ID from the docx XML
     target_ref: str # The target reference path from the docx XML
+    
+    # OLE Object metadata (added 2025-10-31)
+    ole_prog_id: Optional[str] = None  # e.g., 'Visio.Drawing.15', 'Word.Picture.8'
+    ole_object_path: Optional[Path] = None  # Path to extracted OLE object
+    is_ole_object: bool = False  # True if figure is from OLE object
 
 @dataclass
 class DocumentSection:

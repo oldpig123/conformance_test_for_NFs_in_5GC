@@ -97,12 +97,14 @@ class DocumentLoader:
                 is_header = self._is_section_header(para, text)
                 debug_f.write(f"[Para {i}] [Is Header: {is_header}] [Style: {para.style.name}] [Text: {text}]\n")
 
-                # Use namespace-agnostic XPath to find both modern and legacy image references
-                xpath_modern = ".//*[local-name()='blip']/@*[local-name()='embed']"
-                xpath_legacy = ".//*[local-name()='imagedata']/@*[local-name()='id']"
-                rids = para._p.xpath(xpath_modern) + para._p.xpath(xpath_legacy)
+                # Find OLE objects with ProgID (use these as source of truth)
+                xpath_ole = ".//*[local-name()='OLEObject']"
+                ole_objects = para._p.xpath(xpath_ole)
+                
+                if ole_objects:
+                    debug_f.write(f"[Para {i}]: Found {len(ole_objects)} OLE object(s)\n")
 
-                if not text and not rids:
+                if not text and not ole_objects:
                     continue
 
                 if is_header:
@@ -117,35 +119,65 @@ class DocumentLoader:
                         figures=[]
                     )
                 elif current_section:
-                    # Step 1: Find and save any image data in the paragraph.
-                    if rids:
-                        for rid in rids:
+                    # Step 1: Extract OLE objects (actual diagram sources)
+                    if ole_objects:
+                        for ole_obj in ole_objects:
                             try:
-                                if rid in doc.part.rels:
-                                    rel = doc.part.rels[rid]
-                                    if "image" in rel.target_ref:
-                                        image_blob = rel.target_part.blob
-                                        content_type = rel.target_part.content_type.split('/')[-1]
-                                        image_ext = extension_map.get(content_type, content_type)
-
-                                        image_filename = f"figure_{image_index}.{image_ext}"
-                                        image_path = doc_figure_path / image_filename
-                                        with open(image_path, "wb") as f:
-                                            f.write(image_blob)
+                                # Get ProgID (source of truth for file type)
+                                prog_id = ole_obj.get('ProgID', '')
+                                
+                                # Try multiple ways to get r:id
+                                ole_rid = ole_obj.get('{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id', '')
+                                if not ole_rid:
+                                    # Try without namespace (for lxml)
+                                    ole_rid = ole_obj.get('id', '')
+                                
+                                if not ole_rid:
+                                    debug_f.write(f"[Para {i}]: OLE object without r:id (ProgID: {prog_id}), skipping\n")
+                                    continue
+                                
+                                if ole_rid in doc.part.rels:
+                                    rel = doc.part.rels[ole_rid]
+                                    
+                                    # Extract OLE object binary
+                                    if "oleObject" in rel.target_ref or "package" in rel.target_ref:
+                                        ole_blob = rel.target_part.blob
+                                        
+                                        # Determine file extension based on ProgID (not target_ref)
+                                        if 'Visio' in prog_id:
+                                            ole_ext = 'vsdx'
+                                        elif 'Word.Document' in prog_id:
+                                            ole_ext = 'docx'
+                                        elif 'Word.Picture' in prog_id:
+                                            ole_ext = 'doc'
+                                        elif 'PowerPoint' in prog_id or 'Presentation' in prog_id:
+                                            ole_ext = 'pptx'
+                                        else:
+                                            # Fallback: use extension from target_ref if available
+                                            ole_ext = rel.target_ref.split('.')[-1] if '.' in rel.target_ref else 'bin'
+                                        
+                                        # Save OLE object
+                                        ole_filename = f"ole_figure_{image_index}.{ole_ext}"
+                                        ole_path = doc_figure_path / ole_filename
+                                        with open(ole_path, "wb") as f:
+                                            f.write(ole_blob)
                                         
                                         figure_meta = FigureMetadata(
                                             caption="",
-                                            file_path=image_path,
-                                            file_type=image_ext,
+                                            file_path=ole_path,
+                                            file_type=ole_ext,
                                             original_index=image_index,
-                                            r_id=rid,
-                                            target_ref=rel.target_ref
+                                            r_id=ole_rid,
+                                            target_ref=rel.target_ref,
+                                            ole_prog_id=prog_id,
+                                            ole_object_path=ole_path,
+                                            is_ole_object=True
                                         )
                                         current_section.figures.append(figure_meta)
                                         image_index += 1
-                                        debug_f.write(f"[Para {i}]: Found and saved potential image {image_filename}\n")
+                                        debug_f.write(f"[Para {i}]: Extracted OLE object {ole_filename} (ProgID: {prog_id})\n")
                             except Exception as e:
-                                debug_f.write(f"[Para {i}]: Error processing image with rId {rid}: {e}\n")
+                                debug_f.write(f"[Para {i}]: Error processing OLE object: {e}\n")
 
                     # Step 2: Check if the paragraph text is a figure caption.
                     if re.search(r'^Figure[\s\-]', text, re.IGNORECASE):

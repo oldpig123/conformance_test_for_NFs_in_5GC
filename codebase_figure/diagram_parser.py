@@ -21,8 +21,18 @@ class DiagramParser:
         """
         print(f"Parsing diagram: {figure_metadata.file_path}")
 
-        if figure_metadata.file_type in ['emf', 'wmf']:
+        # Handle Visio files (from OLE objects)
+        if figure_metadata.file_type in ['vsdx', 'vsd']:
+            return self._parse_visio_diagram(figure_metadata)
+        # Handle embedded Word/PowerPoint (TODO: extract nested diagrams)
+        elif figure_metadata.file_type in ['doc', 'docx', 'pptx']:
+            print(f"  OLE object type '{figure_metadata.file_type}' detected (ProgID: {figure_metadata.ole_prog_id})")
+            print(f"  TODO: Extract nested diagrams from embedded documents")
+            return None
+        # Handle vector formats (legacy WMF/EMF - now less common with OLE extraction)
+        elif figure_metadata.file_type in ['emf', 'wmf']:
             return self._parse_vector_diagram(figure_metadata)
+        # Handle raster formats
         elif figure_metadata.file_type in ['png', 'jpg', 'jpeg']:
             return self._parse_raster_diagram(figure_metadata)
         else:
@@ -38,6 +48,43 @@ class DiagramParser:
         if is_sequence:
             print(f"    ✓ Classified as sequence diagram.")
             # Placeholder for entity/relation extraction from vector diagram
+            return {
+                "network_functions": [],
+                "messages": [],
+                "sequence": []
+            }
+        else:
+            print(f"    ✗ Not a sequence diagram.")
+            return None
+
+    def _parse_visio_diagram(self, figure_metadata: FigureMetadata) -> Optional[Dict]:
+        """Parses a Visio diagram by converting to PNG and analyzing."""
+        print(f"  Attempting to parse Visio diagram: {figure_metadata.file_path}")
+        
+        # Convert Visio to PNG using LibreOffice
+        png_path = self._convert_visio_to_png(figure_metadata.file_path)
+        
+        if not png_path:
+            print(f"    ✗ Failed to convert Visio to PNG")
+            return None
+        
+        # Analyze the converted PNG
+        temp_fig_meta = FigureMetadata(
+            caption=figure_metadata.caption,
+            file_path=png_path,
+            file_type='png',
+            original_index=figure_metadata.original_index,
+            r_id=figure_metadata.r_id,
+            target_ref=figure_metadata.target_ref,
+            ole_prog_id=figure_metadata.ole_prog_id,
+            ole_object_path=figure_metadata.ole_object_path,
+            is_ole_object=True
+        )
+        
+        is_sequence = self._is_sequence_diagram_raster(temp_fig_meta)
+        
+        if is_sequence:
+            print(f"    ✓ Classified as sequence diagram.")
             return {
                 "network_functions": [],
                 "messages": [],
@@ -136,26 +183,39 @@ class DiagramParser:
         
         return False, None
     
+    def _convert_visio_to_png(self, visio_path: Path) -> Optional[Path]:
+        """
+        Convert Visio file to PNG for raster analysis.
+        Uses LibreOffice which supports Visio formats.
+        """
+        return self._convert_to_png(visio_path)
+    
     def _convert_wmf_to_png(self, wmf_path: Path) -> Optional[Path]:
         """
         Convert WMF/EMF file to PNG for raster analysis.
         Uses LibreOffice in headless mode which supports EMF/WMF formats well.
+        """
+        return self._convert_to_png(wmf_path)
+    
+    def _convert_to_png(self, file_path: Path) -> Optional[Path]:
+        """
+        Generic converter: converts various formats (WMF/EMF/VSDX) to PNG using LibreOffice.
         """
         try:
             # Create temporary directory for output
             temp_dir = tempfile.mkdtemp()
             temp_dir_path = Path(temp_dir)
             
-            # Use LibreOffice to convert EMF/WMF to PNG
+            # Use LibreOffice to convert to PNG
             result = subprocess.run(
                 ['libreoffice', '--headless', '--convert-to', 'png', 
-                 '--outdir', str(temp_dir_path), str(wmf_path)],
+                 '--outdir', str(temp_dir_path), str(file_path)],
                 capture_output=True,
                 timeout=15
             )
             
             # LibreOffice creates output with same basename but .png extension
-            output_filename = wmf_path.stem + '.png'
+            output_filename = file_path.stem + '.png'
             temp_path = temp_dir_path / output_filename
             
             if result.returncode == 0 and temp_path.exists():
