@@ -1,6 +1,28 @@
+## 2025-11-01
+
+### Testing & Validation
+
+-   **Phase 1.6: Full Pipeline Execution Completed:** Successfully validated the complete diagram-centric pipeline on production 3GPP documents.
+    *   **Documents Processed**: 2 files (23502-j40_new.docx, 33501-j40_new.docx) totaling 2,239 sections
+    *   **Procedures Identified**: 326 procedures with confidence scoring (range: 84-106)
+    *   **Diagram Processing**: 461 diagrams parsed, 227 sequence diagrams detected (49.4% detection rate)
+    *   **Nested Extraction**: 294 Word documents + 478 Visio diagrams successfully processed
+    *   **Knowledge Graph**: 3,525 entities and 31,516 relationships loaded into Neo4j
+    *   **Multi-GPU Performance**: LLM on device:0, Embedding model on device:1 (51 GB VRAM available)
+    *   **Search Engine**: 3,525 entities indexed with semantic embeddings
+    *   **FSM Generation**: 6 test FSMs generated and validated
+    *   **Pipeline Status**: ✅ All core functionality working, no CUDA OOM errors
+
 ## 2025-10-31
 
 ### Features
+
+-   **Phase 1.6: Nested Document Extraction Implemented:** Successfully implemented recursive extraction of diagrams from embedded Word and PowerPoint OLE objects.
+    *   **PowerPoint Support**: Export slides as PNG using LibreOffice for classification (1/1 tested = 100% success)
+    *   **Word Support**: Hybrid approach - Phase 1 extracts embedded images from relationships, Phase 2 exports pages as PNG fallback (5/5 tested = 100% success)
+    *   **Native Drawing Support**: Handles PowerPoint shapes and Word drawings, not just embedded images
+    *   **Recursion Safety**: Added `nesting_level` field to `FigureMetadata`, maximum depth limit of 3
+    *   **Coverage**: 120 Word objects + 1 PowerPoint object now fully supported
 
 -   **OLE Object Extraction Implemented:** Successfully implemented extraction of actual diagram source files from OLE objects instead of preview images.
     *   **Implementation**: Modified `document_loader.py` to detect and extract `<o:OLEObject>` tags with `r:id` and `ProgID`
@@ -27,17 +49,17 @@
     *   **Integration**: Classified diagrams automatically associated with parent procedures through existing `DocumentSection` structure
     *   **Test Scripts**: Added `test_diagram_classification.py`, `test_classification_extended.py`, `test_ole_extraction.py`, `test_ole_classification.py`
 
+### Configuration / Installation
+
+-   **PyTorch Installation via pip:** Due to conda dependency conflicts (ffmpeg 8.0, libprotobuf 6.31, libabseil 2025), PyTorch is now installed via pip instead of conda.
+    *   **Issue**: After installing MKL to fix library loading errors, conda pulled in bleeding-edge versions of system libraries that are incompatible with PyTorch
+    *   **Solution**: Install PyTorch via pip with CUDA 11.8 support
+    *   **Updated Files**: `conformance_test.yml` (documents pip installation), `README.md` (installation instructions)
+    *   **Result**: Full GPU support working (2× Quadro RTX 8000 detected)
+
 ### Known Issues / Limitations
 
--   **⚠️ TODO: Nested Document Extraction:** Word.Picture (111), Word.Document (9), and PowerPoint (1) OLE objects may contain nested sequence diagrams that need recursive extraction.
-    *   **Current Behavior**: These objects are detected and extracted but not yet processed for nested content
-    *   **Impact**: Potential sequence diagrams embedded within Word/PowerPoint objects are not yet classified
-    *   **Priority**: MEDIUM - Should be implemented in Phase 1.6 (after Visio support is validated)
-    *   **Proposed Solution**:
-        1. For `Word.Picture.8` / `Word.Document`: Recursively process embedded .doc/.docx files to extract nested images
-        2. For `PowerPoint`: Extract slides and convert to images for classification
-        3. Handle potential infinite recursion with depth limits
-    *   **Workaround**: Visio diagrams (164 total, majority of sequence diagrams) are fully supported
+-   **⚠️ Edge Case: Mscgen.Chart:** 1 Message Sequence Chart object (Mscgen.Chart ProgID) not yet handled - different format from standard sequence diagrams
 
 ### Bug Fixes
 

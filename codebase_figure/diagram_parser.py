@@ -5,6 +5,9 @@ import cv2
 import numpy as np
 import tempfile
 import subprocess
+from docx import Document
+from pptx import Presentation
+import zipfile
 
 from data_structures import FigureMetadata
 
@@ -24,11 +27,10 @@ class DiagramParser:
         # Handle Visio files (from OLE objects)
         if figure_metadata.file_type in ['vsdx', 'vsd']:
             return self._parse_visio_diagram(figure_metadata)
-        # Handle embedded Word/PowerPoint (TODO: extract nested diagrams)
+        # Handle embedded Word/PowerPoint - extract nested diagrams
         elif figure_metadata.file_type in ['doc', 'docx', 'pptx']:
             print(f"  OLE object type '{figure_metadata.file_type}' detected (ProgID: {figure_metadata.ole_prog_id})")
-            print(f"  TODO: Extract nested diagrams from embedded documents")
-            return None
+            return self._parse_nested_document(figure_metadata)
         # Handle vector formats (legacy WMF/EMF - now less common with OLE extraction)
         elif figure_metadata.file_type in ['emf', 'wmf']:
             return self._parse_vector_diagram(figure_metadata)
@@ -304,3 +306,311 @@ class DiagramParser:
         except Exception as e:
             print(f"    Error in raster analysis: {e}")
             return False
+
+    def _parse_nested_document(self, figure_metadata: FigureMetadata, depth: int = 0) -> Optional[Dict]:
+        """
+        Extract and parse diagrams from nested Word/PowerPoint documents.
+        
+        Args:
+            figure_metadata: Metadata of the OLE object
+            depth: Current recursion depth (max 3)
+        
+        Returns:
+            Dictionary with extracted data if sequence diagram found, None otherwise
+        """
+        MAX_DEPTH = 3
+        
+        if depth >= MAX_DEPTH:
+            print(f"    ⚠️  Max nesting depth ({MAX_DEPTH}) reached, skipping")
+            return None
+        
+        if figure_metadata.nesting_level >= MAX_DEPTH:
+            print(f"    ⚠️  Max nesting level ({MAX_DEPTH}) reached in metadata")
+            return None
+        
+        try:
+            if figure_metadata.file_type == 'pptx':
+                return self._extract_from_pptx(figure_metadata, depth)
+            elif figure_metadata.file_type == 'docx':
+                return self._extract_from_docx(figure_metadata, depth)
+            elif figure_metadata.file_type == 'doc':
+                return self._extract_from_doc(figure_metadata, depth)
+            else:
+                print(f"    ⚠️  Unsupported nested document type: {figure_metadata.file_type}")
+                return None
+        except Exception as e:
+            print(f"    ✗ Error extracting from nested document: {e}")
+            return None
+
+    def _extract_from_pptx(self, figure_metadata: FigureMetadata, depth: int) -> Optional[Dict]:
+        """
+        Extract and classify diagrams from PowerPoint slides.
+        Uses LibreOffice to export slides as PNG images for classification.
+        """
+        print(f"    Extracting diagrams from PowerPoint (depth={depth})...")
+        
+        try:
+            prs = Presentation(figure_metadata.file_path)
+            temp_dir = Path(tempfile.mkdtemp(prefix='pptx_extract_'))
+            
+            print(f"      Total slides: {len(prs.slides)}")
+            print(f"      Converting slides to PNG using LibreOffice...")
+            
+            # Convert entire PPTX to PNG images using LibreOffice
+            cmd = [
+                'libreoffice',
+                '--headless',
+                '--convert-to', 'png',
+                '--outdir', str(temp_dir),
+                str(figure_metadata.file_path)
+            ]
+            
+            result_cmd = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+            
+            if result_cmd.returncode != 0:
+                print(f"      ✗ LibreOffice conversion failed: {result_cmd.stderr}")
+                return None
+            
+            # Find converted PNG files (LibreOffice creates one PNG per slide)
+            png_files = sorted(temp_dir.glob('*.png'))
+            
+            if not png_files:
+                print(f"      ✗ No PNG files generated")
+                return None
+            
+            print(f"      ✓ Generated {len(png_files)} slide images")
+            
+            found_sequence = False
+            result = None
+            
+            # Classify each slide
+            for slide_idx, png_path in enumerate(png_files):
+                print(f"      Slide {slide_idx + 1}/{len(png_files)}: {png_path.name}")
+                
+                # Create FigureMetadata for the slide image
+                slide_meta = FigureMetadata(
+                    caption=f"{figure_metadata.caption} (Slide {slide_idx+1})",
+                    file_path=png_path,
+                    file_type='png',
+                    original_index=figure_metadata.original_index,
+                    r_id=f"{figure_metadata.r_id}_slide{slide_idx}",
+                    target_ref=str(png_path),
+                    ole_prog_id=figure_metadata.ole_prog_id,
+                    ole_object_path=figure_metadata.ole_object_path,
+                    is_ole_object=True,
+                    nesting_level=figure_metadata.nesting_level + 1
+                )
+                
+                # Classify the slide
+                parse_result = self.parse_diagram(slide_meta)
+                if parse_result:
+                    print(f"        ✓ Found sequence diagram in slide {slide_idx + 1}")
+                    found_sequence = True
+                    result = parse_result
+                    break
+            
+            if not found_sequence:
+                print(f"      ✗ No sequence diagrams found in {len(png_files)} slides")
+            
+            return result
+            
+        except subprocess.TimeoutExpired:
+            print(f"      ✗ LibreOffice conversion timed out")
+            return None
+        except Exception as e:
+            print(f"      ✗ Error processing PowerPoint: {e}")
+            return None
+
+    def _extract_from_docx(self, figure_metadata: FigureMetadata, depth: int) -> Optional[Dict]:
+        """
+        Extract and classify diagrams from Word document.
+        Uses hybrid approach:
+        1. First try to extract embedded images from document relationships
+        2. If no sequence diagrams found, export pages as PNG using LibreOffice
+        """
+        print(f"    Extracting diagrams from Word .docx (depth={depth})...")
+        
+        try:
+            doc = Document(figure_metadata.file_path)
+            temp_dir = Path(tempfile.mkdtemp(prefix='docx_extract_'))
+            
+            found_sequence = False
+            result = None
+            image_count = 0
+            
+            # Phase 1: Extract embedded images from document relationships
+            print(f"      Phase 1: Extracting embedded images...")
+            for rel in doc.part.rels.values():
+                if "image" in rel.target_ref:
+                    try:
+                        image_bytes = rel.target_part.blob
+                        # Determine extension from content type
+                        content_type = rel.target_part.content_type
+                        ext_map = {
+                            'image/png': 'png',
+                            'image/jpeg': 'jpg',
+                            'image/emf': 'emf',
+                            'image/wmf': 'wmf',
+                            'image/x-emf': 'emf',
+                            'image/x-wmf': 'wmf'
+                        }
+                        ext = ext_map.get(content_type, 'png')
+                        
+                        image_path = temp_dir / f"doc_img{image_count}.{ext}"
+                        with open(image_path, 'wb') as f:
+                            f.write(image_bytes)
+                        
+                        print(f"        Extracted image: {image_path.name}")
+                        image_count += 1
+                        
+                        # Create FigureMetadata for extracted image
+                        nested_meta = FigureMetadata(
+                            caption=f"{figure_metadata.caption} (Nested img {image_count})",
+                            file_path=image_path,
+                            file_type=ext,
+                            original_index=figure_metadata.original_index,
+                            r_id=f"{figure_metadata.r_id}_i{image_count}",
+                            target_ref=str(image_path),
+                            ole_prog_id=figure_metadata.ole_prog_id,
+                            ole_object_path=figure_metadata.ole_object_path,
+                            is_ole_object=True,
+                            nesting_level=figure_metadata.nesting_level + 1
+                        )
+                        
+                        # Classify the extracted image
+                        parse_result = self.parse_diagram(nested_meta)
+                        if parse_result:
+                            print(f"        ✓ Found sequence diagram in nested image {image_count}")
+                            found_sequence = True
+                            result = parse_result
+                            break
+                            
+                    except Exception as e:
+                        print(f"        ⚠️  Error extracting image: {e}")
+                        continue
+            
+            # Phase 2: If no embedded images or no sequence diagrams found, export as PNG
+            if not found_sequence:
+                print(f"      Phase 1 result: {image_count} images extracted, no sequence diagrams")
+                print(f"      Phase 2: Converting document pages to PNG using LibreOffice...")
+                
+                # Convert Word document to PNG (creates one PNG per page)
+                cmd = [
+                    'libreoffice',
+                    '--headless',
+                    '--convert-to', 'png',
+                    '--outdir', str(temp_dir),
+                    str(figure_metadata.file_path)
+                ]
+                
+                result_cmd = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+                
+                if result_cmd.returncode != 0:
+                    print(f"        ✗ LibreOffice conversion failed: {result_cmd.stderr}")
+                    return None
+                
+                # Find converted PNG files
+                png_files = sorted(temp_dir.glob('*.png'))
+                
+                if not png_files:
+                    print(f"        ✗ No PNG files generated")
+                    return None
+                
+                print(f"        ✓ Generated {len(png_files)} page images")
+                
+                # Classify each page
+                for page_idx, png_path in enumerate(png_files):
+                    print(f"        Page {page_idx + 1}/{len(png_files)}: {png_path.name}")
+                    
+                    # Create FigureMetadata for the page image
+                    page_meta = FigureMetadata(
+                        caption=f"{figure_metadata.caption} (Page {page_idx+1})",
+                        file_path=png_path,
+                        file_type='png',
+                        original_index=figure_metadata.original_index,
+                        r_id=f"{figure_metadata.r_id}_page{page_idx}",
+                        target_ref=str(png_path),
+                        ole_prog_id=figure_metadata.ole_prog_id,
+                        ole_object_path=figure_metadata.ole_object_path,
+                        is_ole_object=True,
+                        nesting_level=figure_metadata.nesting_level + 1
+                    )
+                    
+                    # Classify the page
+                    parse_result = self.parse_diagram(page_meta)
+                    if parse_result:
+                        print(f"          ✓ Found sequence diagram on page {page_idx + 1}")
+                        found_sequence = True
+                        result = parse_result
+                        break
+            
+            if not found_sequence:
+                print(f"      ✗ No sequence diagrams found")
+            
+            return result
+            
+        except subprocess.TimeoutExpired:
+            print(f"      ✗ LibreOffice conversion timed out")
+            return None
+        except Exception as e:
+            print(f"      ✗ Error processing Word .docx: {e}")
+            return None
+
+    def _extract_from_doc(self, figure_metadata: FigureMetadata, depth: int) -> Optional[Dict]:
+        """
+        Extract images from old Word .doc format.
+        Uses LibreOffice to convert to .docx first.
+        """
+        print(f"    Extracting diagrams from Word .doc (depth={depth})...")
+        print(f"      Converting .doc to .docx using LibreOffice...")
+        
+        try:
+            temp_dir = Path(tempfile.mkdtemp(prefix='doc_convert_'))
+            
+            # Convert .doc to .docx using LibreOffice
+            cmd = [
+                'libreoffice',
+                '--headless',
+                '--convert-to', 'docx',
+                '--outdir', str(temp_dir),
+                str(figure_metadata.file_path)
+            ]
+            
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+            
+            if result.returncode != 0:
+                print(f"      ✗ LibreOffice conversion failed: {result.stderr}")
+                return None
+            
+            # Find the converted .docx file
+            docx_files = list(temp_dir.glob('*.docx'))
+            if not docx_files:
+                print(f"      ✗ No .docx file generated")
+                return None
+            
+            docx_path = docx_files[0]
+            print(f"      ✓ Converted to: {docx_path.name}")
+            
+            # Create new metadata for the converted file
+            converted_meta = FigureMetadata(
+                caption=figure_metadata.caption,
+                file_path=docx_path,
+                file_type='docx',
+                original_index=figure_metadata.original_index,
+                r_id=figure_metadata.r_id,
+                target_ref=str(docx_path),
+                ole_prog_id=figure_metadata.ole_prog_id,
+                ole_object_path=figure_metadata.ole_object_path,
+                is_ole_object=True,
+                nesting_level=figure_metadata.nesting_level
+            )
+            
+            # Now extract from the converted .docx
+            return self._extract_from_docx(converted_meta, depth)
+            
+        except subprocess.TimeoutExpired:
+            print(f"      ✗ LibreOffice conversion timed out")
+            return None
+        except Exception as e:
+            print(f"      ✗ Error converting .doc: {e}")
+            return None

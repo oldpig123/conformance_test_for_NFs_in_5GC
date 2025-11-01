@@ -18,6 +18,7 @@ class FigureMetadata:
     ole_prog_id: Optional[str] = None  # e.g., 'Visio.Drawing.15', 'Word.Picture.8'
     ole_object_path: Optional[Path] = None  # Path to extracted OLE object
     is_ole_object: bool = False  # True if figure is from OLE object
+    nesting_level: int = 0  # Depth of nested extraction (0=direct, 1=nested, etc.)
 
 @dataclass
 class DocumentSection:

@@ -89,3 +89,22 @@ To enable multi-modal knowledge graph construction, the pipeline has been refact
     5.  **Length Filtering**: Only count substantial lines (vertical ≥20% height, horizontal ≥10% width)
     6.  **Heuristic Matching**: Classify as sequence diagram if structural pattern matches (≥2 lifelines, ≥3 messages, horizontal > vertical)
 *   **Benefit**: Automated classification reduces manual effort and enables scalable processing of large document sets. The 60% accuracy provides a good balance between precision and recall for initial entity extraction, with text-based fallback handling misclassifications.
+
+## 7. Nested Document Extraction (Phase 1.6)
+
+*   **Technique**: Hybrid Extraction for Embedded Office Documents (`diagram_parser.py`)
+*   **Rationale**: 3GPP documents contain embedded Word (.doc/.docx) and PowerPoint (.pptx) OLE objects that may contain sequence diagrams as native drawings (not embedded images). Direct image extraction misses these diagrams.
+*   **Implementation**:
+    *   **PowerPoint Strategy**: Export entire slides as PNG images using LibreOffice, then apply CV classification
+        - Command: `libreoffice --headless --convert-to png --outdir <temp> <pptx>`
+        - Handles native PowerPoint shapes (lines, text boxes, rectangles)
+    *   **Word Strategy**: Hybrid two-phase approach
+        - Phase 1: Extract embedded images from document relationships (fast, handles embedded images)
+        - Phase 2: Export pages as PNG using LibreOffice if Phase 1 finds no diagrams (fallback for native Word drawings)
+    *   **Old Format Support**: Convert .doc to .docx using LibreOffice before extraction
+    *   **Recursion Safety**: Track nesting depth with `nesting_level` field, enforce maximum depth of 3
+*   **Benefits**: 
+    - 100% success rate on tested samples (PowerPoint 1/1, Word 5/5)
+    - Handles both embedded images and native drawings
+    - Prevents infinite recursion with depth limits
+    - Minimal performance overhead (LibreOffice conversion ~2-5 seconds per file)

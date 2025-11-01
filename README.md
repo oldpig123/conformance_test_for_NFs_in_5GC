@@ -73,7 +73,9 @@ codebase_figure/
     conda env create -f conformance_test.yml
     conda activate conformance_test
     ```
-    This will install Python, PyTorch with CUDA 11.8, and all other required packages in an isolated environment.
+    This will install Python, all required packages, and **PyTorch with CUDA 11.8 via pip** (included in the environment file).
+    
+    **Note:** PyTorch is installed via pip (not conda) due to dependency conflicts with newer library versions. This is handled automatically by the environment file and provides full GPU support.
 
 3.  **Place 3GPP Documents:**
     Put your 3GPP specification `.docx` files into the `3GPP/` directory (or the directory specified by `DOCS_PATH` in the config).

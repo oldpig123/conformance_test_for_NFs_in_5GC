@@ -9,13 +9,15 @@ dependencies:
   - python=3.12
   - pip=25.0=py312h06a4308_0
  
-  # CUDA and PyTorch (Explicit Stack)
-  # By specifying the channel and the full stack, we avoid ambiguity for the solver.
-  - pytorch::pytorch
-  - pytorch::torchvision
-  - pytorch::torchaudio
-  - pytorch::pytorch-cuda=11.8
+  # CUDA Toolkit (for other GPU libraries like CuPy)
+  # Note: PyTorch is now installed via pip (see pip section below) due to conda
+  # dependency conflicts with newer library versions (ffmpeg 8.0, libprotobuf 6.31, etc.)
   - cudatoolkit=11.8
+  # Commenting out conda PyTorch to avoid conflicts:
+  # - pytorch::pytorch
+  # - pytorch::torchvision
+  # - pytorch::torchaudio
+  # - pytorch::pytorch-cuda=11.8
 
   # NLP and ML
   - transformers
@@ -34,6 +36,7 @@ dependencies:
   # Data and Graph
   - neo4j
   - python-docx
+  - python-pptx
   - pyshark
   - pandas
   - numpy
@@ -51,6 +54,12 @@ dependencies:
   - jupyter
 
   - pip:
+      # PyTorch with CUDA 11.8 (installed via pip to avoid conda dependency conflicts)
+      # Install command: pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
+      - torch==2.7.1+cu118
+      - torchvision==0.22.1+cu118
+      - torchaudio==2.7.1+cu118
+      # Other pip packages
       - tiktoken # For token counting, used in entity_extractor.py
       - docx2python # For advanced image extraction
       - pymupdf # For PDF processing

@@ -4,40 +4,53 @@ This document summarizes a discussion on a potential future architecture for imp
 
 ---
 
-## ✅ Completed Phase: Figure Extraction (2025-10-31)
+## ✅ Completed Phases (2025-10-31)
 
-**Status:** ✅ **DONE** - Ready for next phase
+**Status:** ✅ **Phase 1.6 COMPLETE** - Ready for full pipeline testing
 
-### What Was Completed:
+### Phase 1.5: OLE Object Extraction & Visio Support
 1. ✅ Figure extraction from DOCX files (both VML and DrawingML)
-2. ✅ Accurate figure-to-caption association (100% - 286/286 figures)
-3. ✅ Fixed regex patterns to handle "Figure-X" format
-4. ✅ Removed duplicate class definitions in `data_structures.py`
-5. ✅ Comprehensive metadata tracking (`r_id`, `target_ref`, `file_path`, `file_type`)
-6. ✅ All documentation updated and aligned with implementation
+2. ✅ OLE object extraction (286/288 objects from embeddings/)
+3. ✅ ProgID-based type detection (Visio, Word, PowerPoint)
+4. ✅ Visio diagram classification (100% accuracy on tested samples)
+5. ✅ Computer Vision-based sequence diagram classification (~60% accuracy)
+
+### Phase 1.6: Nested Document Extraction **(NEW)**
+1. ✅ PowerPoint slide extraction via LibreOffice export (100% - 1/1 tested)
+2. ✅ Word document hybrid extraction (100% - 5/5 tested)
+   - Phase 1: Extract embedded images from relationships
+   - Phase 2: Export pages as PNG (fallback for native drawings)
+3. ✅ Old .doc format support via LibreOffice conversion
+4. ✅ Recursion safety with `nesting_level` field (max depth 3)
+5. ✅ PyTorch GPU support via pip installation
 
 ### Files Modified:
-- `codebase_figure/data_structures.py` - Clean dataclass definitions
-- `codebase_figure/document_loader.py` - Robust VML/DrawingML extraction
-- `README.md`, `CHANGELOG.md`, `TECHNIQUES.md`, `codebase_figure/ARCHITECTURE.md` - Updated
+- `codebase_figure/data_structures.py` - Added `nesting_level` field
+- `codebase_figure/diagram_parser.py` - Nested extraction methods
+- `codebase_figure/document_loader.py` - OLE extraction logic
+- `conformance_test.yml` - PyTorch via pip
+- `README.md` - Installation instructions updated
+- All documentation files updated
 
 ### Test Results:
-- ✅ All 286 figures extracted with captions
-- ✅ Python files compile without errors
-- ✅ VML and DrawingML extraction working correctly
+- ✅ 286 figures extracted with captions from main document
+- ✅ PowerPoint: 1/1 (100%) - 19 lifelines, 161 messages detected
+- ✅ Word: 5/5 (100%) - All tested .doc files classified correctly
+- ✅ GPU support: 2× Quadro RTX 8000 detected
 
 ---
 
-## 🚀 Next Phase: Diagram Parser Implementation (Starting Tomorrow)
+## 🚀 Next Phase: Full Pipeline Testing
 
-**Objective:** Implement `diagram_parser.py` to read sequence diagrams and extract entities/relations for the knowledge graph.
+**Objective:** Validate Phase 1.6 integration with complete pipeline run on both documents.
 
 ### What's Ready:
-- `FigureMetadata` objects with file paths and metadata
-- `DocumentSection` objects with figures and context
-- Pipeline placeholder in architecture
+- Complete nested extraction implementation
+- GPU support working
+- All test scripts passing
+- Documentation updated
 
-### What to Implement:
+### What to Test:
 
 This document summarizes a discussion on a potential future architecture for improving the knowledge graph construction process by parsing sequence diagrams directly from the 3GPP documents.
 

@@ -62,10 +62,14 @@ This module contains no executable code but is critical as it defines the core d
 *   **`FigureMetadata`** (dataclass): Stores comprehensive metadata for an extracted figure:
     *   `caption`: The figure's caption text (initially empty, assigned later)
     *   `file_path`: Path to the extracted image file
-    *   `file_type`: Image format (e.g., 'wmf', 'emf', 'png', 'jpg')
+    *   `file_type`: Image format (e.g., 'wmf', 'emf', 'png', 'jpg', 'vsdx', 'doc', 'docx', 'pptx')
     *   `original_index`: Sequential index of the figure in the document
     *   `r_id`: The relationship ID from the docx XML (e.g., 'rId3')
     *   `target_ref`: The target reference path from document.xml.rels (e.g., 'media/image1.wmf')
+    *   `ole_prog_id`: ProgID from OLE objects (e.g., 'Visio.Drawing.15', 'Word.Picture.8')
+    *   `ole_object_path`: Path to extracted OLE object file
+    *   `is_ole_object`: Boolean flag indicating if this is an OLE object
+    *   `nesting_level`: Recursion depth for nested documents (0=direct, 1=nested, etc., max 3)
 
 *   **`DocumentSection`** (dataclass): Represents a clause or sub-clause parsed from a source `.docx` document:
     *   `title`: Section heading text
@@ -124,34 +128,40 @@ This module contains no executable code but is critical as it defines the core d
 
 ### `diagram_parser.py`
 
-*   **Purpose**: Handles the analysis, classification, and parsing of diagram files extracted from 3GPP documents. Uses Computer Vision to identify sequence diagrams and extract structural information.
+*   **Purpose**: Handles the analysis, classification, and parsing of diagram files extracted from 3GPP documents. Uses Computer Vision to identify sequence diagrams and extract structural information. **Phase 1.6**: Added nested document extraction support.
 *   **Main Class**: `DiagramParser`
 *   **Key Implementation Details**:
-    *   Supports both vector (EMF/WMF) and raster (PNG/JPG) image formats
-    *   Uses LibreOffice in headless mode to convert binary EMF/WMF to PNG for analysis
+    *   Supports vector (EMF/WMF), raster (PNG/JPG), Visio (VSDX), and nested documents (DOC/DOCX/PPTX)
+    *   Uses LibreOffice in headless mode for format conversions
     *   Applies OpenCV Canny edge detection and Hough Line Transform for structural analysis
     *   Classifies diagrams based on detected vertical lines (lifelines) and horizontal lines (messages)
 *   **Method Reference**:
     *   `parse_diagram(self, figure_metadata)`:
-        *   **Description**: Main entry point. Routes to appropriate parser based on file type.
+        *   **Description**: Main entry point. Routes to appropriate parser based on file type and OLE status.
         *   **Returns**: Dictionary with extracted data if sequence diagram, None otherwise.
+    *   `_parse_visio_diagram(self, figure_metadata)`:
+        *   **Description**: Handles Visio (.vsdx) files by converting to PNG and applying CV classification.
+    *   `_parse_nested_document(self, figure_metadata, depth)`:
+        *   **Description**: **NEW (Phase 1.6)** - Extracts diagrams from nested Word/PowerPoint objects.
+        *   **Parameters**: depth tracks recursion level (max 3)
+    *   `_extract_from_pptx(self, figure_metadata, depth)`:
+        *   **Description**: **NEW (Phase 1.6)** - Exports PowerPoint slides as PNG images for classification.
+        *   **Method**: Uses LibreOffice to convert entire slides to PNG
+    *   `_extract_from_docx(self, figure_metadata, depth)`:
+        *   **Description**: **NEW (Phase 1.6)** - Hybrid extraction from Word documents.
+        *   **Phase 1**: Extract embedded images from relationships
+        *   **Phase 2**: Export pages as PNG if no diagrams found (fallback)
+    *   `_extract_from_doc(self, figure_metadata, depth)`:
+        *   **Description**: **NEW (Phase 1.6)** - Handles old Word format by converting to .docx first.
     *   `_parse_vector_diagram(self, figure_metadata)`:
         *   **Description**: Handles EMF/WMF files. Attempts XML parsing first, then falls back to raster conversion.
     *   `_parse_raster_diagram(self, figure_metadata)`:
         *   **Description**: Handles PNG/JPG files using Computer Vision analysis.
-    *   `_is_sequence_diagram_vector(self, figure_metadata)`:
-        *   **Description**: Classifies vector diagrams by checking for XML structure or converting to raster.
-        *   **Returns**: Tuple of (is_sequence: bool, xml_root: Optional[etree._Element])
     *   `_is_sequence_diagram_raster(self, figure_metadata)`:
         *   **Description**: Classifies raster diagrams using Hough Line Transform.
         *   **Algorithm**: Detects vertical lines (≥80°, length ≥20% height) and horizontal lines (≤10° or ≥170°, length ≥10% width)
         *   **Heuristic**: Requires ≥2 vertical lines, ≥3 horizontal lines, and horizontal > vertical
         *   **Returns**: bool indicating if diagram is a sequence diagram
-    *   `_convert_wmf_to_png(self, wmf_path)`:
-        *   **Description**: Converts binary EMF/WMF to PNG using LibreOffice subprocess call.
-        *   **Command**: `libreoffice --headless --convert-to png --outdir <temp> <input>`
-        *   **Timeout**: 15 seconds
-        *   **Returns**: Path to converted PNG file or None if conversion fails
 
 ### `entity_extractor.py`
 
